@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
 
 // Opciones del proxy tipadas como 'any' porque la propiedad 'router' existe
 // en http-proxy (librería subyacente de Vite) pero no está declarada en los
@@ -22,7 +23,7 @@ const ojsProxyOptions: any = {
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), tailwindcss()],
   server: {
     proxy: {
       '/ojs-api': ojsProxyOptions

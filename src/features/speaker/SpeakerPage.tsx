@@ -1,0 +1,321 @@
+import React from 'react';
+import { useSpeaker } from '../../context/SpeakerContext';
+import { useOjs } from '../../context/OjsContext';
+import { useCongress } from '../../context/CongressContext';
+import { Card } from '../../components/common/Card';
+import { Input } from '../../components/common/Input';
+import { Select } from '../../components/common/Select';
+import { Button } from '../../components/common/Button';
+import { Badge } from '../../components/common/Badge';
+import type { FileInfo } from '../../types';
+
+export const SpeakerPage: React.FC = () => {
+  const {
+    submissionTitle,
+    setSubmissionTitle,
+    submissionCategory,
+    setSubmissionCategory,
+    audioFile,
+    setAudioFile,
+    posterFile,
+    setPosterFile,
+    abstractFile,
+    setAbstractFile,
+    manuscriptFile,
+    setManuscriptFile,
+    videoFile,
+    setVideoFile,
+    submissionStatus,
+    setSubmissionStatus
+  } = useSpeaker();
+
+  const { isPublishing, publishAndSyncOjs, addLog } = useOjs();
+  const { getCongressJson } = useCongress();
+
+  // Simulación de carga de archivos
+  const handleFileUploadSimulated = (
+    fileKey: string,
+    fileName: string,
+    fileSizeMB: number,
+    maxMB: number,
+    actualFile?: File
+  ) => {
+    if (fileSizeMB > maxMB) {
+      alert(
+        `Error de Límite: El archivo "${fileName}" pesa ${fileSizeMB} MB, lo cual excede el límite máximo permitido de ${maxMB} MB para este campo.`
+      );
+      addLog('error', `Error de carga: "${fileName}" excede el límite de ${maxMB} MB (Peso: ${fileSizeMB} MB).`);
+      return;
+    }
+
+    const fileSetter =
+      fileKey === 'audio'
+        ? setAudioFile
+        : fileKey === 'poster'
+        ? setPosterFile
+        : fileKey === 'abstract'
+        ? setAbstractFile
+        : fileKey === 'manuscript'
+        ? setManuscriptFile
+        : setVideoFile;
+
+    const initialFile: FileInfo = {
+      name: fileName,
+      size: fileSizeMB,
+      type: fileName.split('.').pop()?.toUpperCase() || 'UNKNOWN',
+      progress: 0,
+      rawFile: actualFile
+    };
+    fileSetter(initialFile);
+
+    let prog = 0;
+    const interval = setInterval(() => {
+      prog += Math.floor(Math.random() * 25) + 15;
+      if (prog >= 100) {
+        prog = 100;
+        clearInterval(interval);
+        addLog('success', `Archivo "${fileName}" (${fileSizeMB} MB) cargado localmente con éxito.`);
+      }
+      fileSetter((prev) => (prev ? { ...prev, progress: prog } : null));
+    }, 150);
+  };
+
+  const handleRealFileUpload = (fileKey: string, e: React.ChangeEvent<HTMLInputElement>, maxMB: number) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const fileSizeMB = parseFloat((file.size / (1024 * 1024)).toFixed(2));
+    handleFileUploadSimulated(fileKey, file.name, fileSizeMB, maxMB, file);
+  };
+
+  const deleteUploadedFile = (fileKey: string) => {
+    const fileSetter =
+      fileKey === 'audio'
+        ? setAudioFile
+        : fileKey === 'poster'
+        ? setPosterFile
+        : fileKey === 'abstract'
+        ? setAbstractFile
+        : fileKey === 'manuscript'
+        ? setManuscriptFile
+        : setVideoFile;
+    fileSetter(null);
+    addLog('info', `Archivo eliminado de la categoría "${fileKey}".`);
+  };
+
+  const handlePublishClick = () => {
+    const filesList = [
+      { key: 'audio', file: audioFile, label: 'Audio de Resumen' },
+      { key: 'poster', file: posterFile, label: 'Póster Científico' },
+      { key: 'abstract', file: abstractFile, label: 'Resumen Académico' },
+      { key: 'manuscript', file: manuscriptFile, label: 'Manuscrito Completo' },
+      { key: 'video', file: videoFile, label: 'Video de Presentación' }
+    ];
+
+    publishAndSyncOjs({
+      activeRole: 'ponente',
+      congressJson: getCongressJson(),
+      submissionTitle,
+      submissionCategory,
+      files: filesList,
+      onSuccessSpeaker: () => setSubmissionStatus('submitted')
+    });
+  };
+
+  const renderUploadCard = (
+    fileKey: string,
+    label: string,
+    limitMB: number,
+    icon: string,
+    fileInfo: FileInfo | null,
+    isLarge: boolean = false
+  ) => {
+    return (
+      <div
+        className={`border border-dashed border-slate-200 dark:border-slate-800 rounded-xl p-4 bg-slate-50/30 dark:bg-slate-900/10 flex flex-col gap-3.5 transition-all duration-200 hover:border-slate-350 dark:hover:border-slate-700 ${
+          isLarge ? 'col-span-1 md:col-span-2' : 'col-span-1'
+        }`}
+      >
+        <div className="flex items-center gap-3">
+          <span className="text-2xl select-none">{icon}</span>
+          <div className="flex flex-col">
+            <strong className="text-sm font-semibold text-slate-800 dark:text-slate-250">{label}</strong>
+            <span className="text-[10px] text-rose-500 font-medium">Límite: {limitMB} MB</span>
+          </div>
+        </div>
+
+        {fileInfo ? (
+          <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-lg p-3 flex flex-col gap-2 relative">
+            <div className="flex justify-between items-start pr-6">
+              <div className="flex flex-col gap-0.5 max-w-[80%]">
+                <span className="text-xs font-medium text-slate-900 dark:text-slate-200 truncate" title={fileInfo.name}>
+                  {fileInfo.name}
+                </span>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400">({fileInfo.size} MB)</span>
+              </div>
+              <button
+                type="button"
+                className="absolute top-2 right-2 text-slate-400 hover:text-rose-500 text-lg transition-colors p-1"
+                onClick={() => deleteUploadedFile(fileKey)}
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="flex items-center gap-3 mt-1">
+              <div className="flex-1 bg-slate-100 dark:bg-slate-850 rounded-full h-1.5 overflow-hidden">
+                <div
+                  className="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
+                  style={{ width: `${fileInfo.progress}%` }}
+                ></div>
+              </div>
+              <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-400 shrink-0">
+                {fileInfo.progress === 100 ? (
+                  <span className="text-emerald-600 dark:text-emerald-400 font-bold">✓ Listo</span>
+                ) : (
+                  `${fileInfo.progress}%`
+                )}
+              </span>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2">
+            <input
+              type="file"
+              id={`file-${fileKey}`}
+              className="hidden"
+              onChange={(e) => handleRealFileUpload(fileKey, e, limitMB)}
+            />
+            <Button
+              type="button"
+              variant="secondary"
+              className="text-xs w-full py-2"
+              onClick={() => document.getElementById(`file-${fileKey}`)?.click()}
+            >
+              📂 Seleccionar Archivo
+            </Button>
+            <div className="flex justify-between items-center gap-2 mt-1">
+              <button
+                type="button"
+                className="text-[10px] text-blue-600 hover:text-blue-700 dark:text-blue-400 hover:underline font-medium"
+                onClick={() =>
+                  handleFileUploadSimulated(
+                    fileKey,
+                    fileKey === 'abstract'
+                      ? 'Resumen_CambioClimatico.pdf'
+                      : fileKey === 'manuscript'
+                      ? 'Articulo_Completo.docx'
+                      : fileKey === 'audio'
+                      ? 'Podcast_AudioExplicativo.mp3'
+                      : fileKey === 'poster'
+                      ? 'Poster_Investigacion_A0.pdf'
+                      : 'Video_Exposicion_5min.mp4',
+                    limitMB * 0.45,
+                    limitMB
+                  )
+                }
+              >
+                Cargar Demo
+              </button>
+              <button
+                type="button"
+                className="text-[10px] text-rose-500 hover:text-rose-650 dark:text-rose-400 hover:underline font-medium"
+                onClick={() =>
+                  handleFileUploadSimulated(
+                    fileKey,
+                    fileKey === 'abstract'
+                      ? 'Resumen_Pesado.pdf'
+                      : fileKey === 'manuscript'
+                      ? 'Paper_AltasFiguras.pdf'
+                      : fileKey === 'audio'
+                      ? 'Podcast_Completo_Wav.wav'
+                      : fileKey === 'poster'
+                      ? 'Poster_SinComprimir.png'
+                      : 'Video_Raw_SinEditar.mov',
+                    limitMB * 1.5,
+                    limitMB
+                  )
+                }
+              >
+                Forzar Exceso
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <Card className="flex flex-col gap-6 w-full animate-fade-in">
+      <div className="border-b border-slate-100 dark:border-slate-800 pb-4">
+        <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2.5">
+          <span className="text-2xl">🎓</span> Portal de Carga de Ponencias (Ponente)
+        </h2>
+      </div>
+
+      <div className="flex flex-col gap-5">
+        <Input
+          id="sub-title"
+          label="Título del Trabajo Académico"
+          type="text"
+          value={submissionTitle}
+          onChange={(e) => setSubmissionTitle(e.target.value)}
+          placeholder="Ingrese el título de su investigación..."
+        />
+
+        <Select
+          id="sub-category"
+          label="Clasificación del Trabajo"
+          value={submissionCategory}
+          onChange={(e) => setSubmissionCategory(e.target.value as any)}
+        >
+          <option value="articulo">Artículo de Impacto (Para Revista Indexada OJS)</option>
+          <option value="poster">Cartel o Póster Científico (Exposición Visual)</option>
+          <option value="libro">Libro / Monografía Extensa</option>
+        </Select>
+
+        <div className="flex flex-col gap-3 mt-2">
+          <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+            Archivos Requeridos para Postulación
+          </label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {renderUploadCard('abstract', 'Resumen Académico', 2, '📝', abstractFile)}
+            {renderUploadCard('manuscript', 'Manuscrito Completo', 25, '📚', manuscriptFile)}
+            {renderUploadCard('audio', 'Audio (Resumen / Podcast)', 10, '🎙️', audioFile)}
+            {renderUploadCard('poster', 'Afiche o Póster', 15, '🖼️', posterFile)}
+            {renderUploadCard('video', 'Video de Presentación (~5 min)', 50, '📹', videoFile, true)}
+          </div>
+        </div>
+
+        {/* Panel de estado y envío */}
+        <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-805 flex flex-col sm:flex-row justify-between items-center gap-4">
+          <div className="flex items-center gap-2.5 text-sm">
+            <span className="text-slate-600 dark:text-slate-400 font-medium">Estado de la Ponencia:</span>
+            <Badge
+              variant={
+                submissionStatus === 'draft' ? 'secondary' : submissionStatus === 'submitted' ? 'warning' : 'success'
+              }
+            >
+              {submissionStatus === 'draft' && '📄 Borrador (Pendiente de Sincronizar)'}
+              {submissionStatus === 'submitted' && '📤 Sincronizado en OJS (En Revisión)'}
+              {submissionStatus === 'reviewed' && '✅ Evaluado'}
+            </Badge>
+          </div>
+
+          {submissionStatus === 'draft' && (
+            <Button
+              type="button"
+              variant="accent"
+              className="w-full sm:w-auto font-semibold px-6 py-2.5"
+              onClick={handlePublishClick}
+              isLoading={isPublishing}
+            >
+              {isPublishing ? 'Enviando a OJS...' : 'Enviar y Sincronizar Ponencia'}
+            </Button>
+          )}
+        </div>
+      </div>
+    </Card>
+  );
+};

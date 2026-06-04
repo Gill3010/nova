@@ -71,3 +71,13 @@ export interface OjsJournal {
   url: string;
   enabled: boolean;
 }
+
+export interface ClassroomInfo {
+  id: string;
+  name: string;
+  building: string;
+  capacity: number;
+  equipment: string[];
+  type: 'fisica' | 'virtual';
+}
+
