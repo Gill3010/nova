@@ -98,6 +98,9 @@ export function useOjsIntegration() {
     activeRole,
     congressJson,
     submissionTitle,
+    submissionAbstract,
+    submissionKeywords,
+    contributors,
     submissionCategory,
     files,
     onSuccessSpeaker
@@ -105,6 +108,9 @@ export function useOjsIntegration() {
     activeRole: 'admin_org' | 'ponente' | 'asistente' | 'revisor_eval';
     congressJson: Congress;
     submissionTitle: string;
+    submissionAbstract?: string;
+    submissionKeywords?: string;
+    contributors?: import('../types').Contributor[];
     submissionCategory: 'poster' | 'libro' | 'articulo';
     files: { key: string; file: FileInfo | null; label: string }[];
     onSuccessSpeaker?: () => void;
@@ -166,6 +172,57 @@ export function useOjsIntegration() {
         const publicationId = subData.currentPublication?.id || (subData.publications && subData.publications[0]?.id) || 1;
 
         addLog('success', `Envío creado con éxito. Submission ID: ${submissionId}, Publication ID: ${publicationId}`);
+
+        // Paso 1.5: Actualizar la publicación con título, resumen y palabras clave (Requerido en OJS 3.4)
+        addLog('info', `Actualizando metadatos de la publicación en OJS 3.4...`);
+        const keywordsArray = submissionKeywords
+          ? submissionKeywords.split(',').map(k => k.trim()).filter(Boolean)
+          : [];
+        const abstractText = submissionAbstract || `Trabajo de la línea: ${congressJson.researchLine}. Categoría: ${submissionCategory}`;
+        const updatePayload = {
+          title: { [locale]: submissionTitle },
+          abstract: { [locale]: abstractText },
+          ...(keywordsArray.length > 0 && { keywords: { [locale]: keywordsArray } })
+        };
+        addLog('request', `PUT /api/v1/submissions/${submissionId}/publications/${publicationId}\nPayload:`, updatePayload);
+        const updatedPub = await ojsApi.updatePublication(ojsUrl, ojsApiKey, selectedJournal.urlPath, submissionId, publicationId, updatePayload);
+        addLog('response', `HTTP/1.1 200 OK`, updatedPub);
+        addLog('success', `Metadatos de publicación actualizados con éxito.`);
+
+        // Paso 1.6: Registrar colaboradores/autores en la publicación
+        const validContributors = (contributors || []).filter(c => c.email.trim() && c.givenName.trim());
+        if (validContributors.length > 0) {
+          addLog('info', `Registrando ${validContributors.length} colaborador(es) en la publicación...`);
+          let userGroupId = 14; // fallback al Autor de la primera revista
+          try {
+            userGroupId = await ojsApi.fetchUserGroupId(ojsUrl, ojsApiKey, selectedJournal.urlPath, selectedJournal.id);
+            addLog('info', `User Group ID de Autor detectado: ${userGroupId}`);
+          } catch {
+            addLog('info', `Usando User Group ID de Autor por defecto: ${userGroupId}`);
+          }
+          for (let i = 0; i < validContributors.length; i++) {
+            const c = validContributors[i];
+            const contribPayload = {
+              givenName: { [locale]: c.givenName },
+              familyName: { [locale]: c.familyName },
+              email: c.email,
+              country: c.country || 'PA',
+              affiliation: { [locale]: c.affiliation },
+              userGroupId: userGroupId,
+              includeInBrowse: true,
+              seq: i
+            };
+            addLog('request', `POST /api/v1/submissions/${submissionId}/publications/${publicationId}/contributors\nColaborador: ${c.givenName} ${c.familyName}`);
+            try {
+              const contribData = await ojsApi.addContributor(ojsUrl, ojsApiKey, selectedJournal.urlPath, submissionId, publicationId, contribPayload);
+              addLog('response', `HTTP/1.1 200 OK`, contribData);
+              addLog('success', `Colaborador "${c.givenName} ${c.familyName}" registrado correctamente (ID: ${contribData.id}).`);
+            } catch (contribErr: any) {
+              const msg = contribErr?.data ? JSON.stringify(contribErr.data) : String(contribErr);
+              addLog('error', `No se pudo registrar al colaborador "${c.givenName} ${c.familyName}": ${msg}`);
+            }
+          }
+        }
 
         // Paso 2: Subir cada archivo cargado como Submission File y asociarlo
         for (const item of filesToUpload) {
@@ -297,6 +354,17 @@ export function useOjsIntegration() {
       const submissionId = subData.id;
       const publicationId = subData.currentPublicationId || subData.publications?.[0]?.id;
       addLog('success', `¡Congreso registrado como Submission en OJS! Submission ID: ${submissionId}, Publication ID: ${publicationId}`);
+
+      // Paso 2.5: Actualizar la publicación con el título y resumen reales del congreso (Requerido en OJS 3.4)
+      addLog('info', `Actualizando metadatos de la publicación en OJS 3.4...`);
+      const updatePayload = {
+        title: { [locale]: congressJson.name },
+        abstract: { [locale]: `${congressJson.description}\n\nLínea de investigación: ${congressJson.researchLine}\nSede: ${congressJson.venue}\nFecha: ${congressJson.date}` }
+      };
+      addLog('request', `PUT /api/v1/submissions/${submissionId}/publications/${publicationId}\nPayload:`, updatePayload);
+      const updatedPub = await ojsApi.updatePublication(ojsUrl, ojsApiKey, selectedJournal.urlPath, submissionId, publicationId, updatePayload);
+      addLog('response', `HTTP/1.1 200 OK`, updatedPub);
+      addLog('success', `Metadatos de publicación del congreso actualizados con éxito.`);
 
       // Paso 3: Webhook
       const webhookPayload = {

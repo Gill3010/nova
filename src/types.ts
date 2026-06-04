@@ -27,6 +27,14 @@ export interface OjsConfig {
   apiKey: string;
 }
 
+export interface Contributor {
+  givenName: string;    // Nombre(s)
+  familyName: string;   // Apellido(s)
+  email: string;        // Correo electrónico (requerido por OJS)
+  country: string;      // Código de país ISO 2 letras, ej: 'PA', 'CO', 'MX'
+  affiliation: string;  // Institución o Universidad
+}
+
 export interface LogEntry {
   timestamp: string;
   type: 'info' | 'success' | 'request' | 'response' | 'error';

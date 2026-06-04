@@ -7,12 +7,18 @@ import { Input } from '../../components/common/Input';
 import { Select } from '../../components/common/Select';
 import { Button } from '../../components/common/Button';
 import { Badge } from '../../components/common/Badge';
-import type { FileInfo } from '../../types';
+import type { Contributor, FileInfo } from '../../types';
 
 export const SpeakerPage: React.FC = () => {
   const {
     submissionTitle,
     setSubmissionTitle,
+    submissionAbstract,
+    setSubmissionAbstract,
+    submissionKeywords,
+    setSubmissionKeywords,
+    contributors,
+    setContributors,
     submissionCategory,
     setSubmissionCategory,
     audioFile,
@@ -32,7 +38,20 @@ export const SpeakerPage: React.FC = () => {
   const { isPublishing, publishAndSyncOjs, addLog } = useOjs();
   const { getCongressJson } = useCongress();
 
-  // Simulación de carga de archivos
+  // --- Colaboradores ---
+  const updateContributor = (index: number, field: keyof Contributor, value: string) => {
+    setContributors(prev => prev.map((c, i) => i === index ? { ...c, [field]: value } : c));
+  };
+
+  const addContributorRow = () => {
+    setContributors(prev => [...prev, { givenName: '', familyName: '', email: '', country: 'PA', affiliation: '' }]);
+  };
+
+  const removeContributorRow = (index: number) => {
+    setContributors(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // --- Archivos ---
   const handleFileUploadSimulated = (
     fileKey: string,
     fileName: string,
@@ -41,23 +60,17 @@ export const SpeakerPage: React.FC = () => {
     actualFile?: File
   ) => {
     if (fileSizeMB > maxMB) {
-      alert(
-        `Error de Límite: El archivo "${fileName}" pesa ${fileSizeMB} MB, lo cual excede el límite máximo permitido de ${maxMB} MB para este campo.`
-      );
+      alert(`Error de Límite: El archivo "${fileName}" pesa ${fileSizeMB} MB, lo cual excede el límite máximo permitido de ${maxMB} MB para este campo.`);
       addLog('error', `Error de carga: "${fileName}" excede el límite de ${maxMB} MB (Peso: ${fileSizeMB} MB).`);
       return;
     }
 
     const fileSetter =
-      fileKey === 'audio'
-        ? setAudioFile
-        : fileKey === 'poster'
-        ? setPosterFile
-        : fileKey === 'abstract'
-        ? setAbstractFile
-        : fileKey === 'manuscript'
-        ? setManuscriptFile
-        : setVideoFile;
+      fileKey === 'audio' ? setAudioFile
+      : fileKey === 'poster' ? setPosterFile
+      : fileKey === 'abstract' ? setAbstractFile
+      : fileKey === 'manuscript' ? setManuscriptFile
+      : setVideoFile;
 
     const initialFile: FileInfo = {
       name: fileName,
@@ -83,22 +96,17 @@ export const SpeakerPage: React.FC = () => {
   const handleRealFileUpload = (fileKey: string, e: React.ChangeEvent<HTMLInputElement>, maxMB: number) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     const fileSizeMB = parseFloat((file.size / (1024 * 1024)).toFixed(2));
     handleFileUploadSimulated(fileKey, file.name, fileSizeMB, maxMB, file);
   };
 
   const deleteUploadedFile = (fileKey: string) => {
     const fileSetter =
-      fileKey === 'audio'
-        ? setAudioFile
-        : fileKey === 'poster'
-        ? setPosterFile
-        : fileKey === 'abstract'
-        ? setAbstractFile
-        : fileKey === 'manuscript'
-        ? setManuscriptFile
-        : setVideoFile;
+      fileKey === 'audio' ? setAudioFile
+      : fileKey === 'poster' ? setPosterFile
+      : fileKey === 'abstract' ? setAbstractFile
+      : fileKey === 'manuscript' ? setManuscriptFile
+      : setVideoFile;
     fileSetter(null);
     addLog('info', `Archivo eliminado de la categoría "${fileKey}".`);
   };
@@ -116,6 +124,9 @@ export const SpeakerPage: React.FC = () => {
       activeRole: 'ponente',
       congressJson: getCongressJson(),
       submissionTitle,
+      submissionAbstract,
+      submissionKeywords,
+      contributors,
       submissionCategory,
       files: filesList,
       onSuccessSpeaker: () => setSubmissionStatus('submitted')
@@ -201,15 +212,11 @@ export const SpeakerPage: React.FC = () => {
                 onClick={() =>
                   handleFileUploadSimulated(
                     fileKey,
-                    fileKey === 'abstract'
-                      ? 'Resumen_CambioClimatico.pdf'
-                      : fileKey === 'manuscript'
-                      ? 'Articulo_Completo.docx'
-                      : fileKey === 'audio'
-                      ? 'Podcast_AudioExplicativo.mp3'
-                      : fileKey === 'poster'
-                      ? 'Poster_Investigacion_A0.pdf'
-                      : 'Video_Exposicion_5min.mp4',
+                    fileKey === 'abstract' ? 'Resumen_CambioClimatico.pdf'
+                    : fileKey === 'manuscript' ? 'Articulo_Completo.docx'
+                    : fileKey === 'audio' ? 'Podcast_AudioExplicativo.mp3'
+                    : fileKey === 'poster' ? 'Poster_Investigacion_A0.pdf'
+                    : 'Video_Exposicion_5min.mp4',
                     limitMB * 0.45,
                     limitMB
                   )
@@ -223,15 +230,11 @@ export const SpeakerPage: React.FC = () => {
                 onClick={() =>
                   handleFileUploadSimulated(
                     fileKey,
-                    fileKey === 'abstract'
-                      ? 'Resumen_Pesado.pdf'
-                      : fileKey === 'manuscript'
-                      ? 'Paper_AltasFiguras.pdf'
-                      : fileKey === 'audio'
-                      ? 'Podcast_Completo_Wav.wav'
-                      : fileKey === 'poster'
-                      ? 'Poster_SinComprimir.png'
-                      : 'Video_Raw_SinEditar.mov',
+                    fileKey === 'abstract' ? 'Resumen_Pesado.pdf'
+                    : fileKey === 'manuscript' ? 'Paper_AltasFiguras.pdf'
+                    : fileKey === 'audio' ? 'Podcast_Completo_Wav.wav'
+                    : fileKey === 'poster' ? 'Poster_SinComprimir.png'
+                    : 'Video_Raw_SinEditar.mov',
                     limitMB * 1.5,
                     limitMB
                   )
@@ -255,6 +258,8 @@ export const SpeakerPage: React.FC = () => {
       </div>
 
       <div className="flex flex-col gap-5">
+
+        {/* — Metadatos principales — */}
         <Input
           id="sub-title"
           label="Título del Trabajo Académico"
@@ -275,6 +280,128 @@ export const SpeakerPage: React.FC = () => {
           <option value="libro">Libro / Monografía Extensa</option>
         </Select>
 
+        {/* — Resumen / Abstract — */}
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="sub-abstract" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+            Resumen del Trabajo <span className="text-[10px] text-blue-500 font-normal ml-1">Se sincroniza como Abstract en OJS</span>
+          </label>
+          <textarea
+            id="sub-abstract"
+            rows={4}
+            className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2.5 text-sm text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none transition"
+            value={submissionAbstract}
+            onChange={(e) => setSubmissionAbstract(e.target.value)}
+            placeholder="Escriba el resumen de su investigación (se guardará como Abstract en OJS)..."
+          />
+        </div>
+
+        {/* — Palabras clave — */}
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="sub-keywords" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+            Palabras Clave <span className="text-[10px] text-slate-400 font-normal ml-1">Separadas por comas</span>
+          </label>
+          <input
+            id="sub-keywords"
+            type="text"
+            className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2.5 text-sm text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+            value={submissionKeywords}
+            onChange={(e) => setSubmissionKeywords(e.target.value)}
+            placeholder="ej: inteligencia artificial, medicina, algoritmos..."
+          />
+        </div>
+
+        {/* — Colaboradores / Autores — */}
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+              Colaboradores / Autores <span className="text-[10px] text-blue-500 font-normal ml-1">Se registran como Authors en OJS</span>
+            </label>
+            <button
+              type="button"
+              onClick={addContributorRow}
+              className="text-xs font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 flex items-center gap-1 transition-colors"
+            >
+              + Añadir colaborador
+            </button>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            {contributors.map((c, i) => (
+              <div
+                key={i}
+                className="relative border border-slate-200 dark:border-slate-700 rounded-xl p-4 bg-slate-50/50 dark:bg-slate-900/20 flex flex-col gap-3"
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Colaborador #{i + 1}</span>
+                  {contributors.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeContributorRow(i)}
+                      className="text-xs text-rose-500 hover:text-rose-600 font-medium transition-colors"
+                    >
+                      × Eliminar
+                    </button>
+                  )}
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Nombre(s)</label>
+                    <input
+                      type="text"
+                      className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                      value={c.givenName}
+                      onChange={(e) => updateContributor(i, 'givenName', e.target.value)}
+                      placeholder="Nombre(s)"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Apellido(s)</label>
+                    <input
+                      type="text"
+                      className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                      value={c.familyName}
+                      onChange={(e) => updateContributor(i, 'familyName', e.target.value)}
+                      placeholder="Apellido(s)"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Correo electrónico <span className="text-rose-500">*</span></label>
+                    <input
+                      type="email"
+                      className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                      value={c.email}
+                      onChange={(e) => updateContributor(i, 'email', e.target.value)}
+                      placeholder="correo@universidad.edu"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-medium text-slate-600 dark:text-slate-400">País (código ISO)</label>
+                    <input
+                      type="text"
+                      maxLength={2}
+                      className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition uppercase"
+                      value={c.country}
+                      onChange={(e) => updateContributor(i, 'country', e.target.value.toUpperCase())}
+                      placeholder="PA"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1 sm:col-span-2">
+                    <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Institución / Universidad</label>
+                    <input
+                      type="text"
+                      className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                      value={c.affiliation}
+                      onChange={(e) => updateContributor(i, 'affiliation', e.target.value)}
+                      placeholder="Universidad de Panamá, Facultad de Ciencias..."
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* — Archivos — */}
         <div className="flex flex-col gap-3 mt-2">
           <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
             Archivos Requeridos para Postulación
@@ -288,7 +415,7 @@ export const SpeakerPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Panel de estado y envío */}
+        {/* — Panel de estado y envío — */}
         <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-805 flex flex-col sm:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2.5 text-sm">
             <span className="text-slate-600 dark:text-slate-400 font-medium">Estado de la Ponencia:</span>

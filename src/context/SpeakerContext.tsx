@@ -1,9 +1,15 @@
 import React, { createContext, useContext, useState } from 'react';
-import type { Submission, FileInfo } from '../types';
+import type { Submission, FileInfo, Contributor } from '../types';
 
 interface SpeakerContextType {
   submissionTitle: string;
   setSubmissionTitle: (val: string) => void;
+  submissionAbstract: string;
+  setSubmissionAbstract: (val: string) => void;
+  submissionKeywords: string;
+  setSubmissionKeywords: (val: string) => void;
+  contributors: Contributor[];
+  setContributors: React.Dispatch<React.SetStateAction<Contributor[]>>;
   submissionCategory: Submission['category'];
   setSubmissionCategory: (val: Submission['category']) => void;
   audioFile: FileInfo | null;
@@ -26,6 +32,13 @@ export const SpeakerProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [submissionTitle, setSubmissionTitle] = useState(
     'Análisis comparativo de algoritmos de Machine Learning aplicados a la medicina de precisión'
   );
+  const [submissionAbstract, setSubmissionAbstract] = useState(
+    'Este trabajo presenta un análisis comparativo de los principales algoritmos de aprendizaje automático aplicados al diagnóstico médico de precisión, evaluando métricas de rendimiento en datasets clínicos reales.'
+  );
+  const [submissionKeywords, setSubmissionKeywords] = useState('machine learning, medicina de precisión, algoritmos, diagnóstico');
+  const [contributors, setContributors] = useState<Contributor[]>([
+    { givenName: '', familyName: '', email: '', country: 'PA', affiliation: '' }
+  ]);
   const [submissionCategory, setSubmissionCategory] = useState<Submission['category']>('articulo');
   const [audioFile, setAudioFile] = useState<FileInfo | null>(null);
   const [posterFile, setPosterFile] = useState<FileInfo | null>(null);
@@ -39,6 +52,12 @@ export const SpeakerProvider: React.FC<{ children: React.ReactNode }> = ({ child
       value={{
         submissionTitle,
         setSubmissionTitle,
+        submissionAbstract,
+        setSubmissionAbstract,
+        submissionKeywords,
+        setSubmissionKeywords,
+        contributors,
+        setContributors,
         submissionCategory,
         setSubmissionCategory,
         audioFile,

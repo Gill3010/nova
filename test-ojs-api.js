@@ -20,15 +20,13 @@ async function run() {
   const JOURNAL_PATH = journal.urlPath;
   const locale = Object.keys(journal.name)[0] || 'es_ES';
 
+  // 1. Crear el envío
+  console.log('1. Creating submission...');
   let submission = null;
   try {
     const payload = {
       locale: locale,
-      sectionId: 1,
-      publication: {
-        title: { [locale]: 'Nova Test Submission' },
-        abstract: { [locale]: 'This is a test submission from Nova.' }
-      }
+      sectionId: 1
     };
     const res = await fetch(`${OJS_URL}/index.php/${JOURNAL_PATH}/api/v1/submissions`, {
       method: 'POST',
@@ -36,12 +34,34 @@ async function run() {
       body: JSON.stringify(payload)
     });
     submission = await res.json();
-    console.log('--- FULL SUBMISSION RESPONSE ---');
-    console.log(JSON.stringify(submission, null, 2));
-    console.log('--------------------------------');
+    console.log('Submission created. ID:', submission.id);
   } catch (err) {
     console.error('Error creating submission:', err);
     return;
+  }
+
+  const submissionId = submission.id;
+  const publicationId = submission.currentPublicationId || (submission.publications && submission.publications[0]?.id);
+  console.log('Publication ID:', publicationId);
+
+  // 2. Intentar actualizar la publicación con PUT
+  console.log('\n2. Updating publication via PUT...');
+  try {
+    const pubPayload = {
+      title: { [locale]: 'Nova Test Title via PUT' },
+      abstract: { [locale]: 'This is a test abstract updated via PUT.' }
+    };
+    const res = await fetch(`${OJS_URL}/index.php/${JOURNAL_PATH}/api/v1/submissions/${submissionId}/publications/${publicationId}`, {
+      method: 'PUT',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify(pubPayload)
+    });
+    const updatedPub = await res.json();
+    console.log('PUT Response Status:', res.status);
+    console.log('Updated Title:', updatedPub.title);
+    console.log('Updated Abstract:', updatedPub.abstract);
+  } catch (err) {
+    console.error('Error updating publication:', err);
   }
 }
 
