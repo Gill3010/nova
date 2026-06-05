@@ -2,7 +2,7 @@ import React from 'react';
 import { useOjs } from '../../context/OjsContext';
 import { useCongress } from '../../context/CongressContext';
 import { useSpeaker } from '../../context/SpeakerContext';
-import { useUserRole } from '../../context/UserRoleContext';
+import { useAuth } from '../../context/AuthContext';
 import { Card } from '../common/Card';
 import { Input } from '../common/Input';
 import { Select } from '../common/Select';
@@ -25,7 +25,8 @@ export const OjsConfigCard: React.FC = () => {
     addLog
   } = useOjs();
 
-  const { activeRole } = useUserRole();
+  const { user } = useAuth();
+  const activeRole = user?.rol === 'admin' || user?.rol === 'organizer' ? 'admin_org' : 'ponente';
   const { getCongressJson, setInternalId } = useCongress();
   const {
     submissionTitle,

@@ -18,7 +18,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onClose }) => {
     setIsLoading(true);
     setError(null);
     try {
-      const result = await fetchDashboardData();
+      const result = await fetchDashboardData('mine');
       setData(result);
     } catch (err: any) {
       setError(err.message || 'Error al conectar con el servidor local');

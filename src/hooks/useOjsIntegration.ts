@@ -123,34 +123,54 @@ export function useOjsIntegration() {
     if (!ojsUrl.trim() || !ojsApiKey.trim()) {
       addLog('error', 'Error de Integración: URL de OJS o API Key faltantes.');
       setIsPublishing(false);
+      alert('Error: Debe configurar la URL y API Key de OJS en el panel de administrador primero.');
       return;
     }
 
-    if (!selectedJournal) {
-      addLog('error', 'Error de Integración: Debe conectar con OJS y seleccionar una revista de destino.');
-      setIsPublishing(false);
-      return;
+    let currentJournal = selectedJournal;
+
+    if (!currentJournal) {
+      addLog('info', 'No hay revista seleccionada. Intentando auto-seleccionar la primera disponible...');
+      try {
+        const fetchedJournals = await ojsApi.fetchJournals(ojsUrl, ojsApiKey);
+        if (fetchedJournals.length > 0) {
+          currentJournal = fetchedJournals[0];
+          setSelectedJournal(currentJournal);
+          addLog('success', `Revista auto-seleccionada: ${currentJournal.name}`);
+        } else {
+          addLog('error', 'Error de Integración: No se encontraron revistas en el servidor OJS.');
+          setIsPublishing(false);
+          alert('Error de Integración: No se encontraron revistas en el servidor OJS.');
+          return;
+        }
+      } catch (err) {
+        addLog('error', 'Error de Integración: No se pudo conectar con OJS para auto-seleccionar revista.');
+        setIsPublishing(false);
+        alert('Error de Integración: No se pudo conectar con OJS para auto-seleccionar revista.');
+        return;
+      }
     }
 
-    const locale = getJournalLocale(selectedJournal.nameObj);
+    const locale = getJournalLocale(currentJournal.nameObj);
 
     if (activeRole === 'ponente') {
-      addLog('info', `Iniciando proceso de sincronización REAL de ponencia con la revista "${selectedJournal.name}"...`);
+      addLog('info', `Iniciando proceso de sincronización REAL de ponencia con la revista "${currentJournal.name}"...`);
 
       const filesToUpload = files.filter(x => x.file !== null);
 
       if (filesToUpload.length === 0) {
         addLog('error', 'Error de Validación: Debe cargar al menos un archivo para sincronizar.');
         setIsPublishing(false);
+        alert('Error de Validación: Debe cargar al menos un archivo (ej: Resumen o Manuscrito).');
         return;
       }
 
       try {
         // Paso 0: Obtener una sección válida de la revista seleccionada
-        addLog('info', `Consultando secciones virtuales para la revista "${selectedJournal.name}"...`);
+        addLog('info', `Consultando secciones virtuales para la revista "${currentJournal.name}"...`);
         let sectionId = 1; // fallback
         try {
-          sectionId = await ojsApi.fetchSectionId(ojsUrl, ojsApiKey, selectedJournal.urlPath);
+          sectionId = await ojsApi.fetchSectionId(ojsUrl, ojsApiKey, currentJournal.urlPath);
           addLog('info', `Sección válida detectada (ID: ${sectionId})`);
         } catch (secErr: any) {
           addLog('info', `No se pudo extraer sectionId de envíos recientes, usando fallback: ${sectionId}`);
@@ -167,7 +187,7 @@ export function useOjsIntegration() {
         };
 
         addLog('request', `POST /api/v1/submissions\nPayload:`, submissionPayload);
-        const subData = await ojsApi.createSubmission(ojsUrl, ojsApiKey, selectedJournal.urlPath, submissionPayload);
+        const subData = await ojsApi.createSubmission(ojsUrl, ojsApiKey, currentJournal.urlPath, submissionPayload);
         addLog('response', `HTTP/1.1 200 OK`, subData);
 
         const submissionId = subData.id || 412; // Fallback
@@ -187,7 +207,7 @@ export function useOjsIntegration() {
           ...(keywordsArray.length > 0 && { keywords: { [locale]: keywordsArray } })
         };
         addLog('request', `PUT /api/v1/submissions/${submissionId}/publications/${publicationId}\nPayload:`, updatePayload);
-        const updatedPub = await ojsApi.updatePublication(ojsUrl, ojsApiKey, selectedJournal.urlPath, submissionId, publicationId, updatePayload);
+        const updatedPub = await ojsApi.updatePublication(ojsUrl, ojsApiKey, currentJournal.urlPath, submissionId, publicationId, updatePayload);
         addLog('response', `HTTP/1.1 200 OK`, updatedPub);
         addLog('success', `Metadatos de publicación actualizados con éxito.`);
 
@@ -197,7 +217,7 @@ export function useOjsIntegration() {
           addLog('info', `Registrando ${validContributors.length} colaborador(es) en la publicación...`);
           let userGroupId = 14; // fallback al Autor de la primera revista
           try {
-            userGroupId = await ojsApi.fetchUserGroupId(ojsUrl, ojsApiKey, selectedJournal.urlPath, selectedJournal.id);
+            userGroupId = await ojsApi.fetchUserGroupId(ojsUrl, ojsApiKey, currentJournal.urlPath, currentJournal.id);
             addLog('info', `User Group ID de Autor detectado: ${userGroupId}`);
           } catch {
             addLog('info', `Usando User Group ID de Autor por defecto: ${userGroupId}`);
@@ -216,7 +236,7 @@ export function useOjsIntegration() {
             };
             addLog('request', `POST /api/v1/submissions/${submissionId}/publications/${publicationId}/contributors\nColaborador: ${c.givenName} ${c.familyName}`);
             try {
-              const contribData = await ojsApi.addContributor(ojsUrl, ojsApiKey, selectedJournal.urlPath, submissionId, publicationId, contribPayload);
+              const contribData = await ojsApi.addContributor(ojsUrl, ojsApiKey, currentJournal.urlPath, submissionId, publicationId, contribPayload);
               addLog('response', `HTTP/1.1 200 OK`, contribData);
               addLog('success', `Colaborador "${c.givenName} ${c.familyName}" registrado correctamente (ID: ${contribData.id}).`);
             } catch (contribErr: any) {
@@ -244,7 +264,7 @@ export function useOjsIntegration() {
             const fileData = await ojsApi.uploadSubmissionFile(
               ojsUrl,
               ojsApiKey,
-              selectedJournal.urlPath,
+              currentJournal.urlPath,
               submissionId,
               fileObject,
               '2', // SUBMISSION_FILE_SUBMISSION
@@ -265,7 +285,7 @@ export function useOjsIntegration() {
 
             addLog('request', `POST /api/v1/submissions/${submissionId}/publications/${publicationId}/galleys\nPayload:`, galleyPayload);
             try {
-              const galleyData = await ojsApi.createGalley(ojsUrl, ojsApiKey, selectedJournal.urlPath, submissionId, publicationId, galleyPayload);
+              const galleyData = await ojsApi.createGalley(ojsUrl, ojsApiKey, currentJournal.urlPath, submissionId, publicationId, galleyPayload);
               addLog('response', `HTTP/1.1 200 OK`, galleyData);
               addLog('success', `Galera "${item.label}" creada correctamente.`);
             } catch (galleyErr: any) {
@@ -296,9 +316,13 @@ export function useOjsIntegration() {
         if (congressJson.id) {
           try {
             addLog('info', `Registrando envío en la base de datos local (PostgreSQL)...`);
+            const token = localStorage.getItem('nova_token');
             const pgResponse = await fetch('http://localhost:3001/api/envios', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+              },
               body: JSON.stringify({
                 congreso_id: congressJson.id,
                 ojs_submission_id: submissionId,
@@ -308,7 +332,7 @@ export function useOjsIntegration() {
                 titulo_articulo: submissionTitle,
                 palabras_claves: submissionKeywords || '',
                 colaboradores: JSON.stringify(validContributors.map(c => `${c.givenName} ${c.familyName} (${c.email})`)),
-                revista_destino: selectedJournal.name
+                revista_destino: currentJournal.name
               })
             });
             const pgData = await pgResponse.json();
@@ -322,7 +346,7 @@ export function useOjsIntegration() {
            addLog('info', `Nota: Este congreso no tiene un ID local (no se guardó en Postgres previamente), omitiendo registro de envío local.`);
         }
 
-        addLog('success', `¡Ponencia "${submissionTitle.substring(0, 30)}..." sincronizada en tiempo real con OJS 3.4 en la revista "${selectedJournal.name}"!`);
+        addLog('success', `¡Ponencia "${submissionTitle.substring(0, 30)}..." sincronizada en tiempo real con OJS 3.4 en la revista "${currentJournal.name}"!`);
         
         if (onSuccessSpeaker) {
           onSuccessSpeaker();
@@ -339,7 +363,7 @@ export function useOjsIntegration() {
     }
 
     // Flujo Administrador / Organizador
-    addLog('info', `Iniciando proceso de registro de congreso en la revista "${selectedJournal.name}" de OJS 3.4...`);
+    addLog('info', `Iniciando proceso de registro de congreso en la revista "${currentJournal.name}" de OJS 3.4...`);
 
     if (congressJson.roles.length === 0) {
       addLog('error', 'Error de Validación: Debe seleccionar al menos un rol de usuario.');
@@ -350,7 +374,7 @@ export function useOjsIntegration() {
     try {
       // Paso 1: Obtener el Issue (Número) activo de la revista
       addLog('info', `Consultando números (Issues) disponibles en la revista OJS...`);
-      const issuesData = await ojsApi.fetchIssues(ojsUrl, ojsApiKey, selectedJournal.urlPath);
+      const issuesData = await ojsApi.fetchIssues(ojsUrl, ojsApiKey, currentJournal.urlPath);
       addLog('response', `HTTP/1.1 200 OK`, issuesData);
 
       const activeIssue = issuesData?.items?.[issuesData.items.length - 1];
@@ -359,10 +383,10 @@ export function useOjsIntegration() {
       addLog('success', `Issue activo encontrado: "${activeIssueTitle}" (ID: ${activeIssueId})`);
 
       // Paso 1.5: Obtener sección
-      addLog('info', `Consultando secciones válidas para la revista "${selectedJournal.name}"...`);
+      addLog('info', `Consultando secciones válidas para la revista "${currentJournal.name}"...`);
       let sectionId = 1;
       try {
-        sectionId = await ojsApi.fetchSectionId(ojsUrl, ojsApiKey, selectedJournal.urlPath);
+        sectionId = await ojsApi.fetchSectionId(ojsUrl, ojsApiKey, currentJournal.urlPath);
         addLog('info', `Sección válida detectada (ID: ${sectionId})`);
       } catch (secErr) {
         addLog('info', `No se pudo extraer sectionId de envíos recientes, usando fallback: ${sectionId}`);
@@ -380,7 +404,7 @@ export function useOjsIntegration() {
       };
 
       addLog('request', `POST /api/v1/submissions\nPayload:`, submissionPayload);
-      const subData = await ojsApi.createSubmission(ojsUrl, ojsApiKey, selectedJournal.urlPath, submissionPayload);
+      const subData = await ojsApi.createSubmission(ojsUrl, ojsApiKey, currentJournal.urlPath, submissionPayload);
       addLog('response', `HTTP/1.1 200 OK`, subData);
 
       const submissionId = subData.id;
@@ -394,7 +418,7 @@ export function useOjsIntegration() {
         abstract: { [locale]: `${congressJson.description}\n\nLínea de investigación: ${congressJson.researchLine}\nSede: ${congressJson.venue}\nFecha: ${congressJson.date}` }
       };
       addLog('request', `PUT /api/v1/submissions/${submissionId}/publications/${publicationId}\nPayload:`, updatePayload);
-      const updatedPub = await ojsApi.updatePublication(ojsUrl, ojsApiKey, selectedJournal.urlPath, submissionId, publicationId, updatePayload);
+      const updatedPub = await ojsApi.updatePublication(ojsUrl, ojsApiKey, currentJournal.urlPath, submissionId, publicationId, updatePayload);
       addLog('response', `HTTP/1.1 200 OK`, updatedPub);
       addLog('success', `Metadatos de publicación del congreso actualizados con éxito.`);
 
@@ -416,9 +440,13 @@ export function useOjsIntegration() {
       // Paso 4: Guardar en PostgreSQL local
       try {
         addLog('info', `Registrando Congreso en base de datos local (PostgreSQL)...`);
+        const token = localStorage.getItem('nova_token');
         const pgResponse = await fetch('http://localhost:3001/api/congresos', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+          },
           body: JSON.stringify({
             nombre: congressJson.name,
             descripcion: congressJson.description,
@@ -443,7 +471,7 @@ export function useOjsIntegration() {
         addLog('error', `No se pudo conectar a la API local de PostgreSQL: ${pgErr.message}`);
       }
 
-      addLog('success', `¡Congreso "${congressJson.name.substring(0, 40)}..." registrado con éxito en OJS!\n📌 Submission ID: ${submissionId} vinculado al Issue "${activeIssueTitle}" (ID: ${activeIssueId})\n✅ Visible en: ${selectedJournal.url}/submissions`);
+      addLog('success', `¡Congreso "${congressJson.name.substring(0, 40)}..." registrado con éxito en OJS!\n📌 Submission ID: ${submissionId} vinculado al Issue "${activeIssueTitle}" (ID: ${activeIssueId})\n✅ Visible en: ${currentJournal.url}/submissions`);
 
     } catch (err: any) {
       console.error(err);

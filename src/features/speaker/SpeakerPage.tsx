@@ -3,7 +3,7 @@ import { fetchDashboardData } from '../../services/dbApi';
 import type { PostgresCongress } from '../../services/dbApi';
 import { useSpeaker } from '../../context/SpeakerContext';
 import { useOjs } from '../../context/OjsContext';
-import { useCongress } from '../../context/CongressContext';
+// Removed useCongress
 import { Card } from '../../components/common/Card';
 import { Input } from '../../components/common/Input';
 import { Select } from '../../components/common/Select';
@@ -47,7 +47,7 @@ export const SpeakerPage: React.FC = () => {
   useEffect(() => {
     const loadCongresses = async () => {
       try {
-        const data = await fetchDashboardData();
+        const data = await fetchDashboardData('all');
         setAvailableCongresses(data);
       } catch (err) {
         console.error('Error cargando congresos:', err);
