@@ -6,10 +6,10 @@ interface StatCardsProps {
   totalEnvios: number;
 }
 
-export const StatCards: React.FC<StatCardsProps> = ({ totalCongresos, totalEnvios }) => {
+export const StatCards: React.FC<StatCardsProps> = React.memo(({ totalCongresos, totalEnvios }) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <Card className="flex flex-col justify-center items-center p-6 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 border border-slate-200 dark:border-slate-800">
+      <Card className="flex flex-col justify-center items-center p-6 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
         <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
           Total Congresos
         </h3>
@@ -18,7 +18,7 @@ export const StatCards: React.FC<StatCardsProps> = ({ totalCongresos, totalEnvio
         </p>
       </Card>
       
-      <Card className="flex flex-col justify-center items-center p-6 bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-950/30 dark:to-indigo-900/20 border border-indigo-100 dark:border-indigo-900/50">
+      <Card className="flex flex-col justify-center items-center p-6 bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/35">
         <h3 className="text-sm font-semibold text-indigo-500 dark:text-indigo-400 uppercase tracking-wider mb-1">
           Artículos Recibidos
         </h3>
@@ -28,4 +28,6 @@ export const StatCards: React.FC<StatCardsProps> = ({ totalCongresos, totalEnvio
       </Card>
     </div>
   );
-};
+});
+
+StatCards.displayName = 'StatCards';

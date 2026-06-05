@@ -1,37 +1,59 @@
 import React from 'react';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'accent' | 'danger';
+  variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
+  size?: 'sm' | 'default' | 'lg';
   isLoading?: boolean;
 }
 
 export const Button: React.FC<ButtonProps> = ({
   children,
   variant = 'primary',
+  size = 'default',
   isLoading = false,
   className = '',
   disabled,
   ...props
 }) => {
-  const baseStyles = 'inline-flex items-center justify-center font-medium rounded-lg px-4 py-2.5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
-  
-  const variants = {
-    primary: 'bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500',
-    secondary: 'bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 dark:border-slate-700 focus:ring-slate-500',
-    accent: 'bg-teal-600 hover:bg-teal-700 text-white focus:ring-teal-500',
-    danger: 'bg-red-600 hover:bg-red-700 text-white focus:ring-red-500'
+  const base =
+    'inline-flex items-center justify-center font-medium rounded-md transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed select-none';
+
+  const variants: Record<string, string> = {
+    primary:
+      'bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-zinc-100 dark:hover:bg-zinc-200 dark:text-zinc-900',
+    secondary:
+      'bg-white hover:bg-zinc-50 text-zinc-700 border border-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-zinc-200 dark:border-zinc-700',
+    danger:
+      'bg-red-600 hover:bg-red-700 text-white',
+    ghost:
+      'bg-transparent hover:bg-zinc-100 text-zinc-600 dark:hover:bg-zinc-800 dark:text-zinc-400',
+  };
+
+  const sizes: Record<string, string> = {
+    sm: 'text-xs px-2.5 py-1.5 gap-1.5',
+    default: 'text-sm px-3.5 py-2 gap-2',
+    lg: 'text-sm px-5 py-2.5 gap-2',
   };
 
   return (
     <button
       disabled={disabled || isLoading}
-      className={`${baseStyles} ${variants[variant]} ${className}`}
+      className={`${base} ${variants[variant]} ${sizes[size]} ${className}`}
       {...props}
     >
       {isLoading && (
-        <svg className="animate-spin -ml-1 mr-2.5 h-4 w-4 text-current" fill="none" viewBox="0 0 24 24">
+        <svg
+          className="animate-spin h-3.5 w-3.5 text-current"
+          fill="none"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+          <path
+            className="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+          />
         </svg>
       )}
       {children}

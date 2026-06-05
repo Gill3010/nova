@@ -9,6 +9,9 @@ export interface Congress {
   academicLevel: 'maestria' | 'doctorado' | 'otros';
   researchLine: string;
   roles: string[];
+  ojs_url?: string;
+  ojs_api_key?: string;
+  ojs_journal_path?: string;
 }
 
 export interface ResearchLine {

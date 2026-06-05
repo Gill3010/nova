@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { RefreshCw, X, Database } from 'lucide-react';
 import { fetchDashboardData } from '../../services/dbApi';
 import type { PostgresCongress } from '../../services/dbApi';
 import { StatCards } from './StatCards';
@@ -39,20 +40,21 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onClose, onEditCon
     <div className="flex flex-col gap-6 w-full max-w-7xl mx-auto px-4 py-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <span className="text-indigo-500">📊</span> PostgreSQL Dashboard
+          <h1 className="text-xl font-bold text-zinc-900 dark:text-white flex items-center gap-2.5">
+            <Database className="h-5 w-5 text-zinc-500" aria-hidden="true" /> Base de Datos Local
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Visualización en tiempo real de la base de datos local de Nova.
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+            Visualización en tiempo real de los congresos y envíos registrados.
           </p>
         </div>
         
         <div className="flex items-center gap-3">
-          <Button variant="secondary" onClick={loadData} disabled={isLoading}>
-            {isLoading ? 'Actualizando...' : '↻ Refrescar'}
+          <Button variant="secondary" size="sm" onClick={loadData} disabled={isLoading}>
+            <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`} aria-hidden="true" />
+            {isLoading ? 'Actualizando...' : 'Refrescar'}
           </Button>
-          <Button variant="secondary" onClick={onClose}>
-            ✕ Cerrar Dashboard
+          <Button variant="secondary" size="sm" onClick={onClose}>
+            <X className="h-3.5 w-3.5" aria-hidden="true" /> Cerrar
           </Button>
         </div>
       </div>
@@ -72,8 +74,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onClose, onEditCon
               Registro de Congresos
             </h2>
             {isLoading ? (
-              <div className="h-64 flex items-center justify-center bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl">
-                <div className="animate-pulse text-slate-400">Cargando base de datos...</div>
+              <div className="h-60 flex items-center justify-center bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-lg">
+                <div className="text-sm text-zinc-400">Cargando...</div>
               </div>
             ) : (
               <CongressTable congresos={data} onEdit={onEditCongress} />

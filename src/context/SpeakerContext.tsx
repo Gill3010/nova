@@ -1,6 +1,118 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useReducer, useCallback } from 'react';
 import type { Submission, FileInfo, Contributor } from '../types';
 
+// ---- State shape ------------------------------------------------------------
+interface SpeakerState {
+  submissionTitle: string;
+  submissionAbstract: string;
+  submissionKeywords: string;
+  contributors: Contributor[];
+  submissionCategory: Submission['category'];
+  audioFile: FileInfo | null;
+  posterFile: FileInfo | null;
+  abstractFile: FileInfo | null;
+  manuscriptFile: FileInfo | null;
+  videoFile: FileInfo | null;
+  submissionStatus: Submission['status'];
+  internalSubmissionId: number | undefined;
+  selectedCongressId: string;
+}
+
+// ---- Actions ----------------------------------------------------------------
+type SpeakerAction =
+  | { type: 'SET_TITLE';           payload: string }
+  | { type: 'SET_ABSTRACT';        payload: string }
+  | { type: 'SET_KEYWORDS';        payload: string }
+  | { type: 'SET_CONTRIBUTORS';    payload: Contributor[] | ((prev: Contributor[]) => Contributor[]) }
+  | { type: 'SET_CATEGORY';        payload: Submission['category'] }
+  | { type: 'SET_AUDIO_FILE';      payload: FileInfo | null | ((p: FileInfo | null) => FileInfo | null) }
+  | { type: 'SET_POSTER_FILE';     payload: FileInfo | null | ((p: FileInfo | null) => FileInfo | null) }
+  | { type: 'SET_ABSTRACT_FILE';   payload: FileInfo | null | ((p: FileInfo | null) => FileInfo | null) }
+  | { type: 'SET_MANUSCRIPT_FILE'; payload: FileInfo | null | ((p: FileInfo | null) => FileInfo | null) }
+  | { type: 'SET_VIDEO_FILE';      payload: FileInfo | null | ((p: FileInfo | null) => FileInfo | null) }
+  | { type: 'SET_STATUS';          payload: Submission['status'] }
+  | { type: 'SET_SUBMISSION_ID';   payload: number | undefined }
+  | { type: 'SET_CONGRESS_ID';     payload: string }
+  | { type: 'RESET' }
+  | { type: 'LOAD'; payload: SpeakerState };
+
+const EMPTY_CONTRIBUTOR: Contributor = {
+  givenName: '',
+  familyName: '',
+  email: '',
+  country: 'PA',
+  affiliation: '',
+};
+
+const INITIAL_STATE: SpeakerState = {
+  submissionTitle: '',
+  submissionAbstract: '',
+  submissionKeywords: '',
+  contributors: [EMPTY_CONTRIBUTOR],
+  submissionCategory: 'articulo',
+  audioFile: null,
+  posterFile: null,
+  abstractFile: null,
+  manuscriptFile: null,
+  videoFile: null,
+  submissionStatus: 'draft',
+  internalSubmissionId: undefined,
+  selectedCongressId: '',
+};
+
+// ---- Reducer ----------------------------------------------------------------
+function speakerReducer(state: SpeakerState, action: SpeakerAction): SpeakerState {
+  switch (action.type) {
+    case 'SET_TITLE':           return { ...state, submissionTitle: action.payload };
+    case 'SET_ABSTRACT':        return { ...state, submissionAbstract: action.payload };
+    case 'SET_KEYWORDS':        return { ...state, submissionKeywords: action.payload };
+    case 'SET_CONTRIBUTORS': {
+      const next = typeof action.payload === 'function'
+        ? action.payload(state.contributors)
+        : action.payload;
+      return { ...state, contributors: next };
+    }
+    case 'SET_CATEGORY':        return { ...state, submissionCategory: action.payload };
+    case 'SET_AUDIO_FILE': {
+      const next = typeof action.payload === 'function'
+        ? (action.payload as (p: FileInfo | null) => FileInfo | null)(state.audioFile)
+        : action.payload;
+      return { ...state, audioFile: next };
+    }
+    case 'SET_POSTER_FILE': {
+      const next = typeof action.payload === 'function'
+        ? (action.payload as (p: FileInfo | null) => FileInfo | null)(state.posterFile)
+        : action.payload;
+      return { ...state, posterFile: next };
+    }
+    case 'SET_ABSTRACT_FILE': {
+      const next = typeof action.payload === 'function'
+        ? (action.payload as (p: FileInfo | null) => FileInfo | null)(state.abstractFile)
+        : action.payload;
+      return { ...state, abstractFile: next };
+    }
+    case 'SET_MANUSCRIPT_FILE': {
+      const next = typeof action.payload === 'function'
+        ? (action.payload as (p: FileInfo | null) => FileInfo | null)(state.manuscriptFile)
+        : action.payload;
+      return { ...state, manuscriptFile: next };
+    }
+    case 'SET_VIDEO_FILE': {
+      const next = typeof action.payload === 'function'
+        ? (action.payload as (p: FileInfo | null) => FileInfo | null)(state.videoFile)
+        : action.payload;
+      return { ...state, videoFile: next };
+    }
+    case 'SET_STATUS':          return { ...state, submissionStatus: action.payload };
+    case 'SET_SUBMISSION_ID':   return { ...state, internalSubmissionId: action.payload };
+    case 'SET_CONGRESS_ID':     return { ...state, selectedCongressId: action.payload };
+    case 'RESET':               return INITIAL_STATE;
+    case 'LOAD':                return { ...INITIAL_STATE, ...action.payload };
+    default:                    return state;
+  }
+}
+
+// ---- Context type (preserving the same public API for compatibility) --------
 interface SpeakerContextType {
   submissionTitle: string;
   setSubmissionTitle: (val: string) => void;
@@ -34,110 +146,101 @@ interface SpeakerContextType {
 
 const SpeakerContext = createContext<SpeakerContextType | undefined>(undefined);
 
+// ---- Provider ---------------------------------------------------------------
 export const SpeakerProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [submissionTitle, setSubmissionTitle] = useState('');
-  const [submissionAbstract, setSubmissionAbstract] = useState('');
-  const [submissionKeywords, setSubmissionKeywords] = useState('');
-  const [contributors, setContributors] = useState<Contributor[]>([
-    { givenName: '', familyName: '', email: '', country: 'PA', affiliation: '' }
-  ]);
-  const [submissionCategory, setSubmissionCategory] = useState<Submission['category']>('articulo');
-  const [audioFile, setAudioFile] = useState<FileInfo | null>(null);
-  const [posterFile, setPosterFile] = useState<FileInfo | null>(null);
-  const [abstractFile, setAbstractFile] = useState<FileInfo | null>(null);
-  const [manuscriptFile, setManuscriptFile] = useState<FileInfo | null>(null);
-  const [videoFile, setVideoFile] = useState<FileInfo | null>(null);
-  const [submissionStatus, setSubmissionStatus] = useState<Submission['status']>('draft');
-  const [internalSubmissionId, setInternalSubmissionId] = useState<number | undefined>(undefined);
-  const [selectedCongressId, setSelectedCongressId] = useState<string>('');
+  const [state, dispatch] = useReducer(speakerReducer, INITIAL_STATE);
 
-  const resetSpeakerForm = () => {
-    setInternalSubmissionId(undefined);
-    setSubmissionTitle('');
-    setSubmissionAbstract('');
-    setSubmissionKeywords('');
-    setContributors([{ givenName: '', familyName: '', email: '', country: 'PA', affiliation: '' }]);
-    setSubmissionCategory('articulo');
-    setAudioFile(null);
-    setPosterFile(null);
-    setAbstractFile(null);
-    setManuscriptFile(null);
-    setVideoFile(null);
-    setSubmissionStatus('draft');
-    setSelectedCongressId('');
-  };
+  // Stable setters (useCallback so referential equality is preserved)
+  const setSubmissionTitle   = useCallback((v: string) => dispatch({ type: 'SET_TITLE', payload: v }), []);
+  const setSubmissionAbstract= useCallback((v: string) => dispatch({ type: 'SET_ABSTRACT', payload: v }), []);
+  const setSubmissionKeywords= useCallback((v: string) => dispatch({ type: 'SET_KEYWORDS', payload: v }), []);
+  const setContributors      = useCallback((v: Contributor[] | ((p: Contributor[]) => Contributor[])) =>
+    dispatch({ type: 'SET_CONTRIBUTORS', payload: v }), []);
+  const setSubmissionCategory= useCallback((v: Submission['category']) => dispatch({ type: 'SET_CATEGORY', payload: v }), []);
+  const setAudioFile         = useCallback((v: FileInfo | null | ((p: FileInfo | null) => FileInfo | null)) =>
+    dispatch({ type: 'SET_AUDIO_FILE', payload: v as FileInfo | null }), []);
+  const setPosterFile        = useCallback((v: FileInfo | null | ((p: FileInfo | null) => FileInfo | null)) =>
+    dispatch({ type: 'SET_POSTER_FILE', payload: v as FileInfo | null }), []);
+  const setAbstractFile      = useCallback((v: FileInfo | null | ((p: FileInfo | null) => FileInfo | null)) =>
+    dispatch({ type: 'SET_ABSTRACT_FILE', payload: v as FileInfo | null }), []);
+  const setManuscriptFile    = useCallback((v: FileInfo | null | ((p: FileInfo | null) => FileInfo | null)) =>
+    dispatch({ type: 'SET_MANUSCRIPT_FILE', payload: v as FileInfo | null }), []);
+  const setVideoFile         = useCallback((v: FileInfo | null | ((p: FileInfo | null) => FileInfo | null)) =>
+    dispatch({ type: 'SET_VIDEO_FILE', payload: v as FileInfo | null }), []);
+  const setSubmissionStatus  = useCallback((v: Submission['status']) => dispatch({ type: 'SET_STATUS', payload: v }), []);
+  const setInternalSubmissionId = useCallback((v: number | undefined) =>
+    dispatch({ type: 'SET_SUBMISSION_ID', payload: v }), []);
+  const setSelectedCongressId= useCallback((v: string | ((p: string) => string)) => {
+    const next = typeof v === 'function' ? v(state.selectedCongressId) : v;
+    dispatch({ type: 'SET_CONGRESS_ID', payload: next });
+  }, [state.selectedCongressId]);
+  const resetSpeakerForm     = useCallback(() => dispatch({ type: 'RESET' }), []);
 
-  const loadSubmission = (data: any) => {
-    setInternalSubmissionId(data.id);
-    if (data.congreso_id) setSelectedCongressId(data.congreso_id.toString());
-    setSubmissionTitle(data.titulo_articulo || '');
-    setSubmissionAbstract(''); // Assuming abstract isn't loaded back for now
-    setSubmissionKeywords(data.palabras_claves || '');
-    setSubmissionCategory((data.categoria as any) || 'articulo');
+  const loadSubmission = useCallback((data: any) => {
+    let contributors: Contributor[] = [EMPTY_CONTRIBUTOR];
     try {
-      if (data.colaboradores && data.colaboradores.startsWith('[')) {
+      if (data.colaboradores?.startsWith('[')) {
         const parsed = JSON.parse(data.colaboradores);
         if (parsed.length > 0 && typeof parsed[0] === 'string') {
-          // Fallback for old data where we saved an array of strings
-          setContributors(parsed.map((name: string) => ({ givenName: name, familyName: '', email: '', country: 'PA', affiliation: '' })));
+          contributors = parsed.map((name: string) => ({ ...EMPTY_CONTRIBUTOR, givenName: name }));
         } else if (parsed.length > 0 && typeof parsed[0] === 'object') {
-          // New format: full objects
-          setContributors(parsed);
-        } else {
-          setContributors([{ givenName: '', familyName: '', email: '', country: 'PA', affiliation: '' }]);
+          contributors = parsed;
         }
       } else if (data.colaboradores) {
-        setContributors([{ givenName: data.colaboradores, familyName: '', email: '', country: 'PA', affiliation: '' }]);
-      } else {
-        setContributors([{ givenName: '', familyName: '', email: '', country: 'PA', affiliation: '' }]);
+        contributors = [{ ...EMPTY_CONTRIBUTOR, givenName: data.colaboradores }];
       }
-    } catch (e) {
-      setContributors([{ givenName: '', familyName: '', email: '', country: 'PA', affiliation: '' }]);
-    }
+    } catch { /* keep default */ }
+
+    dispatch({
+      type: 'LOAD',
+      payload: {
+        ...INITIAL_STATE,
+        internalSubmissionId: data.id,
+        selectedCongressId: data.congreso_id ? String(data.congreso_id) : '',
+        submissionTitle: data.titulo_articulo || '',
+        submissionKeywords: data.palabras_claves || '',
+        submissionCategory: (data.categoria as Submission['category']) || 'articulo',
+        contributors,
+      },
+    });
+  }, []);
+
+  const value: SpeakerContextType = {
+    submissionTitle: state.submissionTitle,
+    setSubmissionTitle,
+    submissionAbstract: state.submissionAbstract,
+    setSubmissionAbstract,
+    submissionKeywords: state.submissionKeywords,
+    setSubmissionKeywords,
+    contributors: state.contributors,
+    setContributors: setContributors as React.Dispatch<React.SetStateAction<Contributor[]>>,
+    submissionCategory: state.submissionCategory,
+    setSubmissionCategory,
+    audioFile: state.audioFile,
+    setAudioFile: setAudioFile as React.Dispatch<React.SetStateAction<FileInfo | null>>,
+    posterFile: state.posterFile,
+    setPosterFile: setPosterFile as React.Dispatch<React.SetStateAction<FileInfo | null>>,
+    abstractFile: state.abstractFile,
+    setAbstractFile: setAbstractFile as React.Dispatch<React.SetStateAction<FileInfo | null>>,
+    manuscriptFile: state.manuscriptFile,
+    setManuscriptFile: setManuscriptFile as React.Dispatch<React.SetStateAction<FileInfo | null>>,
+    videoFile: state.videoFile,
+    setVideoFile: setVideoFile as React.Dispatch<React.SetStateAction<FileInfo | null>>,
+    submissionStatus: state.submissionStatus,
+    setSubmissionStatus,
+    internalSubmissionId: state.internalSubmissionId,
+    setInternalSubmissionId,
+    selectedCongressId: state.selectedCongressId,
+    setSelectedCongressId: setSelectedCongressId as React.Dispatch<React.SetStateAction<string>>,
+    resetSpeakerForm,
+    loadSubmission,
   };
 
-  return (
-    <SpeakerContext.Provider
-      value={{
-        submissionTitle,
-        setSubmissionTitle,
-        submissionAbstract,
-        setSubmissionAbstract,
-        submissionKeywords,
-        setSubmissionKeywords,
-        contributors,
-        setContributors,
-        submissionCategory,
-        setSubmissionCategory,
-        audioFile,
-        setAudioFile,
-        posterFile,
-        setPosterFile,
-        abstractFile,
-        setAbstractFile,
-        manuscriptFile,
-        setManuscriptFile,
-        videoFile,
-        setVideoFile,
-        submissionStatus,
-        setSubmissionStatus,
-        internalSubmissionId,
-        setInternalSubmissionId,
-        selectedCongressId,
-        setSelectedCongressId,
-        resetSpeakerForm,
-        loadSubmission
-      }}
-    >
-      {children}
-    </SpeakerContext.Provider>
-  );
+  return <SpeakerContext.Provider value={value}>{children}</SpeakerContext.Provider>;
 };
 
 export const useSpeaker = () => {
   const context = useContext(SpeakerContext);
-  if (!context) {
-    throw new Error('useSpeaker must be used within a SpeakerProvider');
-  }
+  if (!context) throw new Error('useSpeaker must be used within a SpeakerProvider');
   return context;
 };

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { FileStack, Pencil } from 'lucide-react';
 import { fetchMySubmissions } from '../../services/dbApi';
 import type { PostgresMySubmission } from '../../services/dbApi';
 import { Card } from '../../components/common/Card';
@@ -51,8 +52,8 @@ export const MySubmissions: React.FC<MySubmissionsProps> = ({ onEditSubmission }
   if (submissions.length === 0) {
     return (
       <Card className="p-12 text-center flex flex-col items-center">
-        <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center text-3xl mb-4">
-          📁
+        <div className="w-14 h-14 bg-zinc-100 dark:bg-zinc-800 rounded-lg flex items-center justify-center mb-4">
+          <FileStack className="h-6 w-6 text-zinc-400" aria-hidden="true" />
         </div>
         <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
           Aún no tienes envíos
@@ -73,7 +74,7 @@ export const MySubmissions: React.FC<MySubmissionsProps> = ({ onEditSubmission }
             Historial de artículos y ponencias radicadas en OJS
           </p>
         </div>
-        <Badge variant="primary" className="text-sm px-3 py-1">
+        <Badge variant="default" className="text-sm px-3 py-1">
           {submissions.length} {submissions.length === 1 ? 'Envío' : 'Envíos'}
         </Badge>
       </div>
@@ -107,13 +108,13 @@ export const MySubmissions: React.FC<MySubmissionsProps> = ({ onEditSubmission }
                   </div>
                 </td>
                 <td className="py-4 px-6">
-                  <Badge variant="secondary" className="capitalize">
+                  <Badge variant="default" className="capitalize">
                     {envio.categoria || 'Ponencia'}
                   </Badge>
                 </td>
                 <td className="py-4 px-6">
                   <div className="flex flex-col gap-1 items-start">
-                    <Badge variant="success" className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+                    <Badge variant="success">
                       Enviado
                     </Badge>
                     <span className="text-xs text-slate-400 font-mono">
@@ -130,9 +131,9 @@ export const MySubmissions: React.FC<MySubmissionsProps> = ({ onEditSubmission }
                   {onEditSubmission && (
                     <button
                       onClick={() => onEditSubmission(envio)}
-                      className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 bg-indigo-50 dark:bg-indigo-900/20 px-3 py-1.5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity inline-flex items-center gap-1"
                     >
-                      ✏️ Editar
+                      <Pencil className="h-3 w-3" aria-hidden="true" /> Editar
                     </button>
                   )}
                 </td>

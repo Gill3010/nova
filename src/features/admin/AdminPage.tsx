@@ -1,4 +1,5 @@
 import React from 'react';
+import { Building2, Plus } from 'lucide-react';
 import { useCongress } from '../../context/CongressContext';
 import { Card } from '../../components/common/Card';
 import { Input } from '../../components/common/Input';
@@ -46,8 +47,8 @@ export const AdminPage: React.FC = () => {
   return (
     <Card className="flex flex-col gap-6 w-full animate-fade-in">
       <div className="border-b border-slate-100 dark:border-slate-800 pb-4">
-        <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2.5">
-          <span className="text-2xl">🏢</span> Datos del Congreso Académico
+        <h2 className="text-xl font-bold text-zinc-900 dark:text-white flex items-center gap-2.5">
+          <Building2 className="h-5 w-5 text-zinc-500" aria-hidden="true" /> Datos del Congreso Académico
         </h2>
       </div>
 
@@ -167,8 +168,8 @@ export const AdminPage: React.FC = () => {
                   <h4 className="font-semibold text-sm text-slate-900 dark:text-slate-100">
                     {selectedClassroomObj.name}
                   </h4>
-                  <Badge variant={selectedClassroomObj.type === 'virtual' ? 'info' : 'primary'}>
-                    {selectedClassroomObj.type === 'virtual' ? '🌐 Virtual' : '🏢 Física'}
+                  <Badge variant={selectedClassroomObj.type === 'virtual' ? 'outline' : 'default'}>
+                    {selectedClassroomObj.type === 'virtual' ? 'Virtual' : 'Física'}
                   </Badge>
                 </div>
                 <div className="text-xs flex flex-col gap-1.5 text-slate-600 dark:text-slate-400">
@@ -226,7 +227,7 @@ export const AdminPage: React.FC = () => {
                 const line = lines.find((l) => l.id === selectedLine);
                 if (!line) return null;
                 return (
-                  <Badge variant={line.isCustom ? 'info' : 'primary'} className="text-xs py-1 px-3">
+                  <Badge variant={line.isCustom ? 'outline' : 'default'} className="text-xs py-1 px-3">
                     {line.name}
                   </Badge>
                 );
@@ -271,8 +272,8 @@ export const AdminPage: React.FC = () => {
               onChange={(e) => setNewLineName(e.target.value)}
               className="flex-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 text-sm text-slate-950 dark:text-white outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/30"
             />
-            <Button type="submit" variant="secondary" className="px-4 py-2 text-xs shrink-0">
-              + Agregar
+            <Button type="submit" variant="secondary" size="sm" className="shrink-0">
+              <Plus className="h-3.5 w-3.5" aria-hidden="true" /> Agregar
             </Button>
           </form>
         </div>

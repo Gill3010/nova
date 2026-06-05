@@ -20,6 +20,9 @@ export interface PostgresCongress {
   nivel_academico: string;
   linea_investigacion: string;
   aula_canal: string;
+  ojs_url?: string;
+  ojs_api_key?: string;
+  ojs_journal_path?: string;
   created_at: string;
   envios: PostgresEnvio[];
 }

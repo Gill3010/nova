@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { ClipboardCheck, Check } from 'lucide-react';
 import { useSpeaker } from '../../context/SpeakerContext';
 import { useCongress } from '../../context/CongressContext';
 import { useOjs } from '../../context/OjsContext';
@@ -80,8 +81,8 @@ export const ReviewerPage: React.FC = () => {
   return (
     <Card className="flex flex-col gap-6 w-full animate-fade-in">
       <div className="border-b border-slate-100 dark:border-slate-800 pb-4">
-        <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2.5">
-          <span className="text-2xl">🔍</span> Portal de Evaluación Académica (Revisor)
+        <h2 className="text-xl font-bold text-zinc-900 dark:text-white flex items-center gap-2.5">
+          <ClipboardCheck className="h-5 w-5 text-zinc-500" aria-hidden="true" /> Evaluación Académica
         </h2>
       </div>
 
@@ -95,8 +96,8 @@ export const ReviewerPage: React.FC = () => {
             "{submissionTitle}"
           </strong>
           <div className="flex flex-wrap items-center gap-2 mt-2">
-            <Badge variant="primary">Categoría: {submissionCategory.toUpperCase()}</Badge>
-            <Badge variant="info">Línea: {selectedLineName}</Badge>
+            <Badge variant="default">Categoría: {submissionCategory.toUpperCase()}</Badge>
+            <Badge variant="outline">Línea: {selectedLineName}</Badge>
           </div>
         </div>
 
@@ -139,14 +140,14 @@ export const ReviewerPage: React.FC = () => {
               required
             />
 
-            <Button type="submit" variant="accent" className="w-full font-semibold py-3 mt-2">
-              Enviar Calificación y Comentarios
+            <Button type="submit" variant="primary" size="lg" className="w-full mt-2">
+              Enviar Calificación
             </Button>
           </form>
         ) : (
           <div className="flex flex-col gap-5 items-center text-center py-4">
-            <span className="h-14 w-14 rounded-full bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 text-2xl flex items-center justify-center select-none">
-              ✓
+            <span className="h-12 w-12 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center select-none">
+              <Check className="h-5 w-5" aria-hidden="true" />
             </span>
             <div className="flex flex-col gap-1 max-w-sm">
               <h3 className="text-base font-bold text-slate-900 dark:text-white">Evaluación Enviada con Éxito</h3>
@@ -166,7 +167,7 @@ export const ReviewerPage: React.FC = () => {
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-slate-550 dark:text-slate-400 font-semibold">Veredicto Final:</span>
-                <Badge variant={isApproved ? 'success' : 'danger'} className="text-[10px] py-1 px-3">
+                <Badge variant={isApproved ? 'success' : 'destructive'}>
                   {isApproved ? 'Aprobado para publicación' : 'Rechazado'}
                 </Badge>
               </div>

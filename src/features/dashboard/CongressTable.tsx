@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Pencil } from 'lucide-react';
 import type { PostgresCongress } from '../../services/dbApi';
 
 interface CongressTableProps {
@@ -6,7 +7,7 @@ interface CongressTableProps {
   onEdit?: (congress: PostgresCongress) => void;
 }
 
-export const CongressTable: React.FC<CongressTableProps> = ({ congresos, onEdit }) => {
+export const CongressTable: React.FC<CongressTableProps> = React.memo(({ congresos, onEdit }) => {
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
 
   const toggleRow = (id: number) => {
@@ -62,9 +63,10 @@ export const CongressTable: React.FC<CongressTableProps> = ({ congresos, onEdit 
                         e.stopPropagation();
                         onEdit(congreso);
                       }}
-                      className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
                     >
-                      ✏️ Editar
+                      <Pencil className="h-3 w-3" aria-hidden="true" />
+                      Editar
                     </button>
                   )}
                 </td>
@@ -165,4 +167,6 @@ export const CongressTable: React.FC<CongressTableProps> = ({ congresos, onEdit 
       </table>
     </div>
   );
-};
+});
+
+CongressTable.displayName = 'CongressTable';

@@ -1,4 +1,5 @@
 import React from 'react';
+import { Settings } from 'lucide-react';
 import { useOjs } from '../../context/OjsContext';
 import { useCongress } from '../../context/CongressContext';
 import { useSpeaker } from '../../context/SpeakerContext';
@@ -81,8 +82,8 @@ export const OjsConfigCard: React.FC = () => {
   return (
     <Card className="flex flex-col gap-5 w-full">
       <div className="border-b border-slate-100 dark:border-slate-800 pb-3">
-        <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-          <span className="text-lg">⚙</span> Configuración de Integración OJS 3.4
+        <h2 className="text-base font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+          <Settings className="h-4 w-4 text-zinc-400" aria-hidden="true" /> Integración OJS 3.4
         </h2>
       </div>
 
@@ -133,7 +134,7 @@ export const OjsConfigCard: React.FC = () => {
           <div className="flex flex-col gap-1.5">
             <Select
               id="ojs-journal-select"
-              label="📖 Revista de Destino"
+              label="Revista de Destino"
               value={selectedJournal?.id || ''}
               onChange={(e) => {
                 const journalId = parseInt(e.target.value);
@@ -180,8 +181,8 @@ export const OjsConfigCard: React.FC = () => {
 
           <Button
             type="button"
-            variant="accent"
-            className="text-xs font-semibold py-2.5"
+            variant="primary"
+            size="sm"
             onClick={handlePublishClick}
             disabled={isPublishing || isTestingConnection || (!selectedJournal && !isEditMode)}
           >

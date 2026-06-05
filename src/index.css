@@ -1,119 +1,153 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+/* ============================================================
+   Nova — Global Styles
+   Base reset, token imports, form resets, and a11y utilities
+   ============================================================ */
+
+@import './styles/tokens.css';
 @import "tailwindcss";
 
-:root {
-  /* Paleta de colores Premium (Inspiración Universitaria y Científica) */
-  --primary: #1e3a8a; /* Azul Universitario */
-  --primary-hover: #172554;
-  --secondary: #0f766e; /* Verde OJS */
-  --secondary-hover: #115e59;
-  --accent: #4f46e5; /* Índigo */
-  --accent-light: rgba(79, 70, 229, 0.1);
-  --bg-main: #f8fafc; /* Gris Slate ultra claro */
-  --bg-card: #ffffff;
-  --text-main: #334155;
-  --text-title: #0f172a;
-  --border: #e2e8f0;
-  --border-focus: #4f46e5;
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 16px;
-
-  /* Tipografías modernas */
-  --font-heading: 'Outfit', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-  --font-body: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-
-  font-family: var(--font-body);
-  background-color: var(--bg-main);
-  color: var(--text-main);
-  margin: 0;
-  padding: 0;
+/* ---- Base Reset ---- */
+*,
+*::before,
+*::after {
   box-sizing: border-box;
+}
+
+:root {
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  color: var(--text-primary);
+  background-color: var(--bg-page);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 body {
   margin: 0;
   padding: 0;
-  background-color: var(--bg-main);
+  background-color: var(--bg-page);
+  min-height: 100vh;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --primary: #3b82f6;
-    --primary-hover: #60a5fa;
-    --secondary: #14b8a6;
-    --secondary-hover: #2dd4bf;
-    --accent: #818cf8;
-    --accent-light: rgba(129, 140, 248, 0.15);
-    --bg-main: #0b0f19; /* Fondo ultra oscuro profundo */
-    --bg-card: #151f32; /* Azul marino pizarra */
-    --text-main: #94a3b8;
-    --text-title: #f8fafc;
-    --border: #1e293b;
-    --border-focus: #6366f1;
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
-  }
-}
-
-/* Base de layout */
 #root {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
 }
 
-/* Micro-animaciones */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+/* ---- Typography ---- */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-sans);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  line-height: var(--leading-tight);
+  margin-top: 0;
 }
 
-@keyframes pulseBorder {
-  0% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.4); }
-  70% { box-shadow: 0 0 0 6px rgba(79, 70, 229, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0); }
-}
-
-@keyframes pulseSuccess {
-  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
-  70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
-}
-
-/* Estilos de botones de formulario y de interactividad */
-input, textarea, select {
-  font-family: var(--font-body);
-  font-size: 0.95rem;
-  padding: 10px 14px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
-  background-color: var(--bg-card);
-  color: var(--text-title);
-  transition: all 0.2s ease-in-out;
+/* ---- Form Elements ---- */
+input,
+textarea,
+select {
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-default);
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
+  transition: border-color var(--duration-fast) var(--ease-default),
+              box-shadow var(--duration-fast) var(--ease-default);
   outline: none;
 }
 
-input:focus, textarea:focus, select:focus {
+input:focus,
+textarea:focus,
+select:focus {
   border-color: var(--border-focus);
-  box-shadow: 0 0 0 3px var(--accent-light);
+  box-shadow: 0 0 0 3px var(--ring-focus);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-tertiary);
 }
 
 button {
   cursor: pointer;
-  font-family: var(--font-body);
-  font-weight: 500;
-  transition: all 0.2s ease-in-out;
+  font-family: var(--font-sans);
+  font-weight: var(--font-medium);
 }
 
-h1, h2, h3, h4 {
-  font-family: var(--font-heading);
-  font-weight: 600;
-  color: var(--text-title);
-  margin-top: 0;
+/* ---- Focus Management ---- */
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+/* ---- Accessibility Utilities ---- */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---- Reduced Motion ---- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---- Subtle Animations ---- */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn var(--duration-slow) var(--ease-out) both;
+}
+
+/* ---- Scrollbar (subtle) ---- */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-gray-300);
+  border-radius: var(--radius-full);
+}
+
+@media (prefers-color-scheme: dark) {
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-gray-600);
+  }
 }

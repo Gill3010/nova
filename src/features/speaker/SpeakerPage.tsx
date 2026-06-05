@@ -1,15 +1,18 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
+import { GraduationCap, FileText, BookOpen, Mic, Image, Video } from 'lucide-react';
 import { fetchDashboardData } from '../../services/dbApi';
 import type { PostgresCongress } from '../../services/dbApi';
 import { useSpeaker } from '../../context/SpeakerContext';
 import { useOjs } from '../../context/OjsContext';
-// Removed useCongress
 import { Card } from '../../components/common/Card';
 import { Input } from '../../components/common/Input';
 import { Select } from '../../components/common/Select';
-import { Button } from '../../components/common/Button';
-import { Badge } from '../../components/common/Badge';
 import type { Contributor, FileInfo } from '../../types';
+
+// Subcomponents
+import { FileUploadCard } from './components/FileUploadCard';
+import { ContributorsSection } from './components/ContributorsSection';
+import { SubmissionStatusBar } from './components/SubmissionStatusBar';
 
 export const SpeakerPage: React.FC = () => {
   const {
@@ -63,21 +66,21 @@ export const SpeakerPage: React.FC = () => {
     loadCongresses();
   }, []);
 
-  // --- Colaboradores ---
-  const updateContributor = (index: number, field: keyof Contributor, value: string) => {
+  // --- Colaboradores (memoizados) ---
+  const updateContributor = useCallback((index: number, field: keyof Contributor, value: string) => {
     setContributors(prev => prev.map((c, i) => i === index ? { ...c, [field]: value } : c));
-  };
+  }, [setContributors]);
 
-  const addContributorRow = () => {
+  const addContributorRow = useCallback(() => {
     setContributors(prev => [...prev, { givenName: '', familyName: '', email: '', country: 'PA', affiliation: '' }]);
-  };
+  }, [setContributors]);
 
-  const removeContributorRow = (index: number) => {
+  const removeContributorRow = useCallback((index: number) => {
     setContributors(prev => prev.filter((_, i) => i !== index));
-  };
+  }, [setContributors]);
 
-  // --- Archivos ---
-  const handleFileUploadSimulated = (
+  // --- Archivos (memoizados) ---
+  const handleFileUploadSimulated = useCallback((
     fileKey: string,
     fileName: string,
     fileSizeMB: number,
@@ -116,16 +119,16 @@ export const SpeakerPage: React.FC = () => {
       }
       fileSetter((prev) => (prev ? { ...prev, progress: prog } : null));
     }, 150);
-  };
+  }, [setAudioFile, setPosterFile, setAbstractFile, setManuscriptFile, setVideoFile, addLog]);
 
-  const handleRealFileUpload = (fileKey: string, e: React.ChangeEvent<HTMLInputElement>, maxMB: number) => {
+  const handleRealFileUpload = useCallback((fileKey: string, e: React.ChangeEvent<HTMLInputElement>, maxMB: number) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const fileSizeMB = parseFloat((file.size / (1024 * 1024)).toFixed(2));
     handleFileUploadSimulated(fileKey, file.name, fileSizeMB, maxMB, file);
-  };
+  }, [handleFileUploadSimulated]);
 
-  const deleteUploadedFile = (fileKey: string) => {
+  const deleteUploadedFile = useCallback((fileKey: string) => {
     const fileSetter =
       fileKey === 'audio' ? setAudioFile
       : fileKey === 'poster' ? setPosterFile
@@ -134,9 +137,9 @@ export const SpeakerPage: React.FC = () => {
       : setVideoFile;
     fileSetter(null);
     addLog('info', `Archivo eliminado de la categoría "${fileKey}".`);
-  };
+  }, [setAudioFile, setPosterFile, setAbstractFile, setManuscriptFile, setVideoFile, addLog]);
 
-  const handlePublishClick = () => {
+  const handlePublishClick = useCallback(() => {
     if (!selectedCongressId) {
       alert('Error: Debe seleccionar un Congreso al cual postular su trabajo.');
       return;
@@ -156,7 +159,10 @@ export const SpeakerPage: React.FC = () => {
       classroom: selectedDbCongress.aula_canal,
       academicLevel: selectedDbCongress.nivel_academico as any,
       researchLine: selectedDbCongress.linea_investigacion,
-      roles: []
+      roles: [],
+      ojs_url: selectedDbCongress.ojs_url,
+      ojs_api_key: selectedDbCongress.ojs_api_key,
+      ojs_journal_path: selectedDbCongress.ojs_journal_path
     };
 
     const filesList = [
@@ -202,129 +208,33 @@ export const SpeakerPage: React.FC = () => {
         }
       });
     }
-  };
-
-  const renderUploadCard = (
-    fileKey: string,
-    label: string,
-    limitMB: number,
-    icon: string,
-    fileInfo: FileInfo | null,
-    isLarge: boolean = false
-  ) => {
-    return (
-      <div
-        className={`border border-dashed border-slate-200 dark:border-slate-800 rounded-xl p-4 bg-slate-50/30 dark:bg-slate-900/10 flex flex-col gap-3.5 transition-all duration-200 hover:border-slate-350 dark:hover:border-slate-700 ${
-          isLarge ? 'col-span-1 md:col-span-2' : 'col-span-1'
-        }`}
-      >
-        <div className="flex items-center gap-3">
-          <span className="text-2xl select-none">{icon}</span>
-          <div className="flex flex-col">
-            <strong className="text-sm font-semibold text-slate-800 dark:text-slate-250">{label}</strong>
-            <span className="text-[10px] text-rose-500 font-medium">Límite: {limitMB} MB</span>
-          </div>
-        </div>
-
-        {fileInfo ? (
-          <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-lg p-3 flex flex-col gap-2 relative">
-            <div className="flex justify-between items-start pr-6">
-              <div className="flex flex-col gap-0.5 max-w-[80%]">
-                <span className="text-xs font-medium text-slate-900 dark:text-slate-200 truncate" title={fileInfo.name}>
-                  {fileInfo.name}
-                </span>
-                <span className="text-[10px] text-slate-500 dark:text-slate-400">({fileInfo.size} MB)</span>
-              </div>
-              <button
-                type="button"
-                className="absolute top-2 right-2 text-slate-400 hover:text-rose-500 text-lg transition-colors p-1"
-                onClick={() => deleteUploadedFile(fileKey)}
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="flex items-center gap-3 mt-1">
-              <div className="flex-1 bg-slate-100 dark:bg-slate-850 rounded-full h-1.5 overflow-hidden">
-                <div
-                  className="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
-                  style={{ width: `${fileInfo.progress}%` }}
-                ></div>
-              </div>
-              <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-400 shrink-0">
-                {fileInfo.progress === 100 ? (
-                  <span className="text-emerald-600 dark:text-emerald-400 font-bold">✓ Listo</span>
-                ) : (
-                  `${fileInfo.progress}%`
-                )}
-              </span>
-            </div>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-2">
-            <input
-              type="file"
-              id={`file-${fileKey}`}
-              className="hidden"
-              onChange={(e) => handleRealFileUpload(fileKey, e, limitMB)}
-            />
-            <Button
-              type="button"
-              variant="secondary"
-              className="text-xs w-full py-2"
-              onClick={() => document.getElementById(`file-${fileKey}`)?.click()}
-            >
-              📂 Seleccionar Archivo
-            </Button>
-            <div className="flex justify-between items-center gap-2 mt-1">
-              <button
-                type="button"
-                className="text-[10px] text-blue-600 hover:text-blue-700 dark:text-blue-400 hover:underline font-medium"
-                onClick={() =>
-                  handleFileUploadSimulated(
-                    fileKey,
-                    fileKey === 'abstract' ? 'Resumen_CambioClimatico.pdf'
-                    : fileKey === 'manuscript' ? 'Articulo_Completo.docx'
-                    : fileKey === 'audio' ? 'Podcast_AudioExplicativo.mp3'
-                    : fileKey === 'poster' ? 'Poster_Investigacion_A0.pdf'
-                    : 'Video_Exposicion_5min.mp4',
-                    limitMB * 0.45,
-                    limitMB
-                  )
-                }
-              >
-                Cargar Demo
-              </button>
-              <button
-                type="button"
-                className="text-[10px] text-rose-500 hover:text-rose-650 dark:text-rose-400 hover:underline font-medium"
-                onClick={() =>
-                  handleFileUploadSimulated(
-                    fileKey,
-                    fileKey === 'abstract' ? 'Resumen_Pesado.pdf'
-                    : fileKey === 'manuscript' ? 'Paper_AltasFiguras.pdf'
-                    : fileKey === 'audio' ? 'Podcast_Completo_Wav.wav'
-                    : fileKey === 'poster' ? 'Poster_SinComprimir.png'
-                    : 'Video_Raw_SinEditar.mov',
-                    limitMB * 1.5,
-                    limitMB
-                  )
-                }
-              >
-                Forzar Exceso
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  };
+  }, [
+    selectedCongressId,
+    availableCongresses,
+    isEditMode,
+    internalSubmissionId,
+    submissionTitle,
+    submissionAbstract,
+    submissionKeywords,
+    contributors,
+    submissionCategory,
+    audioFile,
+    posterFile,
+    abstractFile,
+    manuscriptFile,
+    videoFile,
+    updateAndSyncOjs,
+    publishAndSyncOjs,
+    resetSpeakerForm,
+    setSelectedCongressId,
+    setSubmissionStatus
+  ]);
 
   return (
     <Card className="flex flex-col gap-6 w-full animate-fade-in">
       <div className="border-b border-slate-100 dark:border-slate-800 pb-4">
-        <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2.5">
-          <span className="text-2xl">🎓</span> Portal de Carga de Ponencias (Ponente)
+        <h2 className="text-xl font-bold text-zinc-900 dark:text-white flex items-center gap-2.5">
+          <GraduationCap className="h-5 w-5 text-zinc-500" aria-hidden="true" /> Portal de Ponencias
         </h2>
       </div>
 
@@ -398,138 +308,81 @@ export const SpeakerPage: React.FC = () => {
           />
         </div>
 
-        {/* — Colaboradores / Autores — */}
-        <div className="flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-              Colaboradores / Autores <span className="text-[10px] text-blue-500 font-normal ml-1">Se registran como Authors en OJS</span>
-            </label>
-            <button
-              type="button"
-              onClick={addContributorRow}
-              className="text-xs font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 flex items-center gap-1 transition-colors"
-            >
-              + Añadir colaborador
-            </button>
-          </div>
+        {/* — Colaboradores / Autores (extraído) — */}
+        <ContributorsSection
+          contributors={contributors}
+          onUpdateContributor={updateContributor}
+          onAddContributor={addContributorRow}
+          onRemoveContributor={removeContributorRow}
+        />
 
-          <div className="flex flex-col gap-3">
-            {contributors.map((c, i) => (
-              <div
-                key={i}
-                className="relative border border-slate-200 dark:border-slate-700 rounded-xl p-4 bg-slate-50/50 dark:bg-slate-900/20 flex flex-col gap-3"
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Colaborador #{i + 1}</span>
-                  {contributors.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeContributorRow(i)}
-                      className="text-xs text-rose-500 hover:text-rose-600 font-medium transition-colors"
-                    >
-                      × Eliminar
-                    </button>
-                  )}
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="flex flex-col gap-1">
-                    <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Nombre(s)</label>
-                    <input
-                      type="text"
-                      className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
-                      value={c.givenName}
-                      onChange={(e) => updateContributor(i, 'givenName', e.target.value)}
-                      placeholder="Nombre(s)"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Apellido(s)</label>
-                    <input
-                      type="text"
-                      className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
-                      value={c.familyName}
-                      onChange={(e) => updateContributor(i, 'familyName', e.target.value)}
-                      placeholder="Apellido(s)"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Correo electrónico <span className="text-rose-500">*</span></label>
-                    <input
-                      type="email"
-                      className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
-                      value={c.email}
-                      onChange={(e) => updateContributor(i, 'email', e.target.value)}
-                      placeholder="correo@universidad.edu"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <label className="text-xs font-medium text-slate-600 dark:text-slate-400">País (código ISO)</label>
-                    <input
-                      type="text"
-                      maxLength={2}
-                      className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition uppercase"
-                      value={c.country}
-                      onChange={(e) => updateContributor(i, 'country', e.target.value.toUpperCase())}
-                      placeholder="PA"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1 sm:col-span-2">
-                    <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Institución / Universidad</label>
-                    <input
-                      type="text"
-                      className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
-                      value={c.affiliation}
-                      onChange={(e) => updateContributor(i, 'affiliation', e.target.value)}
-                      placeholder="Universidad de Panamá, Facultad de Ciencias..."
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* — Archivos — */}
+        {/* — Archivos (extraído y mapeado) — */}
         <div className="flex flex-col gap-3 mt-2">
           <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
             Archivos Requeridos para Postulación
           </label>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {renderUploadCard('abstract', 'Resumen Académico', 2, '📝', abstractFile)}
-            {renderUploadCard('manuscript', 'Manuscrito Completo', 25, '📚', manuscriptFile)}
-            {renderUploadCard('audio', 'Audio (Resumen / Podcast)', 10, '🎙️', audioFile)}
-            {renderUploadCard('poster', 'Afiche o Póster', 15, '🖼️', posterFile)}
-            {renderUploadCard('video', 'Video de Presentación (~5 min)', 50, '📹', videoFile, true)}
+            <FileUploadCard
+              fileKey="abstract"
+              label="Resumen Académico"
+              limitMB={2}
+              icon={<FileText className="h-5 w-5" />}
+              fileInfo={abstractFile}
+              onUploadSimulated={handleFileUploadSimulated}
+              onRealFileUpload={handleRealFileUpload}
+              onDeleteFile={deleteUploadedFile}
+            />
+            <FileUploadCard
+              fileKey="manuscript"
+              label="Manuscrito Completo"
+              limitMB={25}
+              icon={<BookOpen className="h-5 w-5" />}
+              fileInfo={manuscriptFile}
+              onUploadSimulated={handleFileUploadSimulated}
+              onRealFileUpload={handleRealFileUpload}
+              onDeleteFile={deleteUploadedFile}
+            />
+            <FileUploadCard
+              fileKey="audio"
+              label="Audio (Resumen / Podcast)"
+              limitMB={10}
+              icon={<Mic className="h-5 w-5" />}
+              fileInfo={audioFile}
+              onUploadSimulated={handleFileUploadSimulated}
+              onRealFileUpload={handleRealFileUpload}
+              onDeleteFile={deleteUploadedFile}
+            />
+            <FileUploadCard
+              fileKey="poster"
+              label="Afiche o Póster"
+              limitMB={15}
+              icon={<Image className="h-5 w-5" />}
+              fileInfo={posterFile}
+              onUploadSimulated={handleFileUploadSimulated}
+              onRealFileUpload={handleRealFileUpload}
+              onDeleteFile={deleteUploadedFile}
+            />
+            <FileUploadCard
+              fileKey="video"
+              label="Video de Presentación (~5 min)"
+              limitMB={50}
+              icon={<Video className="h-5 w-5" />}
+              fileInfo={videoFile}
+              isLarge={true}
+              onUploadSimulated={handleFileUploadSimulated}
+              onRealFileUpload={handleRealFileUpload}
+              onDeleteFile={deleteUploadedFile}
+            />
           </div>
         </div>
 
-        {/* — Panel de estado y envío — */}
-        <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-805 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <div className="flex items-center gap-2.5 text-sm">
-            <span className="text-slate-600 dark:text-slate-400 font-medium">Estado de la Ponencia:</span>
-            <Badge
-              variant={
-                submissionStatus === 'draft' ? 'secondary' : submissionStatus === 'submitted' ? 'warning' : 'success'
-              }
-            >
-              {submissionStatus === 'draft' && '📄 Borrador (Pendiente de Sincronizar)'}
-              {submissionStatus === 'submitted' && '📤 Sincronizado en OJS (En Revisión)'}
-              {submissionStatus === 'reviewed' && '✅ Evaluado'}
-            </Badge>
-          </div>
-
-          {(submissionStatus === 'draft' || isEditMode) && (
-            <Button
-              type="button"
-              variant="accent"
-              className="w-full sm:w-auto font-semibold px-6 py-2.5"
-              onClick={handlePublishClick}
-              isLoading={isPublishing}
-            >
-              {isPublishing ? 'Procesando...' : isEditMode ? 'Guardar Cambios' : 'Enviar y Sincronizar Ponencia'}
-            </Button>
-          )}
-        </div>
+        {/* — Panel de estado y envío (extraído) — */}
+        <SubmissionStatusBar
+          submissionStatus={submissionStatus}
+          isEditMode={isEditMode}
+          isPublishing={isPublishing}
+          onPublishClick={handlePublishClick}
+        />
       </div>
     </Card>
   );

@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Lock } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import type { Role } from '../../context/AuthContext';
 import { Card } from '../../components/common/Card';
@@ -7,7 +9,8 @@ import { Button } from '../../components/common/Button';
 import { Select } from '../../components/common/Select';
 
 export const AuthPage: React.FC = () => {
-  const { login } = useAuth();
+  const { user, login } = useAuth();
+  const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
   
   // State
@@ -17,6 +20,12 @@ export const AuthPage: React.FC = () => {
   const [rol, setRol] = useState<Role>('speaker');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      navigate('/', { replace: true });
+    }
+  }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,24 +66,23 @@ export const AuthPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md p-8 animate-fade-in shadow-2xl">
+    <Card className="w-full max-w-md p-8 animate-fade-in shadow-2xl">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 mb-4">
-            <span className="text-3xl">🔒</span>
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 mb-4">
+            <Lock className="h-5 w-5" aria-hidden="true" />
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-            {isLogin ? 'Iniciar Sesión en Nova' : 'Crear Cuenta en Nova'}
+          <h1 className="text-xl font-bold text-zinc-900 dark:text-white">
+            {isLogin ? 'Iniciar Sesión' : 'Crear Cuenta'}
           </h1>
-          <p className="text-slate-500 mt-2 text-sm">
-            {isLogin 
-              ? 'Ingresa tus credenciales para acceder a tu portal' 
-              : 'Únete a la plataforma de gestión académica'}
+          <p className="text-zinc-500 mt-1 text-sm">
+            {isLogin
+              ? 'Ingresa tus credenciales para acceder'
+              : 'Crea tu cuenta en la plataforma académica'}
           </p>
         </div>
 
         {error && (
-          <div className={`p-3 mb-6 rounded-lg text-sm font-medium ${
+          <div role="alert" className={`p-3 mb-6 rounded-lg text-sm font-medium ${
             error.includes('exitoso') 
               ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400'
               : 'bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400'
@@ -104,6 +112,7 @@ export const AuthPage: React.FC = () => {
             onChange={(e) => setEmail(e.target.value)}
             required
             placeholder="correo@universidad.edu"
+            autoComplete="email"
           />
 
           <Input
@@ -114,6 +123,7 @@ export const AuthPage: React.FC = () => {
             onChange={(e) => setPassword(e.target.value)}
             required
             placeholder="••••••••"
+            autoComplete={isLogin ? 'current-password' : 'new-password'}
           />
 
           {!isLogin && (
@@ -136,15 +146,14 @@ export const AuthPage: React.FC = () => {
 
         <div className="mt-6 text-center text-sm text-slate-500">
           {isLogin ? '¿No tienes una cuenta?' : '¿Ya tienes una cuenta?'}
-          <button 
-            type="button" 
+          <button
+            type="button"
             onClick={() => { setIsLogin(!isLogin); setError(''); }}
-            className="ml-2 font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+            className="ml-2 font-semibold text-zinc-900 dark:text-zinc-100 hover:underline underline-offset-2"
           >
             {isLogin ? 'Regístrate aquí' : 'Inicia Sesión'}
           </button>
         </div>
       </Card>
-    </div>
   );
 };

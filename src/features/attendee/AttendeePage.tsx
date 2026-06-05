@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Users, CheckCircle, CalendarDays } from 'lucide-react';
 import { useCongress } from '../../context/CongressContext';
 import { useOjs } from '../../context/OjsContext';
 import { Card } from '../../components/common/Card';
@@ -50,9 +51,9 @@ export const AttendeePage: React.FC = () => {
 
   return (
     <Card className="flex flex-col gap-6 w-full animate-fade-in">
-      <div className="border-b border-slate-100 dark:border-slate-800 pb-4">
-        <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2.5">
-          <span className="text-2xl">👥</span> Portal de Inscripción y Pagos (Asistente)
+      <div className="border-b border-zinc-100 dark:border-zinc-800 pb-4">
+        <h2 className="text-xl font-bold text-zinc-900 dark:text-white flex items-center gap-2.5">
+          <Users className="h-5 w-5 text-zinc-500" aria-hidden="true" /> Inscripción y Acceso
         </h2>
       </div>
 
@@ -116,12 +117,13 @@ export const AttendeePage: React.FC = () => {
 
               <Button
                 type="submit"
-                variant="accent"
-                className="w-full font-semibold mt-3 py-3"
+                variant="primary"
+                size="lg"
+                className="w-full mt-3"
                 disabled={isProcessingPayment}
                 isLoading={isProcessingPayment}
               >
-                {isProcessingPayment ? 'Validando con pasarela...' : 'Realizar Pago Seguro ($50.00 USD)'}
+                {isProcessingPayment ? 'Validando...' : 'Realizar Pago Seguro ($50.00 USD)'}
               </Button>
             </form>
           </div>
@@ -129,25 +131,21 @@ export const AttendeePage: React.FC = () => {
           <div className="flex flex-col gap-6 items-center">
             {/* Banner de éxito */}
             <div className="flex flex-col items-center text-center gap-2 max-w-md">
-              <span className="h-16 w-16 bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 text-3xl rounded-full flex items-center justify-center select-none animate-bounce">
-                🎉
+              <span className="h-12 w-12 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-lg flex items-center justify-center">
+                <CheckCircle className="h-6 w-6" aria-hidden="true" />
               </span>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white mt-1">¡Inscripción Confirmada!</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                Tu pago ha sido validado de manera exitosa y hemos generado tu acceso oficial al congreso.
+              <h3 className="text-lg font-bold text-zinc-900 dark:text-white mt-1">¡Inscripción Confirmada!</h3>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                Tu pago fue validado exitosamente. Tu acceso oficial al congreso ha sido generado.
               </p>
             </div>
 
-            {/* Ticket Digital Premium */}
-            <div className="relative w-full max-w-sm rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-md overflow-hidden flex flex-col">
-              {/* Notches laterales */}
-              <div className="absolute left-0 top-[60%] -translate-x-1/2 h-8 w-8 bg-slate-50 dark:bg-slate-900 rounded-full border-r border-slate-200 dark:border-slate-800 z-10"></div>
-              <div className="absolute right-0 top-[60%] translate-x-1/2 h-8 w-8 bg-slate-50 dark:bg-slate-900 rounded-full border-l border-slate-200 dark:border-slate-800 z-10"></div>
-
+            {/* Ticket Digital */}
+            <div className="w-full max-w-sm rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-sm overflow-hidden flex flex-col">
               {/* Cabecera del ticket */}
-              <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-5 text-white flex justify-between items-center select-none">
-                <span className="font-extrabold text-sm tracking-widest uppercase">TICKET DE INGRESO</span>
-                <span className="text-xs font-semibold bg-white/20 px-2 py-0.5 rounded">#NV-2026-8941</span>
+              <div className="bg-zinc-900 dark:bg-zinc-800 px-5 py-4 text-white flex justify-between items-center">
+                <span className="font-semibold text-sm tracking-wide uppercase">Ticket de Ingreso</span>
+                <span className="text-xs font-mono text-zinc-400">#NV-2026-8941</span>
               </div>
 
               {/* Cuerpo del ticket */}
@@ -159,8 +157,8 @@ export const AttendeePage: React.FC = () => {
                   </div>
                   <div className="flex flex-col gap-0.5">
                     <span className="text-slate-400 dark:text-slate-500 font-medium">Modalidad:</span>
-                    <Badge variant="primary" className="w-fit">
-                      {modality.toUpperCase()}
+                    <Badge variant="default" className="w-fit capitalize">
+                      {modality}
                     </Badge>
                   </div>
                   <div className="flex flex-col gap-0.5 col-span-2">
@@ -194,34 +192,34 @@ export const AttendeePage: React.FC = () => {
 
             {/* Itinerario Desbloqueado */}
             <div className="w-full border-t border-slate-100 dark:border-slate-805 pt-6 mt-2">
-              <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 select-none">
-                <span>📅</span> Tu Itinerario del Congreso (Desbloqueado)
+              <h4 className="text-sm font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+                <CalendarDays className="h-4 w-4 text-zinc-500" aria-hidden="true" /> Itinerario del Congreso
               </h4>
               <div className="flex flex-col gap-3.5 mt-4">
-                <div className="flex gap-4 items-start bg-slate-50/50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800/60 rounded-2xl p-4 transition-all duration-200 hover:shadow-sm">
-                  <span className="text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 py-1.5 px-3 rounded-lg shrink-0 w-24 text-center">
-                    09:00 AM
+                <div className="flex gap-3 items-start border border-zinc-100 dark:border-zinc-800 rounded-lg p-3.5">
+                  <span className="text-xs font-semibold text-zinc-500 bg-zinc-50 dark:bg-zinc-800 py-1 px-2.5 rounded shrink-0">
+                    09:00
                   </span>
-                  <div className="flex flex-col gap-1">
-                    <strong className="text-xs font-bold text-slate-900 dark:text-slate-200">
+                  <div className="flex flex-col gap-0.5">
+                    <strong className="text-xs font-semibold text-zinc-900 dark:text-zinc-200">
                       Conferencia Magistral Inaugural
                     </strong>
-                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
-                      <span>●</span> Sala: {classroom} (Enlace Activo)
+                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
+                      Sala: {classroom}
                     </span>
                   </div>
                 </div>
 
-                <div className="flex gap-4 items-start bg-slate-50/50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800/60 rounded-2xl p-4 transition-all duration-200 hover:shadow-sm">
-                  <span className="text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 py-1.5 px-3 rounded-lg shrink-0 w-24 text-center">
-                    11:00 AM
+                <div className="flex gap-3 items-start border border-zinc-100 dark:border-zinc-800 rounded-lg p-3.5">
+                  <span className="text-xs font-semibold text-zinc-500 bg-zinc-50 dark:bg-zinc-800 py-1 px-2.5 rounded shrink-0">
+                    11:00
                   </span>
-                  <div className="flex flex-col gap-1">
-                    <strong className="text-xs font-bold text-slate-900 dark:text-slate-200">
-                      Sesión de Ponencias Orales - Línea: {selectedLineName}
+                  <div className="flex flex-col gap-0.5">
+                    <strong className="text-xs font-semibold text-zinc-900 dark:text-zinc-200">
+                      Ponencias Orales — {selectedLineName}
                     </strong>
-                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
-                      <span>●</span> Acceso a Transmisión Directa
+                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
+                      Transmisión en vivo
                     </span>
                   </div>
                 </div>
