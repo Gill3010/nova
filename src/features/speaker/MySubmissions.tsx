@@ -4,7 +4,11 @@ import type { PostgresMySubmission } from '../../services/dbApi';
 import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
 
-export const MySubmissions: React.FC = () => {
+interface MySubmissionsProps {
+  onEditSubmission?: (submission: PostgresMySubmission) => void;
+}
+
+export const MySubmissions: React.FC<MySubmissionsProps> = ({ onEditSubmission }) => {
   const [submissions, setSubmissions] = useState<PostgresMySubmission[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -83,11 +87,12 @@ export const MySubmissions: React.FC = () => {
               <th className="py-4 px-6 font-semibold">Categoría</th>
               <th className="py-4 px-6 font-semibold">Estado (OJS ID)</th>
               <th className="py-4 px-6 font-semibold text-right">Fecha</th>
+              <th className="py-4 px-6 font-semibold text-center">Acciones</th>
             </tr>
           </thead>
           <tbody className="text-sm divide-y divide-slate-100 dark:divide-slate-800">
             {submissions.map((envio) => (
-              <tr key={envio.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
+              <tr key={envio.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors group">
                 <td className="py-4 px-6">
                   <div className="font-medium text-slate-900 dark:text-slate-200">
                     {envio.titulo_articulo || 'Sin Título'}
@@ -120,6 +125,16 @@ export const MySubmissions: React.FC = () => {
                   {new Date(envio.created_at).toLocaleDateString('es-ES', { 
                     year: 'numeric', month: 'short', day: 'numeric' 
                   })}
+                </td>
+                <td className="py-4 px-6 text-center">
+                  {onEditSubmission && (
+                    <button
+                      onClick={() => onEditSubmission(envio)}
+                      className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      ✏️ Editar
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}

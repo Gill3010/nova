@@ -3,9 +3,10 @@ import type { PostgresCongress } from '../../services/dbApi';
 
 interface CongressTableProps {
   congresos: PostgresCongress[];
+  onEdit?: (congress: PostgresCongress) => void;
 }
 
-export const CongressTable: React.FC<CongressTableProps> = ({ congresos }) => {
+export const CongressTable: React.FC<CongressTableProps> = ({ congresos, onEdit }) => {
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
 
   const toggleRow = (id: number) => {
@@ -29,6 +30,7 @@ export const CongressTable: React.FC<CongressTableProps> = ({ congresos }) => {
             <th className="px-6 py-4">Fecha</th>
             <th className="px-6 py-4">Modalidad</th>
             <th className="px-6 py-4 text-center">Envíos</th>
+            <th className="px-6 py-4 text-center">Acciones</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
@@ -36,7 +38,7 @@ export const CongressTable: React.FC<CongressTableProps> = ({ congresos }) => {
             <React.Fragment key={congreso.id}>
               {/* Fila Principal del Congreso */}
               <tr 
-                className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors cursor-pointer"
+                className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors cursor-pointer group"
                 onClick={() => toggleRow(congreso.id)}
               >
                 <td className="px-6 py-4 font-medium text-slate-900 dark:text-white max-w-xs truncate">
@@ -52,6 +54,19 @@ export const CongressTable: React.FC<CongressTableProps> = ({ congresos }) => {
                   <span className="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-300">
                     {congreso.envios.length}
                   </span>
+                </td>
+                <td className="px-6 py-4 text-center">
+                  {onEdit && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEdit(congreso);
+                      }}
+                      className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      ✏️ Editar
+                    </button>
+                  )}
                 </td>
               </tr>
               
@@ -114,7 +129,8 @@ export const CongressTable: React.FC<CongressTableProps> = ({ congresos }) => {
                                   let autores = envio.colaboradores || envio.autor_email;
                                   try {
                                     if (envio.colaboradores && envio.colaboradores.startsWith('[')) {
-                                      autores = JSON.parse(envio.colaboradores).join(', ');
+                                      const parsed = JSON.parse(envio.colaboradores);
+                                      autores = parsed.map((c: any) => typeof c === 'string' ? c : `${c.givenName} ${c.familyName || ''}`.trim()).join(', ');
                                     }
                                   } catch (e) {}
 

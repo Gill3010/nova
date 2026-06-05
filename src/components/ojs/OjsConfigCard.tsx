@@ -22,12 +22,13 @@ export const OjsConfigCard: React.FC = () => {
     isPublishing,
     testOjsConnection,
     publishAndSyncOjs,
+    updateAndSyncOjs,
     addLog
   } = useOjs();
 
   const { user } = useAuth();
   const activeRole = user?.rol === 'admin' || user?.rol === 'organizer' ? 'admin_org' : 'ponente';
-  const { getCongressJson, setInternalId } = useCongress();
+  const { getCongressJson, setInternalId, resetCongressForm, internalId } = useCongress();
   const {
     submissionTitle,
     submissionCategory,
@@ -38,6 +39,8 @@ export const OjsConfigCard: React.FC = () => {
     videoFile
   } = useSpeaker();
 
+  const isEditMode = !!internalId;
+
   const handlePublishClick = () => {
     const filesList = [
       { key: 'audio', file: audioFile, label: 'Audio de Resumen' },
@@ -47,16 +50,32 @@ export const OjsConfigCard: React.FC = () => {
       { key: 'video', file: videoFile, label: 'Video de Presentación' }
     ];
 
-    publishAndSyncOjs({
-      activeRole,
-      congressJson: getCongressJson(),
-      submissionTitle,
-      submissionCategory,
-      files: filesList,
-      onSuccessAdmin: (internalId) => {
-        if (setInternalId) setInternalId(internalId);
+    if (isEditMode) {
+      if (updateAndSyncOjs) {
+        updateAndSyncOjs({
+          activeRole,
+          internalId: internalId,
+          congressJson: getCongressJson(),
+          onSuccessAdmin: () => {
+            alert('¡Los cambios del Congreso han sido guardados con éxito!');
+            if (resetCongressForm) resetCongressForm();
+          }
+        });
       }
-    });
+    } else {
+      publishAndSyncOjs({
+        activeRole,
+        congressJson: getCongressJson(),
+        submissionTitle,
+        submissionCategory,
+        files: filesList,
+        onSuccessAdmin: (newInternalId) => {
+          if (setInternalId) setInternalId(newInternalId);
+          alert('¡El Congreso ha sido creado con éxito y sincronizado con OJS!');
+          if (resetCongressForm) resetCongressForm();
+        }
+      });
+    }
   };
 
   return (
@@ -164,9 +183,9 @@ export const OjsConfigCard: React.FC = () => {
             variant="accent"
             className="text-xs font-semibold py-2.5"
             onClick={handlePublishClick}
-            disabled={isPublishing || isTestingConnection || !selectedJournal}
+            disabled={isPublishing || isTestingConnection || (!selectedJournal && !isEditMode)}
           >
-            {isPublishing ? 'Sincronizando...' : 'Publicar en OJS'}
+            {isPublishing ? 'Procesando...' : isEditMode ? 'Guardar Cambios' : 'Publicar en OJS'}
           </Button>
         </div>
       </div>

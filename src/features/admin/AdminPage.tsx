@@ -120,8 +120,11 @@ export const AdminPage: React.FC = () => {
                       </li>
                     ))
                   ) : !isLoadingSuggestions ? (
-                    <li className="px-3.5 py-2 text-sm text-slate-500 dark:text-slate-400 italic">
-                      No se encontraron coincidencias. Presiona Enter para usar "{venue}"
+                    <li 
+                      className="px-3.5 py-2 text-sm text-slate-500 dark:text-slate-400 italic cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors rounded-md"
+                      onClick={() => handleSuggestionClick(venue)}
+                    >
+                      No se encontraron coincidencias. Presiona Enter o haz clic aquí para usar "{venue}"
                     </li>
                   ) : null}
                 </ul>

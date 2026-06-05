@@ -7,9 +7,10 @@ import { Button } from '../../components/common/Button';
 
 interface DashboardPageProps {
   onClose: () => void;
+  onEditCongress?: (congress: PostgresCongress) => void;
 }
 
-export const DashboardPage: React.FC<DashboardPageProps> = ({ onClose }) => {
+export const DashboardPage: React.FC<DashboardPageProps> = ({ onClose, onEditCongress }) => {
   const [data, setData] = useState<PostgresCongress[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -75,7 +76,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onClose }) => {
                 <div className="animate-pulse text-slate-400">Cargando base de datos...</div>
               </div>
             ) : (
-              <CongressTable congresos={data} />
+              <CongressTable congresos={data} onEdit={onEditCongress} />
             )}
           </div>
         </>

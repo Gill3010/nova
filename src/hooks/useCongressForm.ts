@@ -10,10 +10,10 @@ import {
 export function useCongressForm() {
   // Estado del congreso
   const [internalId, setInternalId] = useState<number | undefined>(undefined);
-  const [name, setName] = useState('I Congreso Internacional de Investigación Científica y Posgrado');
-  const [description, setDescription] = useState('Evento académico orientado a la difusión de trabajos de investigación desarrollados por alumnos de maestría y doctorado.');
-  const [date, setDate] = useState('2026-10-15');
-  const [venue, setVenue] = useState('Campus Central - Universidad de la Nueva Era');
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [date, setDate] = useState('');
+  const [venue, setVenue] = useState('');
   const [modality, setModality] = useState<Congress['modality']>('hibrida');
   const [classroom, setClassroom] = useState(PREDEFINED_CLASSROOMS[0].name);
   const [academicLevel, setAcademicLevel] = useState<Congress['academicLevel']>('maestria');
@@ -111,9 +111,11 @@ export function useCongressForm() {
 
   const handleVenueKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
-      if (showSuggestions && filteredSuggestions[activeSuggestion]) {
-        e.preventDefault();
-        setVenue(filteredSuggestions[activeSuggestion]);
+      e.preventDefault();
+      if (showSuggestions) {
+        if (filteredSuggestions[activeSuggestion]) {
+          setVenue(filteredSuggestions[activeSuggestion]);
+        }
         setShowSuggestions(false);
       }
     } else if (e.key === 'ArrowUp') {
@@ -184,6 +186,37 @@ export function useCongressForm() {
 
   const selectedClassroomObj = PREDEFINED_CLASSROOMS.find(r => r.name === classroom) || PREDEFINED_CLASSROOMS[0];
 
+  const resetCongressForm = () => {
+    setInternalId(undefined);
+    setName('');
+    setDescription('');
+    setDate('');
+    setVenue('');
+    setModality('hibrida');
+    setClassroom(PREDEFINED_CLASSROOMS[0].name);
+    setAcademicLevel('maestria');
+    setLines(DEFAULT_RESEARCH_LINES);
+    setSelectedLine('1');
+    setNewLineName('');
+    setSelectedRoles(['ponente', 'revisor', 'organizador', 'editor', 'asistente', 'administrador']);
+  };
+
+  const loadCongress = (data: any) => {
+    setInternalId(data.id);
+    setName(data.nombre || '');
+    setDescription(data.descripcion || '');
+    setDate(data.fecha_celebracion || '');
+    setVenue(data.sede || '');
+    setModality(data.modalidad || 'hibrida');
+    setClassroom(data.aula_canal || PREDEFINED_CLASSROOMS[0].name);
+    setAcademicLevel(data.nivel_academico || 'maestria');
+    // Research line logic is simplified since it's just stored as string
+    if (data.linea_investigacion) {
+      const found = lines.find(l => l.name === data.linea_investigacion);
+      if (found) setSelectedLine(found.id);
+    }
+  };
+
   return {
     name,
     setName,
@@ -219,6 +252,8 @@ export function useCongressForm() {
     handleAddCustomLine,
     selectLine,
     toggleRol,
-    getCongressJson
+    getCongressJson,
+    resetCongressForm,
+    loadCongress
   };
 }

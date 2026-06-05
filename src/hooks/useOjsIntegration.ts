@@ -331,7 +331,7 @@ export function useOjsIntegration() {
                 autor_email: validContributors[0]?.email || 'N/A',
                 titulo_articulo: submissionTitle,
                 palabras_claves: submissionKeywords || '',
-                colaboradores: JSON.stringify(validContributors.map(c => `${c.givenName} ${c.familyName} (${c.email})`)),
+                colaboradores: JSON.stringify(validContributors),
                 revista_destino: currentJournal.name
               })
             });
@@ -482,6 +482,120 @@ export function useOjsIntegration() {
     }
   };
 
+  const updateAndSyncOjs = async ({
+    activeRole,
+    internalId,
+    congressJson,
+    selectedCongressId,
+    submissionTitle,
+    submissionKeywords,
+    contributors,
+    submissionCategory,
+    onSuccessSpeaker,
+    onSuccessAdmin
+  }: {
+    activeRole: 'admin_org' | 'ponente' | 'asistente' | 'revisor_eval';
+    internalId: number;
+    congressJson?: Congress;
+    selectedCongressId?: string;
+    submissionTitle?: string;
+    submissionKeywords?: string;
+    contributors?: import('../types').Contributor[];
+    submissionCategory?: 'poster' | 'libro' | 'articulo';
+    onSuccessSpeaker?: () => void;
+    onSuccessAdmin?: () => void;
+  }) => {
+    if (isPublishing) return;
+    setIsPublishing(true);
+
+    try {
+      const token = localStorage.getItem('nova_token') || '';
+      
+      if (activeRole === 'ponente' && submissionTitle) {
+        addLog('info', `Actualizando envío en base de datos local...`);
+        const payload: any = {
+          titulo_articulo: submissionTitle,
+          palabras_claves: submissionKeywords || '',
+          colaboradores: JSON.stringify(contributors || []),
+          categoria: submissionCategory || 'articulo'
+        };
+        
+        if (selectedCongressId) {
+          payload.congreso_id = parseInt(selectedCongressId, 10);
+        }
+        
+        const response = await fetch(`http://localhost:3001/api/envios/${internalId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+          },
+          body: JSON.stringify(payload)
+        });
+        
+        let data;
+        try {
+          data = await response.json();
+        } catch (e) {
+          throw new Error(`El servidor respondió con un formato inválido (Status: ${response.status}). Asegúrese de que el backend esté ejecutando la última versión.`);
+        }
+
+        if (response.ok && data.success) {
+          addLog('success', 'Envío actualizado correctamente en la base de datos local.');
+          if (onSuccessSpeaker) onSuccessSpeaker();
+        } else {
+          const errorMsg = `Error al actualizar: ${data.error || 'Error desconocido'}`;
+          addLog('error', errorMsg);
+          alert(errorMsg);
+        }
+      } else if (activeRole === 'admin_org' && congressJson) {
+        addLog('info', `Actualizando congreso en base de datos local...`);
+        const payload = {
+          nombre: congressJson.name,
+          descripcion: congressJson.description,
+          fecha_celebracion: congressJson.date,
+          sede: congressJson.venue,
+          modalidad: congressJson.modality,
+          nivel_academico: congressJson.academicLevel,
+          linea_investigacion: congressJson.researchLine,
+          aula_canal: congressJson.classroom
+        };
+        
+        const response = await fetch(`http://localhost:3001/api/congresos/${internalId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+          },
+          body: JSON.stringify(payload)
+        });
+        
+        let data;
+        try {
+          data = await response.json();
+        } catch (e) {
+          throw new Error(`El servidor respondió con un formato inválido (Status: ${response.status}). Asegúrese de que el backend esté ejecutando la última versión.`);
+        }
+
+        if (response.ok && data.success) {
+          addLog('success', 'Congreso actualizado correctamente en la base de datos local.');
+          if (onSuccessAdmin) onSuccessAdmin();
+        } else {
+          const errorMsg = `Error al actualizar: ${data.error || 'Error desconocido'}`;
+          addLog('error', errorMsg);
+          alert(errorMsg);
+        }
+      }
+    } catch (err: any) {
+      console.error(err);
+      const errMsg = `Error de red al intentar actualizar: ${err.message}`;
+      addLog('error', errMsg);
+      alert(errMsg);
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
   const copyPayload = (congressJson: Congress) => {
     navigator.clipboard.writeText(JSON.stringify(congressJson, null, 2));
     alert('¡Payload JSON copiado al portapapeles!');
@@ -503,6 +617,7 @@ export function useOjsIntegration() {
     clearConsole,
     testOjsConnection,
     publishAndSyncOjs,
+    updateAndSyncOjs,
     copyPayload
   };
 }

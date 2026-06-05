@@ -229,6 +229,81 @@ app.post('/api/envios', verifyToken, (req, res) => {
   });
 });
 
+// Actualizar un congreso existente
+app.put('/api/congresos/:id', verifyToken, (req, res) => {
+  const congressId = req.params.id;
+  const {
+    nombre, descripcion, fecha_celebracion, sede, modalidad,
+    nivel_academico, linea_investigacion, aula_canal
+  } = req.body;
+  const userId = req.user.id;
+  const rol = req.user.rol;
+
+  let query = `
+    UPDATE congresos 
+    SET nombre = ?, descripcion = ?, fecha_celebracion = ?, sede = ?, 
+        modalidad = ?, nivel_academico = ?, linea_investigacion = ?, aula_canal = ?
+    WHERE id = ?
+  `;
+  let values = [nombre, descripcion, fecha_celebracion, sede, modalidad, nivel_academico, linea_investigacion, aula_canal, congressId];
+
+  if (rol !== 'admin') {
+    query += ` AND creador_id = ?`;
+    values.push(userId);
+  }
+
+  db.run(query, values, function(err) {
+    if (err) {
+      console.error('Error al actualizar congreso:', err.message);
+      return res.status(500).json({ success: false, error: 'Error interno del servidor al actualizar' });
+    }
+    if (this.changes === 0) {
+      return res.status(404).json({ success: false, error: 'Congreso no encontrado o no autorizado' });
+    }
+    res.json({ success: true, message: 'Congreso actualizado exitosamente' });
+  });
+});
+
+// Actualizar un envío existente
+app.put('/api/envios/:id', verifyToken, (req, res) => {
+  const envioId = req.params.id;
+  const { titulo_articulo, palabras_claves, colaboradores, categoria, congreso_id } = req.body;
+  const userId = req.user.id;
+  const rol = req.user.rol;
+  
+  console.log('Update Envio Payload:', req.body);
+
+  let query = `
+    UPDATE envios_ojs
+    SET titulo_articulo = ?, palabras_claves = ?, colaboradores = ?, categoria = ?
+  `;
+  let values = [titulo_articulo, palabras_claves, colaboradores, categoria];
+
+  if (congreso_id) {
+    query += `, congreso_id = ?`;
+    values.push(congreso_id);
+  }
+
+  query += ` WHERE id = ?`;
+  values.push(envioId);
+
+  if (rol !== 'admin') {
+    query += ` AND usuario_id = ?`;
+    values.push(userId);
+  }
+
+  db.run(query, values, function(err) {
+    if (err) {
+      console.error('Error al actualizar envío:', err.message);
+      return res.status(500).json({ success: false, error: 'Error interno del servidor al actualizar envío' });
+    }
+    if (this.changes === 0) {
+      return res.status(404).json({ success: false, error: 'Envío no encontrado o no autorizado' });
+    }
+    res.json({ success: true, message: 'Envío actualizado exitosamente' });
+  });
+});
+
 // Obtener los envíos del usuario actual
 app.get('/api/envios/me', verifyToken, (req, res) => {
   const usuario_id = req.user.id;
@@ -237,8 +312,11 @@ app.get('/api/envios/me', verifyToken, (req, res) => {
       e.id,
       e.ojs_submission_id,
       e.titulo_articulo,
+      e.palabras_claves,
+      e.colaboradores,
       e.categoria,
       e.created_at,
+      e.congreso_id,
       c.nombre AS congreso_nombre
     FROM envios_ojs e
     JOIN congresos c ON e.congreso_id = c.id

@@ -58,10 +58,67 @@ export interface PostgresMySubmission {
   id: number;
   ojs_submission_id: number;
   titulo_articulo: string;
+  palabras_claves?: string;
+  colaboradores?: string;
   categoria: string;
   created_at: string;
+  congreso_id: number;
   congreso_nombre: string;
 }
+
+export const saveCongress = async (congressData: any, token: string) => {
+  const response = await fetch(`${API_BASE_URL}/congresos`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify(congressData)
+  });
+  
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Error al guardar el congreso en la base de datos local');
+  }
+  
+  return response.json();
+};
+
+export const updateCongress = async (id: number, congressData: any, token: string) => {
+  const response = await fetch(`${API_BASE_URL}/congresos/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify(congressData)
+  });
+  
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Error al actualizar el congreso en la base de datos local');
+  }
+  
+  return response.json();
+};
+
+export const updateSubmission = async (id: number, submissionData: any, token: string) => {
+  const response = await fetch(`${API_BASE_URL}/envios/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify(submissionData)
+  });
+  
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Error al actualizar la ponencia en la base de datos local');
+  }
+  
+  return response.json();
+};
 
 export const fetchMySubmissions = async (): Promise<PostgresMySubmission[]> => {
   try {

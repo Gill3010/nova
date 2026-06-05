@@ -34,14 +34,19 @@ export const SpeakerPage: React.FC = () => {
     videoFile,
     setVideoFile,
     submissionStatus,
-    setSubmissionStatus
+    setSubmissionStatus,
+    resetSpeakerForm,
+    internalSubmissionId,
+    selectedCongressId,
+    setSelectedCongressId
   } = useSpeaker();
 
-  const { isPublishing, publishAndSyncOjs, addLog } = useOjs();
+  const { isPublishing, publishAndSyncOjs, updateAndSyncOjs, addLog } = useOjs();
+
+  const isEditMode = !!internalSubmissionId;
 
   // --- Selector de Congreso ---
   const [availableCongresses, setAvailableCongresses] = useState<PostgresCongress[]>([]);
-  const [selectedCongressId, setSelectedCongressId] = useState<string>('');
   const [isLoadingCongresses, setIsLoadingCongresses] = useState(true);
 
   useEffect(() => {
@@ -162,17 +167,41 @@ export const SpeakerPage: React.FC = () => {
       { key: 'video', file: videoFile, label: 'Video de Presentación' }
     ];
 
-    publishAndSyncOjs({
-      activeRole: 'ponente',
-      congressJson: congressJsonToSync,
-      submissionTitle,
-      submissionAbstract,
-      submissionKeywords,
-      contributors,
-      submissionCategory,
-      files: filesList,
-      onSuccessSpeaker: () => setSubmissionStatus('submitted')
-    });
+    if (isEditMode && internalSubmissionId) {
+      if (updateAndSyncOjs) {
+        updateAndSyncOjs({
+          activeRole: 'ponente',
+          internalId: internalSubmissionId,
+          selectedCongressId,
+          submissionTitle,
+          submissionKeywords,
+          contributors,
+          submissionCategory,
+          onSuccessSpeaker: () => {
+            alert('¡Los cambios de su ponencia han sido guardados con éxito!');
+            resetSpeakerForm();
+            setSelectedCongressId('');
+          }
+        });
+      }
+    } else {
+      publishAndSyncOjs({
+        activeRole: 'ponente',
+        congressJson: congressJsonToSync,
+        submissionTitle,
+        submissionAbstract,
+        submissionKeywords,
+        contributors,
+        submissionCategory,
+        files: filesList,
+        onSuccessSpeaker: () => {
+          setSubmissionStatus('submitted');
+          alert('¡Su ponencia ha sido enviada con éxito y sincronizada con OJS!');
+          resetSpeakerForm();
+          setSelectedCongressId('');
+        }
+      });
+    }
   };
 
   const renderUploadCard = (
@@ -489,7 +518,7 @@ export const SpeakerPage: React.FC = () => {
             </Badge>
           </div>
 
-          {submissionStatus === 'draft' && (
+          {(submissionStatus === 'draft' || isEditMode) && (
             <Button
               type="button"
               variant="accent"
@@ -497,7 +526,7 @@ export const SpeakerPage: React.FC = () => {
               onClick={handlePublishClick}
               isLoading={isPublishing}
             >
-              {isPublishing ? 'Enviando a OJS...' : 'Enviar y Sincronizar Ponencia'}
+              {isPublishing ? 'Procesando...' : isEditMode ? 'Guardar Cambios' : 'Enviar y Sincronizar Ponencia'}
             </Button>
           )}
         </div>

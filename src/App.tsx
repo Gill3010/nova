@@ -1,7 +1,7 @@
 import { Suspense, lazy, useState } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { CongressProvider } from './context/CongressContext';
-import { SpeakerProvider } from './context/SpeakerContext';
+import { CongressProvider, useCongress } from './context/CongressContext';
+import { SpeakerProvider, useSpeaker } from './context/SpeakerContext';
 import { OjsProvider } from './context/OjsContext';
 import { Header } from './components/layout/Header';
 import { OjsConfigCard } from './components/ojs/OjsConfigCard';
@@ -36,14 +36,22 @@ function DashboardContent() {
     return <AuthPage />;
   }
 
+  const { loadCongress } = useCongress();
+
   if (showDashboard) {
-    return <DashboardPage onClose={() => setShowDashboard(false)} />;
+    return <DashboardPage onClose={() => setShowDashboard(false)} onEditCongress={(congress) => {
+      loadCongress(congress);
+      setActiveTab('admin');
+      setShowDashboard(false);
+    }} />;
   }
 
   const isAdminOrOrg = user.rol === 'admin' || user.rol === 'organizer';
   
   // Si es speaker y estaba en 'admin' por defecto, forzar la vista a 'speaker_new' o 'speaker_history'
   const currentView = isAdminOrOrg ? activeTab : (activeTab === 'speaker_history' ? 'speaker_history' : 'speaker_new');
+
+  const { loadSubmission } = useSpeaker();
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 flex flex-col gap-6 w-full animate-in fade-in duration-300">
@@ -103,7 +111,14 @@ function DashboardContent() {
           >
             {currentView === 'admin' && <AdminPage />}
             {currentView === 'speaker_new' && <SpeakerPage />}
-            {currentView === 'speaker_history' && <MySubmissions />}
+            {currentView === 'speaker_history' && (
+              <MySubmissions 
+                onEditSubmission={(sub) => {
+                  loadSubmission(sub);
+                  setActiveTab('speaker_new');
+                }} 
+              />
+            )}
           </Suspense>
         </div>
 
@@ -119,16 +134,26 @@ function DashboardContent() {
   );
 }
 
+const ProtectedProviders: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user } = useAuth();
+  if (!user) return <>{children}</>;
+  return (
+    <CongressProvider key={`congress-${user.id}`}>
+      <SpeakerProvider key={`speaker-${user.id}`}>
+        <OjsProvider key={`ojs-${user.id}`}>
+          {children}
+        </OjsProvider>
+      </SpeakerProvider>
+    </CongressProvider>
+  );
+};
+
 function App() {
   return (
     <AuthProvider>
-      <CongressProvider>
-        <SpeakerProvider>
-          <OjsProvider>
-            <DashboardContent />
-          </OjsProvider>
-        </SpeakerProvider>
-      </CongressProvider>
+      <ProtectedProviders>
+        <DashboardContent />
+      </ProtectedProviders>
     </AuthProvider>
   );
 }
