@@ -1,4 +1,4 @@
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useState } from 'react';
 import { UserRoleProvider, useUserRole } from './context/UserRoleContext';
 import { CongressProvider } from './context/CongressContext';
 import { SpeakerProvider } from './context/SpeakerContext';
@@ -7,6 +7,7 @@ import { Header } from './components/layout/Header';
 import { RoleSwitcher } from './components/layout/RoleSwitcher';
 import { OjsConfigCard } from './components/ojs/OjsConfigCard';
 import { ConsoleLogs } from './components/layout/ConsoleLogs';
+import { DashboardPage } from './features/dashboard/DashboardPage';
 
 // Lazy load portal pages
 const AdminPage = lazy(() =>
@@ -24,11 +25,16 @@ const ReviewerPage = lazy(() =>
 
 function DashboardContent() {
   const { activeRole, setActiveRole } = useUserRole();
+  const [showDashboard, setShowDashboard] = useState(false);
+
+  if (showDashboard) {
+    return <DashboardPage onClose={() => setShowDashboard(false)} />;
+  }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-6 flex flex-col gap-6 w-full">
+    <div className="max-w-7xl mx-auto px-4 py-6 flex flex-col gap-6 w-full animate-in fade-in duration-300">
       {/* Cabecera */}
-      <Header />
+      <Header onOpenDashboard={() => setShowDashboard(true)} />
 
       {/* Selector de Rol Activo */}
       <RoleSwitcher activeRole={activeRole} setActiveRole={setActiveRole} />

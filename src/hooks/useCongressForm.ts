@@ -9,6 +9,7 @@ import {
 
 export function useCongressForm() {
   // Estado del congreso
+  const [internalId, setInternalId] = useState<number | undefined>(undefined);
   const [name, setName] = useState('I Congreso Internacional de Investigación Científica y Posgrado');
   const [description, setDescription] = useState('Evento académico orientado a la difusión de trabajos de investigación desarrollados por alumnos de maestría y doctorado.');
   const [date, setDate] = useState('2026-10-15');
@@ -168,6 +169,7 @@ export function useCongressForm() {
 
   const getCongressJson = (): Congress => {
     return {
+      id: internalId,
       name,
       description,
       date,
@@ -208,6 +210,8 @@ export function useCongressForm() {
     activeSuggestion,
     isLoadingSuggestions,
     autocompleteRef,
+    internalId,
+    setInternalId,
     handleVenueChange,
     handleVenueFocus,
     handleVenueKeyDown,

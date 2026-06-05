@@ -1,4 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { fetchDashboardData } from '../../services/dbApi';
+import type { PostgresCongress } from '../../services/dbApi';
 import { useSpeaker } from '../../context/SpeakerContext';
 import { useOjs } from '../../context/OjsContext';
 import { useCongress } from '../../context/CongressContext';
@@ -36,7 +38,25 @@ export const SpeakerPage: React.FC = () => {
   } = useSpeaker();
 
   const { isPublishing, publishAndSyncOjs, addLog } = useOjs();
-  const { getCongressJson } = useCongress();
+
+  // --- Selector de Congreso ---
+  const [availableCongresses, setAvailableCongresses] = useState<PostgresCongress[]>([]);
+  const [selectedCongressId, setSelectedCongressId] = useState<string>('');
+  const [isLoadingCongresses, setIsLoadingCongresses] = useState(true);
+
+  useEffect(() => {
+    const loadCongresses = async () => {
+      try {
+        const data = await fetchDashboardData();
+        setAvailableCongresses(data);
+      } catch (err) {
+        console.error('Error cargando congresos:', err);
+      } finally {
+        setIsLoadingCongresses(false);
+      }
+    };
+    loadCongresses();
+  }, []);
 
   // --- Colaboradores ---
   const updateContributor = (index: number, field: keyof Contributor, value: string) => {
@@ -112,6 +132,28 @@ export const SpeakerPage: React.FC = () => {
   };
 
   const handlePublishClick = () => {
+    if (!selectedCongressId) {
+      alert('Error: Debe seleccionar un Congreso al cual postular su trabajo.');
+      return;
+    }
+
+    const selectedDbCongress = availableCongresses.find(c => c.id.toString() === selectedCongressId);
+    if (!selectedDbCongress) return;
+
+    // Adaptamos el PostgresCongress a lo que espera publishAndSyncOjs
+    const congressJsonToSync = {
+      id: selectedDbCongress.id,
+      name: selectedDbCongress.nombre,
+      description: selectedDbCongress.descripcion,
+      date: selectedDbCongress.fecha_celebracion,
+      venue: selectedDbCongress.sede,
+      modality: selectedDbCongress.modalidad as any,
+      classroom: selectedDbCongress.aula_canal,
+      academicLevel: selectedDbCongress.nivel_academico as any,
+      researchLine: selectedDbCongress.linea_investigacion,
+      roles: []
+    };
+
     const filesList = [
       { key: 'audio', file: audioFile, label: 'Audio de Resumen' },
       { key: 'poster', file: posterFile, label: 'Póster Científico' },
@@ -122,7 +164,7 @@ export const SpeakerPage: React.FC = () => {
 
     publishAndSyncOjs({
       activeRole: 'ponente',
-      congressJson: getCongressJson(),
+      congressJson: congressJsonToSync,
       submissionTitle,
       submissionAbstract,
       submissionKeywords,
@@ -258,6 +300,23 @@ export const SpeakerPage: React.FC = () => {
       </div>
 
       <div className="flex flex-col gap-5">
+
+        {/* — Selector de Congreso de Destino — */}
+        <Select
+          id="target-congress"
+          label="Seleccione el Congreso de Destino"
+          value={selectedCongressId}
+          onChange={(e) => setSelectedCongressId(e.target.value)}
+        >
+          <option value="" disabled>
+            {isLoadingCongresses ? 'Cargando congresos disponibles...' : '-- Seleccione un congreso --'}
+          </option>
+          {availableCongresses.map(c => (
+            <option key={c.id} value={c.id}>
+              {c.nombre} ({new Date(c.fecha_celebracion).toLocaleDateString()})
+            </option>
+          ))}
+        </Select>
 
         {/* — Metadatos principales — */}
         <Input

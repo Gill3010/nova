@@ -26,7 +26,7 @@ export const OjsConfigCard: React.FC = () => {
   } = useOjs();
 
   const { activeRole } = useUserRole();
-  const { getCongressJson } = useCongress();
+  const { getCongressJson, setInternalId } = useCongress();
   const {
     submissionTitle,
     submissionCategory,
@@ -51,7 +51,10 @@ export const OjsConfigCard: React.FC = () => {
       congressJson: getCongressJson(),
       submissionTitle,
       submissionCategory,
-      files: filesList
+      files: filesList,
+      onSuccessAdmin: (internalId) => {
+        if (setInternalId) setInternalId(internalId);
+      }
     });
   };
 

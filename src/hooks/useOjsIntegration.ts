@@ -103,7 +103,8 @@ export function useOjsIntegration() {
     contributors,
     submissionCategory,
     files,
-    onSuccessSpeaker
+    onSuccessSpeaker,
+    onSuccessAdmin
   }: {
     activeRole: 'admin_org' | 'ponente' | 'asistente' | 'revisor_eval';
     congressJson: Congress;
@@ -114,6 +115,7 @@ export function useOjsIntegration() {
     submissionCategory: 'poster' | 'libro' | 'articulo';
     files: { key: string; file: FileInfo | null; label: string }[];
     onSuccessSpeaker?: () => void;
+    onSuccessAdmin?: (internalId: number) => void;
   }) => {
     if (isPublishing) return;
     setIsPublishing(true);
@@ -290,6 +292,36 @@ export function useOjsIntegration() {
         addLog('request', `POST /webhooks/submission-sync\nPayload:`, webhookPayload);
         addLog('response', `HTTP/1.1 200 OK\nWebhook registrado localmente.`);
 
+        // Paso 4.5: Guardar envío en PostgreSQL local
+        if (congressJson.id) {
+          try {
+            addLog('info', `Registrando envío en la base de datos local (PostgreSQL)...`);
+            const pgResponse = await fetch('http://localhost:3001/api/envios', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                congreso_id: congressJson.id,
+                ojs_submission_id: submissionId,
+                ojs_publication_id: publicationId,
+                categoria: submissionCategory,
+                autor_email: validContributors[0]?.email || 'N/A',
+                titulo_articulo: submissionTitle,
+                palabras_claves: submissionKeywords || '',
+                colaboradores: JSON.stringify(validContributors.map(c => `${c.givenName} ${c.familyName} (${c.email})`)),
+                revista_destino: selectedJournal.name
+              })
+            });
+            const pgData = await pgResponse.json();
+            if (pgData.success) {
+              addLog('success', `Envío registrado en PostgreSQL relacionado al Congreso ID ${congressJson.id}`);
+            }
+          } catch (pgErr: any) {
+            addLog('error', `No se pudo conectar a la API local de PostgreSQL: ${pgErr.message}`);
+          }
+        } else {
+           addLog('info', `Nota: Este congreso no tiene un ID local (no se guardó en Postgres previamente), omitiendo registro de envío local.`);
+        }
+
         addLog('success', `¡Ponencia "${submissionTitle.substring(0, 30)}..." sincronizada en tiempo real con OJS 3.4 en la revista "${selectedJournal.name}"!`);
         
         if (onSuccessSpeaker) {
@@ -380,6 +412,36 @@ export function useOjsIntegration() {
       addLog('info', `Registrando evento de sincronización...`);
       addLog('request', `POST /webhooks/congress-sync\nPayload:`, webhookPayload);
       addLog('response', `HTTP/1.1 200 OK\nEvento registrado.`);
+
+      // Paso 4: Guardar en PostgreSQL local
+      try {
+        addLog('info', `Registrando Congreso en base de datos local (PostgreSQL)...`);
+        const pgResponse = await fetch('http://localhost:3001/api/congresos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            nombre: congressJson.name,
+            descripcion: congressJson.description,
+            fecha_celebracion: congressJson.date,
+            sede: congressJson.venue,
+            modalidad: congressJson.modality,
+            nivel_academico: congressJson.academicLevel,
+            linea_investigacion: congressJson.researchLine,
+            aula_canal: congressJson.classroom
+          })
+        });
+        const pgData = await pgResponse.json();
+        if (pgData.success) {
+          addLog('success', `Congreso guardado en PostgreSQL con ID local: ${pgData.congreso.id}`);
+          if (onSuccessAdmin) {
+            onSuccessAdmin(pgData.congreso.id);
+          }
+        } else {
+          addLog('error', `Error al guardar en PostgreSQL: ${pgData.error}`);
+        }
+      } catch (pgErr: any) {
+        addLog('error', `No se pudo conectar a la API local de PostgreSQL: ${pgErr.message}`);
+      }
 
       addLog('success', `¡Congreso "${congressJson.name.substring(0, 40)}..." registrado con éxito en OJS!\n📌 Submission ID: ${submissionId} vinculado al Issue "${activeIssueTitle}" (ID: ${activeIssueId})\n✅ Visible en: ${selectedJournal.url}/submissions`);
 
