@@ -69,8 +69,8 @@ export const AuthPage: React.FC = () => {
   return (
     <Card className="w-full max-w-md p-8 animate-fade-in shadow-2xl">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 mb-4">
-            <Lock className="h-5 w-5" aria-hidden="true" />
+          <div className="inline-flex items-center justify-center mb-6">
+            <img src="/logo_nexus.jpg" alt="Nova Logo" className="h-16 object-contain rounded-xl shadow-sm" />
           </div>
           <h1 className="text-xl font-bold text-zinc-900 dark:text-white">
             {isLogin ? 'Iniciar Sesión' : 'Crear Cuenta'}

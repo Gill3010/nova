@@ -13,11 +13,9 @@ export const Header: React.FC<HeaderProps> = ({ onOpenDashboard }) => {
   return (
     <header className="flex justify-between items-center px-5 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-xs flex-wrap gap-4">
       <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2.5">
-          <span className="text-base font-bold text-zinc-900 dark:text-white tracking-tight">
-            Nova
-          </span>
-          <span className="hidden sm:inline-block h-4 w-px bg-zinc-200 dark:bg-zinc-700" aria-hidden="true" />
+          <div className="flex items-center gap-2.5">
+            <img src="/logo_nexus.jpg" alt="Nova Logo" className="h-8 object-contain rounded" />
+            <span className="hidden sm:inline-block h-4 w-px bg-zinc-200 dark:bg-zinc-700" aria-hidden="true" />
           <span className="hidden sm:inline-block text-xs text-zinc-500 dark:text-zinc-400">
             Gestión de Congresos
           </span>
