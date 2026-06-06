@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Lock } from 'lucide-react';
+
 import { useAuth } from '../../context/AuthContext';
 import type { Role } from '../../context/AuthContext';
 import { Card } from '../../components/common/Card';
