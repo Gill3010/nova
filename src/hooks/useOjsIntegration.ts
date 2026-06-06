@@ -209,7 +209,7 @@ export function useOjsIntegration() {
         if (congressJson.id) {
           try {
             const token = getToken();
-            const pgRes = await fetch('http://localhost:3001/api/envios', {
+            const pgRes = await fetch(import.meta.env.PROD ? '/api/envios' : 'http://localhost:3001/api/envios', {
               method: 'POST',
               headers: apiHeaders(token),
               body: JSON.stringify({
@@ -290,7 +290,7 @@ export function useOjsIntegration() {
       // Step 3: Save to local DB
       try {
         const token = getToken();
-        const pgRes = await fetch('http://localhost:3001/api/congresos', {
+        const pgRes = await fetch(import.meta.env.PROD ? '/api/congresos' : 'http://localhost:3001/api/congresos', {
           method: 'POST',
           headers: apiHeaders(token),
           body: JSON.stringify({
@@ -366,7 +366,7 @@ export function useOjsIntegration() {
           ...(selectedCongressId && { congreso_id: parseInt(selectedCongressId, 10) }),
         };
 
-        const res = await fetch(`http://localhost:3001/api/envios/${internalId}`, {
+        const res = await fetch(import.meta.env.PROD ? `/api/envios/${internalId}` : `http://localhost:3001/api/envios/${internalId}`, {
           method: 'PUT',
           headers: apiHeaders(token),
           body: JSON.stringify(payload),
@@ -399,7 +399,7 @@ export function useOjsIntegration() {
           ojs_journal_path: selectedJournal?.urlPath || null,
         };
 
-        const res = await fetch(`http://localhost:3001/api/congresos/${internalId}`, {
+        const res = await fetch(import.meta.env.PROD ? `/api/congresos/${internalId}` : `http://localhost:3001/api/congresos/${internalId}`, {
           method: 'PUT',
           headers: apiHeaders(token),
           body: JSON.stringify(payload),

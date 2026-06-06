@@ -27,7 +27,7 @@ export interface PostgresCongress {
   envios: PostgresEnvio[];
 }
 
-const API_BASE_URL = 'http://localhost:3001/api';
+const API_BASE_URL = import.meta.env.PROD ? '/api' : 'http://localhost:3001/api';
 
 const getHeaders = () => {
   const token = localStorage.getItem('nova_token');

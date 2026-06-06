@@ -38,7 +38,8 @@ export const AuthPage: React.FC = () => {
       : { email, password, nombre, rol };
 
     try {
-      const response = await fetch(`http://localhost:3001${endpoint}`, {
+      const API_URL = import.meta.env.PROD ? endpoint : `http://localhost:3001${endpoint}`;
+      const response = await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
