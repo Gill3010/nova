@@ -1,29 +1,52 @@
--- Script para crear la estructura de la base de datos PostgreSQL
+-- Script para crear la estructura de la base de datos PostgreSQL en AWS RDS
 
--- 1. Crear la base de datos (puedes ejecutar esto o usar una existente)
+-- 1. Crear la base de datos (ejecutar por separado si es necesario)
 -- CREATE DATABASE nova_db;
 
--- 2. Crear la tabla de congresos
-CREATE TABLE IF NOT EXISTS congresos (
+-- Conectarse a la base de datos antes de ejecutar lo siguiente:
+-- \c nova_db;
+
+-- 2. Crear la tabla de usuarios
+CREATE TABLE IF NOT EXISTS usuarios (
     id SERIAL PRIMARY KEY,
     nombre VARCHAR(255) NOT NULL,
-    descripcion TEXT,
-    fecha_celebracion DATE,
-    sede VARCHAR(255),
-    modalidad VARCHAR(50),
-    nivel_academico VARCHAR(50),
-    linea_investigacion VARCHAR(255),
-    aula_canal VARCHAR(255),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    rol VARCHAR(50) NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- 3. Crear la tabla de envíos OJS relacionados al congreso
+-- 3. Crear la tabla de congresos
+CREATE TABLE IF NOT EXISTS congresos (
+    id SERIAL PRIMARY KEY,
+    creador_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
+    nombre VARCHAR(255) NOT NULL,
+    descripcion TEXT,
+    fecha_celebracion VARCHAR(100), -- Almacenado como texto flexible para compatibilidad con la lógica actual
+    sede VARCHAR(255),
+    modalidad VARCHAR(100),
+    nivel_academico VARCHAR(100),
+    linea_investigacion VARCHAR(255),
+    aula_canal VARCHAR(255),
+    ojs_url TEXT,
+    ojs_api_key TEXT,
+    ojs_journal_path VARCHAR(255),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 4. Crear la tabla de envíos OJS relacionados a los congresos
 CREATE TABLE IF NOT EXISTS envios_ojs (
     id SERIAL PRIMARY KEY,
     congreso_id INTEGER REFERENCES congresos(id) ON DELETE CASCADE,
+    usuario_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
     ojs_submission_id INTEGER NOT NULL,
     ojs_publication_id INTEGER,
-    categoria VARCHAR(50),
+    titulo_articulo TEXT,
+    palabras_claves TEXT,
+    colaboradores TEXT, -- Almacena JSON string o texto según sea enviado por el frontend
+    revista_destino VARCHAR(255),
+    categoria VARCHAR(100),
     autor_email VARCHAR(255),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );

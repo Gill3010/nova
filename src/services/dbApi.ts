@@ -141,3 +141,61 @@ export const fetchMySubmissions = async (): Promise<PostgresMySubmission[]> => {
     throw new Error('No se pudo conectar con el servidor local');
   }
 };
+
+export interface PostgresUser {
+  id: number;
+  nombre: string;
+  email: string;
+  rol: 'admin' | 'organizer' | 'speaker';
+  is_active: boolean;
+  created_at: string;
+}
+
+export const fetchUsers = async (): Promise<PostgresUser[]> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/usuarios`, {
+      headers: getHeaders()
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    if (data.success) {
+      return data.data;
+    }
+    throw new Error(data.error || 'Error al obtener usuarios');
+  } catch (error: any) {
+    console.error('Error fetching users:', error);
+    throw new Error('No se pudo conectar con el servidor local');
+  }
+};
+
+export const updateUserRole = async (id: number, rol: string): Promise<any> => {
+  const response = await fetch(`${API_BASE_URL}/usuarios/${id}/rol`, {
+    method: 'PUT',
+    headers: getHeaders(),
+    body: JSON.stringify({ rol })
+  });
+  
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Error al actualizar el rol');
+  }
+  
+  return response.json();
+};
+
+export const toggleUserStatus = async (id: number, isActive: boolean): Promise<any> => {
+  const response = await fetch(`${API_BASE_URL}/usuarios/${id}/status`, {
+    method: 'PUT',
+    headers: getHeaders(),
+    body: JSON.stringify({ is_active: isActive })
+  });
+  
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Error al actualizar el estado del usuario');
+  }
+  
+  return response.json();
+};

@@ -23,13 +23,13 @@ router.get('/me', verifyToken, (req, res) => {
       c.nombre AS congreso_nombre
     FROM envios_ojs e
     JOIN congresos c ON e.congreso_id = c.id
-    WHERE e.usuario_id = ?
+    WHERE e.usuario_id = $1
     ORDER BY e.created_at DESC
   `;
 
   db.all(query, [usuario_id], (err, rows) => {
     if (err) {
-      logger.error('Error al obtener los envíos del usuario en SQLite', { error: err.message, usuario_id });
+      logger.error('Error al obtener los envíos del usuario en BD', { error: err.message, usuario_id });
       return res.status(500).json({ success: false, error: 'Error interno del servidor' });
     }
     res.status(200).json({ success: true, data: rows });
@@ -68,7 +68,7 @@ router.post('/', verifyToken, (req, res) => {
     INSERT INTO envios_ojs 
       (congreso_id, usuario_id, ojs_submission_id, ojs_publication_id, categoria, autor_email, titulo_articulo, palabras_claves, colaboradores, revista_destino) 
     VALUES 
-      (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
   `;
   const values = [
     congreso_id,
@@ -85,13 +85,13 @@ router.post('/', verifyToken, (req, res) => {
   
   db.run(query, values, function(err) {
     if (err) {
-      logger.error('Error insertando envío OJS en SQLite', { error: err.message, usuario_id });
+      logger.error('Error insertando envío OJS en BD', { error: err.message, usuario_id });
       return res.status(500).json({ success: false, error: 'Error interno del servidor al registrar el envío' });
     }
     const insertedId = this.lastID;
     logger.info('Envío de OJS registrado con éxito', { insertedId, ojs_submission_id, usuario_id });
     
-    db.get(`SELECT * FROM envios_ojs WHERE id = ?`, [insertedId], (err, row) => {
+    db.get(`SELECT * FROM envios_ojs WHERE id = $1`, [insertedId], (err, row) => {
       res.status(201).json({ success: true, envio: row });
     });
   });
@@ -112,7 +112,7 @@ router.put('/:id', verifyToken, (req, res) => {
 
   let query = `
     UPDATE envios_ojs
-    SET titulo_articulo = ?, palabras_claves = ?, colaboradores = ?, categoria = ?
+    SET titulo_articulo = $1, palabras_claves = $2, colaboradores = $3, categoria = $4
   `;
   let values = [
     titulo_articulo.trim(),
@@ -120,23 +120,24 @@ router.put('/:id', verifyToken, (req, res) => {
     colaboradores,
     categoria
   ];
+  let counter = 5;
 
   if (congreso_id) {
-    query += `, congreso_id = ?`;
+    query += `, congreso_id = $${counter++}`;
     values.push(congreso_id);
   }
 
-  query += ` WHERE id = ?`;
+  query += ` WHERE id = $${counter++}`;
   values.push(envioId);
 
   if (rol !== 'admin') {
-    query += ` AND usuario_id = ?`;
+    query += ` AND usuario_id = $${counter++}`;
     values.push(userId);
   }
 
   db.run(query, values, function(err) {
     if (err) {
-      logger.error('Error actualizando envío OJS en SQLite', { error: err.message, envioId, userId });
+      logger.error('Error actualizando envío OJS en BD', { error: err.message, envioId, userId });
       return res.status(500).json({ success: false, error: 'Error interno del servidor al actualizar el envío' });
     }
     if (this.changes === 0) {

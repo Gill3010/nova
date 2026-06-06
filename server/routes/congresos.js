@@ -13,7 +13,7 @@ router.get('/', verifyToken, (req, res) => {
   let queryParams = [];
 
   if (rol !== 'admin' && (scope === 'mine' || (rol === 'organizer' && scope !== 'all'))) {
-    whereClause = 'WHERE c.creador_id = ?';
+    whereClause = 'WHERE c.creador_id = $1';
     queryParams.push(id);
   }
 
@@ -22,8 +22,8 @@ router.get('/', verifyToken, (req, res) => {
       c.*,
       COALESCE(
         (
-          SELECT json_group_array(
-            json_object(
+          SELECT json_agg(
+            json_build_object(
               'id', e.id,
               'ojs_submission_id', e.ojs_submission_id,
               'titulo_articulo', e.titulo_articulo,
@@ -37,7 +37,7 @@ router.get('/', verifyToken, (req, res) => {
           )
           FROM envios_ojs e WHERE e.congreso_id = c.id
         ),
-        '[]'
+        '[]'::json
       ) as envios
     FROM congresos c
     ${whereClause}
@@ -46,19 +46,26 @@ router.get('/', verifyToken, (req, res) => {
   
   db.all(query, queryParams, (err, rows) => {
     if (err) {
-      logger.error('Error consultando congresos en SQLite', { error: err.message, userId: id });
+      logger.error('Error consultando congresos en BD', { error: err.message, userId: id });
       return res.status(500).json({ success: false, error: 'Error interno al consultar la base de datos' });
     }
     
     const formattedRows = rows.map(row => {
       let enviosArray = [];
       try {
-        if (row.envios && row.envios !== '[]') {
-          const parsed = JSON.parse(row.envios);
-          enviosArray = parsed.filter(e => e.id !== null);
+        if (row.envios) {
+          // Si es string (comportamiento legacy de SQLite por si acaso se usa), lo parseamos
+          if (typeof row.envios === 'string' && row.envios !== '[]') {
+            const parsed = JSON.parse(row.envios);
+            enviosArray = parsed.filter(e => e.id !== null);
+          } 
+          // Si es arreglo (comportamiento de PostgreSQL pg)
+          else if (Array.isArray(row.envios)) {
+            enviosArray = row.envios.filter(e => e.id !== null);
+          }
         }
       } catch (e) {
-        logger.warn('Error al parsear envíos JSON desde SQLite', { rowId: row.id, error: e.message });
+        logger.warn('Error al procesar envíos JSON desde BD', { rowId: row.id, error: e.message });
       }
       return { ...row, envios: enviosArray };
     });
@@ -100,7 +107,7 @@ router.post('/', verifyToken, (req, res) => {
     INSERT INTO congresos 
       (creador_id, nombre, descripcion, fecha_celebracion, sede, modalidad, nivel_academico, linea_investigacion, aula_canal, ojs_url, ojs_api_key, ojs_journal_path) 
     VALUES 
-      (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
   `;
   const values = [
     creador_id,
@@ -119,14 +126,14 @@ router.post('/', verifyToken, (req, res) => {
   
   db.run(query, values, function(err) {
     if (err) {
-      logger.error('Error insertando congreso en SQLite', { error: err.message, creador_id });
+      logger.error('Error insertando congreso en BD', { error: err.message, creador_id });
       return res.status(500).json({ success: false, error: 'Error interno del servidor al guardar el congreso' });
     }
     
     const insertedId = this.lastID;
     logger.info('Congreso registrado con éxito', { insertedId, creador_id });
     
-    db.get(`SELECT * FROM congresos WHERE id = ?`, [insertedId], (err, row) => {
+    db.get(`SELECT * FROM congresos WHERE id = $1`, [insertedId], (err, row) => {
       if (err) {
         return res.status(500).json({ success: false, error: 'Congreso guardado pero hubo error al recuperarlo' });
       }
@@ -154,10 +161,9 @@ router.put('/:id', verifyToken, (req, res) => {
 
   let query = `
     UPDATE congresos 
-    SET nombre = ?, descripcion = ?, fecha_celebracion = ?, sede = ?, 
-        modalidad = ?, nivel_academico = ?, linea_investigacion = ?, aula_canal = ?,
-        ojs_url = ?, ojs_api_key = ?, ojs_journal_path = ?
-    WHERE id = ?
+    SET nombre = $1, descripcion = $2, fecha_celebracion = $3, sede = $4, 
+        modalidad = $5, nivel_academico = $6, linea_investigacion = $7, aula_canal = $8,
+        ojs_url = $9, ojs_api_key = $10, ojs_journal_path = $11
   `;
   let values = [
     nombre.trim(),
@@ -170,18 +176,22 @@ router.put('/:id', verifyToken, (req, res) => {
     aula_canal ? aula_canal.trim() : null,
     ojs_url ? ojs_url.trim() : null,
     ojs_api_key ? ojs_api_key.trim() : null,
-    ojs_journal_path ? ojs_journal_path.trim() : null,
-    congressId
+    ojs_journal_path ? ojs_journal_path.trim() : null
   ];
+  let counter = 12;
 
   if (rol !== 'admin') {
-    query += ` AND creador_id = ?`;
+    query += ` WHERE id = $${counter++} AND creador_id = $${counter++}`;
+    values.push(congressId);
     values.push(userId);
+  } else {
+    query += ` WHERE id = $${counter++}`;
+    values.push(congressId);
   }
 
   db.run(query, values, function(err) {
     if (err) {
-      logger.error('Error actualizando congreso en SQLite', { error: err.message, congressId, userId });
+      logger.error('Error actualizando congreso en BD', { error: err.message, congressId, userId });
       return res.status(500).json({ success: false, error: 'Error interno del servidor al actualizar' });
     }
     if (this.changes === 0) {

@@ -1,90 +1,74 @@
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
+const { Pool } = require('pg');
+const logger = require('../utils/logger');
+require('dotenv').config();
 
-const dbPath = path.resolve(__dirname, '../nova.sqlite');
-const db = new sqlite3.Database(dbPath, (err) => {
+// Determine database user: use DB_USER from env, or the current system user as default for local Homebrew Postgres
+const dbUser = process.env.DB_USER || process.env.USER || 'postgres';
+
+const pool = new Pool({
+  host: process.env.DB_HOST || 'localhost',
+  user: dbUser,
+  password: process.env.DB_PASSWORD || '',
+  database: process.env.DB_DATABASE || 'nova_db',
+  port: parseInt(process.env.DB_PORT || '5432', 10)
+});
+
+pool.connect((err, client, release) => {
   if (err) {
-    console.error(JSON.stringify({ level: 'error', message: `Error al abrir la base de datos SQLite: ${err.message}` }));
+    logger.error('Error conectando a PostgreSQL:', { error: err.message });
   } else {
-    console.log(JSON.stringify({ level: 'info', message: `Conectado exitosamente a la base de datos SQLite en: ${dbPath}` }));
-    initDB();
+    logger.info('Conectado exitosamente a la base de datos PostgreSQL local.');
+    release();
   }
 });
 
-const initDB = () => {
-  db.serialize(() => {
-    // Tabla: usuarios
-    db.run(`
-      CREATE TABLE IF NOT EXISTS usuarios (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          nombre TEXT NOT NULL,
-          email TEXT UNIQUE NOT NULL,
-          password_hash TEXT NOT NULL,
-          rol TEXT NOT NULL,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
-    // Tabla: congresos
-    db.run(`
-      CREATE TABLE IF NOT EXISTS congresos (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          creador_id INTEGER,
-          nombre TEXT NOT NULL,
-          descripcion TEXT,
-          fecha_celebracion TEXT,
-          sede TEXT,
-          modalidad TEXT,
-          nivel_academico TEXT,
-          linea_investigacion TEXT,
-          aula_canal TEXT,
-          ojs_url TEXT,
-          ojs_api_key TEXT,
-          ojs_journal_path TEXT,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          FOREIGN KEY (creador_id) REFERENCES usuarios (id) ON DELETE SET NULL
-      )
-    `);
-
-    // Ejecutar migraciones para agregar columnas si la base de datos ya existía
-    db.run("ALTER TABLE congresos ADD COLUMN ojs_url TEXT", (err) => {
-      if (err && !err.message.includes('duplicate column name')) {
-        console.error(JSON.stringify({ level: 'error', message: `Error agregando ojs_url: ${err.message}` }));
-      }
+// Adaptador para replicar la API de sqlite3 pero ejecutando en PostgreSQL
+const db = {
+  // Ejecuta una consulta simple
+  query: (text, params, callback) => {
+    return pool.query(text, params, callback);
+  },
+  
+  // Equivale a db.all en SQLite (retorna un arreglo de filas)
+  all: (text, params, callback) => {
+    pool.query(text, params, (err, res) => {
+      callback(err, res ? res.rows : null);
     });
-    db.run("ALTER TABLE congresos ADD COLUMN ojs_api_key TEXT", (err) => {
-      if (err && !err.message.includes('duplicate column name')) {
-        console.error(JSON.stringify({ level: 'error', message: `Error agregando ojs_api_key: ${err.message}` }));
-      }
+  },
+  
+  // Equivale a db.get en SQLite (retorna solo la primera fila)
+  get: (text, params, callback) => {
+    pool.query(text, params, (err, res) => {
+      callback(err, res ? res.rows[0] : null);
     });
-    db.run("ALTER TABLE congresos ADD COLUMN ojs_journal_path TEXT", (err) => {
-      if (err && !err.message.includes('duplicate column name')) {
-        console.error(JSON.stringify({ level: 'error', message: `Error agregando ojs_journal_path: ${err.message}` }));
-      }
-    });
-
-    // Tabla: envios_ojs
-    db.run(`
-      CREATE TABLE IF NOT EXISTS envios_ojs (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          congreso_id INTEGER,
-          usuario_id INTEGER,
-          ojs_submission_id INTEGER NOT NULL,
-          ojs_publication_id INTEGER,
-          titulo_articulo TEXT,
-          palabras_claves TEXT,
-          colaboradores TEXT,
-          revista_destino TEXT,
-          categoria TEXT,
-          autor_email TEXT,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          FOREIGN KEY (congreso_id) REFERENCES congresos (id) ON DELETE CASCADE,
-          FOREIGN KEY (usuario_id) REFERENCES usuarios (id) ON DELETE SET NULL
-      )
-    `);
+  },
+  
+  // Equivale a db.run en SQLite
+  run: function (text, params, callback) {
+    let queryText = text;
+    const isInsert = text.trim().toUpperCase().startsWith('INSERT');
     
-    console.log(JSON.stringify({ level: 'info', message: 'Tablas inicializadas correctamente (o ya existían).' }));
-  });
+    // Auto-agregar RETURNING id si es un INSERT para imitar el this.lastID
+    if (isInsert && !text.toUpperCase().includes('RETURNING')) {
+      queryText += ' RETURNING id';
+    }
+
+    pool.query(queryText, params, function (err, res) {
+      if (err) {
+        return callback(err);
+      }
+      
+      const context = {
+        lastID: isInsert && res.rows && res.rows.length > 0 ? res.rows[0].id : null,
+        changes: res ? res.rowCount : 0
+      };
+      
+      // Llamamos al callback simulando el contexto `this` de SQLite
+      if (callback) {
+        callback.call(context, null);
+      }
+    });
+  }
 };
 
 module.exports = db;

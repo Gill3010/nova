@@ -14,6 +14,8 @@ export const AppLayout: React.FC = () => {
     () => user?.rol === 'admin' || user?.rol === 'organizer',
     [user?.rol]
   );
+  
+  const isAdmin = user?.rol === 'admin';
 
   if (isLoading) {
     return (
@@ -28,7 +30,7 @@ export const AppLayout: React.FC = () => {
     return <Navigate to="/login" replace />;
   }
 
-  const isRoutingAdmin = location.pathname === '/admin';
+  const isRoutingAdmin = location.pathname === '/admin' || location.pathname === '/users';
 
   const handleOpenDashboard = () => {
     navigate('/dashboard');
@@ -71,7 +73,23 @@ export const AppLayout: React.FC = () => {
                   }`
                 }
               >
-                Gestión de Congresos
+                Congresos
+              </NavLink>
+            )}
+            {isAdmin && (
+              <NavLink
+                to="/users"
+                role="tab"
+                id="tab-users"
+                className={({ isActive }) =>
+                  `px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 ${
+                    isActive
+                      ? 'border-zinc-900 text-zinc-900 dark:border-zinc-100 dark:text-zinc-100'
+                      : 'border-transparent text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-300'
+                  }`
+                }
+              >
+                Usuarios
               </NavLink>
             )}
             <NavLink

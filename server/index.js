@@ -47,11 +47,13 @@ app.use((req, res, next) => {
 const authRoutes = require('./routes/auth');
 const congresosRoutes = require('./routes/congresos');
 const enviosRoutes = require('./routes/envios');
+const usuariosRoutes = require('./routes/usuarios');
 
 // Registrar rutas
 app.use('/api/auth', authRoutes);
 app.use('/api/congresos', congresosRoutes);
 app.use('/api/envios', enviosRoutes);
+app.use('/api/usuarios', usuariosRoutes);
 
 // Endpoint de salud
 app.get('/api/ping', (req, res) => {

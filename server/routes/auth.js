@@ -43,7 +43,7 @@ router.post('/register', async (req, res) => {
     const saltRounds = 10;
     const passwordHash = await bcrypt.hash(password, saltRounds);
 
-    const query = `INSERT INTO usuarios (nombre, email, password_hash, rol) VALUES (?, ?, ?, ?)`;
+    const query = `INSERT INTO usuarios (nombre, email, password_hash, rol) VALUES ($1, $2, $3, $4)`;
     db.run(query, [nombre.trim(), email.trim().toLowerCase(), passwordHash, rol], function (err) {
       if (err) {
         logger.error('Error insertando usuario en SQLite', { email, error: err.message });
@@ -71,7 +71,7 @@ router.post('/login', (req, res) => {
   }
 
   const normalizedEmail = email.trim().toLowerCase();
-  const query = `SELECT * FROM usuarios WHERE email = ?`;
+  const query = `SELECT * FROM usuarios WHERE email = $1`;
   
   db.get(query, [normalizedEmail], async (err, user) => {
     if (err) {
@@ -82,6 +82,11 @@ router.post('/login', (req, res) => {
     if (!user) {
       logger.warn('Login fallido: usuario no registrado', { email: normalizedEmail });
       return res.status(401).json({ error: 'Credenciales inválidas' });
+    }
+
+    if (user.is_active === false) {
+      logger.warn('Login fallido: usuario inactivo', { email: normalizedEmail });
+      return res.status(403).json({ error: 'Tu cuenta ha sido desactivada. Contacta al administrador.' });
     }
 
     try {

@@ -18,6 +18,9 @@ const SpeakerPage = lazy(() =>
 const MySubmissions = lazy(() =>
   import('../features/speaker/MySubmissions').then((m) => ({ default: m.MySubmissions }))
 );
+const UsersPage = lazy(() =>
+  import('../features/users/UsersPage').then((m) => ({ default: m.UsersPage }))
+);
 
 // Fallback skeleton loader
 const RouteSkeleton = () => (
@@ -116,6 +119,14 @@ export const router = createBrowserRouter([
         element: (
           <Suspense fallback={<RouteSkeleton />}>
             <AdminPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'users',
+        element: (
+          <Suspense fallback={<RouteSkeleton />}>
+            <UsersPage />
           </Suspense>
         ),
       },
