@@ -56,7 +56,7 @@ export const fetchDashboardData = async (scope?: 'all' | 'mine'): Promise<Postgr
     throw new Error(data.error || 'Error al obtener datos');
   } catch (error: any) {
     console.error('Error fetching dashboard data:', error);
-    throw new Error('No se pudo conectar con el servidor local Node.js (Puerto 3001). Asegúrate de que está corriendo.');
+    throw error;
   }
 };
 
@@ -142,7 +142,7 @@ export const fetchMySubmissions = async (): Promise<PostgresMySubmission[]> => {
     throw new Error(data.error || 'Error al obtener envíos');
   } catch (error: any) {
     console.error('Error fetching my submissions:', error);
-    throw new Error('No se pudo conectar con el servidor local');
+    throw error;
   }
 };
 
@@ -170,7 +170,7 @@ export const fetchUsers = async (): Promise<PostgresUser[]> => {
     throw new Error(data.error || 'Error al obtener usuarios');
   } catch (error: any) {
     console.error('Error fetching users:', error);
-    throw new Error('No se pudo conectar con el servidor local');
+    throw error;
   }
 };
 
@@ -215,7 +215,7 @@ export const fetchEspacios = async (): Promise<any[]> => {
     return await response.json();
   } catch (error: any) {
     console.error('Error fetching espacios:', error);
-    throw new Error('No se pudo conectar con el servidor para obtener los espacios');
+    throw error;
   }
 };
 
