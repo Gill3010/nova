@@ -1,7 +1,0 @@
-{
-  "locale": "es",
-  "publication": {
-    "title": { "es": "Test Submission sin Section ID" },
-    "abstract": { "es": "Prueba para ver si sectionId es opcional" }
-  }
-}
