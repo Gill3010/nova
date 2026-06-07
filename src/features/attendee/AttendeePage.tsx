@@ -160,11 +160,11 @@ export const AttendeePage: React.FC = () => {
           </div>
 
           {/* Sede Principal */}
-          <div className="flex gap-3 items-start p-3 bg-slate-50/50 dark:bg-slate-900/10 rounded-xl border border-slate-100 dark:border-slate-800/60">
+          <div className="flex gap-3 items-start p-3 bg-slate-50/50 dark:bg-slate-900/10 rounded-xl border border-slate-100 dark:border-slate-800/60 min-w-0">
             <MapPin className="h-5 w-5 text-indigo-500 mt-0.5 shrink-0" />
-            <div className="flex flex-col">
+            <div className="flex flex-col min-w-0 flex-1">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Sede Principal</span>
-              <span className="text-sm font-semibold text-slate-850 dark:text-slate-200 truncate" title={venue}>
+              <span className="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate" title={venue}>
                 {venue || '-'}
               </span>
             </div>
