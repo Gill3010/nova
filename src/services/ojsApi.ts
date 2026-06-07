@@ -302,3 +302,54 @@ export const addContributor = async (
 
   return responseData;
 };
+
+export const fetchSubmission = async (
+  ojsUrl: string,
+  apiKey: string,
+  journalPath: string,
+  submissionId: number
+): Promise<any> => {
+  const portalUrl = getPortalBaseUrl(ojsUrl);
+  const targetUrl = `/ojs-api/index.php/${journalPath}/api/v1/submissions/${submissionId}`;
+  const headers = getHeaders(apiKey, portalUrl);
+
+  const response = await fetch(targetUrl, {
+    method: 'GET',
+    headers
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP Error: ${response.status} ${response.statusText}`);
+  }
+
+  return response.json();
+};
+
+export const deleteContributor = async (
+  ojsUrl: string,
+  apiKey: string,
+  journalPath: string,
+  submissionId: number,
+  publicationId: number,
+  contributorId: number
+): Promise<any> => {
+  const portalUrl = getPortalBaseUrl(ojsUrl);
+  const targetUrl = `/ojs-api/index.php/${journalPath}/api/v1/submissions/${submissionId}/publications/${publicationId}/contributors/${contributorId}`;
+  const headers = getHeaders(apiKey, portalUrl);
+
+  const response = await fetch(targetUrl, {
+    method: 'DELETE',
+    headers
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP Error: ${response.status} ${response.statusText}`);
+  }
+
+  const responseText = await response.text();
+  try {
+    return JSON.parse(responseText);
+  } catch {
+    return responseText;
+  }
+};

@@ -33,7 +33,7 @@ router.post('/register', async (req, res) => {
   }
 
   // Validación de roles permitidos
-  const rolesPermitidos = ['speaker', 'organizer', 'admin'];
+  const rolesPermitidos = ['speaker', 'organizer', 'admin', 'attendee'];
   if (!rolesPermitidos.includes(rol)) {
     logger.warn('Registro fallido: rol no permitido', { email, rol });
     return res.status(400).json({ error: 'El rol especificado no es válido' });

@@ -243,7 +243,7 @@ export function useOjsIntegration() {
     }
 
     // ==================== ADMIN FLOW ====================
-    addLog('info', `Registrando congreso en "${currentJournal.name}"...`);
+    addLog('info', `Validando conexión a OJS e ingresando datos locales para "${currentJournal.name}"...`);
 
     if (congressJson.roles.length === 0) {
       addLog('error', 'Error: Debe seleccionar al menos un rol de usuario.');
@@ -252,42 +252,7 @@ export function useOjsIntegration() {
     }
 
     try {
-      // Step 1: Get active issue
-      const issuesData = await ojsApi.fetchIssues(ojsUrl, ojsApiKey, currentJournal.urlPath);
-      addLog('response', 'HTTP/1.1 200 OK', issuesData);
-      const activeIssue = issuesData?.items?.[issuesData.items.length - 1];
-      const activeIssueId = activeIssue?.id ?? 6;
-      const activeIssueTitle = activeIssue?.title?.es ?? activeIssue?.title?.es_ES ?? `Número ${activeIssueId}`;
-      addLog('success', `Issue activo: "${activeIssueTitle}" (ID: ${activeIssueId})`);
-
-      // Step 1.5: Get section
-      let sectionId = 1;
-      try {
-        sectionId = await ojsApi.fetchSectionId(ojsUrl, ojsApiKey, currentJournal.urlPath);
-      } catch { /* use fallback */ }
-
-      // Step 2: Create submission
-      const description = `${congressJson.description}\n\nLínea: ${congressJson.researchLine}\nSede: ${congressJson.venue}\nFecha: ${congressJson.date}`;
-      const submissionPayload = {
-        locale,
-        sectionId,
-        publication: { title: { [locale]: congressJson.name }, abstract: { [locale]: description } },
-      };
-      addLog('request', `POST /api/v1/submissions`, submissionPayload);
-      const subData = await ojsApi.createSubmission(ojsUrl, ojsApiKey, currentJournal.urlPath, submissionPayload);
-      addLog('response', 'HTTP/1.1 200 OK', subData);
-
-      const submissionId: number = subData.id;
-      const publicationId: number = subData.currentPublicationId ?? subData.publications?.[0]?.id;
-      addLog('success', `Congreso registrado en OJS. Submission ID: ${submissionId}`);
-
-      // Step 2.5: Update publication metadata
-      const updatePayload = { title: { [locale]: congressJson.name }, abstract: { [locale]: description } };
-      addLog('request', `PUT /api/v1/submissions/${submissionId}/publications/${publicationId}`, updatePayload);
-      const updatedPub = await ojsApi.updatePublication(ojsUrl, ojsApiKey, currentJournal.urlPath, submissionId, publicationId, updatePayload);
-      addLog('response', 'HTTP/1.1 200 OK', updatedPub);
-
-      // Step 3: Save to local DB
+      // Guardar en BD local (sin crear postulación en OJS)
       try {
         const token = getToken();
         const pgRes = await fetch(import.meta.env.PROD ? '/api/congresos' : 'http://localhost:3001/api/congresos', {
@@ -297,6 +262,7 @@ export function useOjsIntegration() {
             nombre: congressJson.name,
             descripcion: congressJson.description,
             fecha_celebracion: congressJson.date,
+            fecha_finalizacion: congressJson.fecha_finalizacion || null,
             sede: congressJson.venue,
             modalidad: congressJson.modality,
             nivel_academico: congressJson.academicLevel,
@@ -305,6 +271,8 @@ export function useOjsIntegration() {
             ojs_url: ojsUrl,
             ojs_api_key: ojsApiKey,
             ojs_journal_path: currentJournal.urlPath,
+            ojs_submission_id: null,
+            ojs_publication_id: null,
           }),
         });
         const pgData = await pgRes.json();
@@ -318,10 +286,10 @@ export function useOjsIntegration() {
         addLog('error', `No se pudo conectar a la API local: ${err.message}`);
       }
 
-      addLog('success', `¡"${congressJson.name.substring(0, 40)}..." registrado en OJS!\n📌 Submission ID: ${submissionId} → Issue "${activeIssueTitle}"`);
+      addLog('success', `¡Congreso "${congressJson.name.substring(0, 40)}..." registrado exitosamente en Nova (Conexión OJS verificada)!`);
     } catch (err: any) {
       const msg = err.data && typeof err.data === 'object' ? JSON.stringify(err.data) : (err.message ?? err);
-      addLog('error', `Error en publicación: ${msg}`);
+      addLog('error', `Error en validación/guardado: ${msg}`);
     } finally {
       setIsPublishing(false);
     }
@@ -331,9 +299,12 @@ export function useOjsIntegration() {
   const updateAndSyncOjs = useCallback(async ({
     activeRole,
     internalId,
+    ojsSubmissionId,
+    ojsPublicationId,
     congressJson,
     selectedCongressId,
     submissionTitle,
+    submissionAbstract,
     submissionKeywords,
     contributors,
     submissionCategory,
@@ -342,9 +313,12 @@ export function useOjsIntegration() {
   }: {
     activeRole: 'admin_org' | 'ponente' | 'asistente' | 'revisor_eval';
     internalId: number;
+    ojsSubmissionId?: number;
+    ojsPublicationId?: number;
     congressJson?: Congress;
     selectedCongressId?: string;
     submissionTitle?: string;
+    submissionAbstract?: string;
     submissionKeywords?: string;
     contributors?: import('../types').Contributor[];
     submissionCategory?: 'poster' | 'libro' | 'articulo';
@@ -358,6 +332,94 @@ export function useOjsIntegration() {
 
     try {
       if (activeRole === 'ponente' && submissionTitle) {
+        // --- 1. OJS Sync for Ponente ---
+        let targetOjsUrl = ojsUrl;
+        let targetOjsApiKey = ojsApiKey;
+        let targetJournalPath = selectedJournal?.urlPath;
+
+        if (congressJson) {
+          targetOjsUrl = (congressJson as any).ojs_url || '';
+          targetOjsApiKey = (congressJson as any).ojs_api_key || '';
+          targetJournalPath = (congressJson as any).ojs_journal_path;
+        }
+
+        if (ojsSubmissionId && targetOjsUrl.trim() && targetOjsApiKey.trim() && targetJournalPath) {
+          const subId = ojsSubmissionId;
+          addLog('info', `Iniciando sincronización de cambios con OJS para Envío ID ${subId}...`);
+          const currentJournal = await resolveJournal(targetOjsUrl, targetOjsApiKey, targetJournalPath);
+          if (currentJournal) {
+            const locale = getJournalLocale(currentJournal.nameObj);
+
+            // Fetch correct publication ID if not provided
+            let publicationId = ojsPublicationId;
+            if (!publicationId) {
+              try {
+                const subDetails = await ojsApi.fetchSubmission(targetOjsUrl, targetOjsApiKey, currentJournal.urlPath, subId);
+                publicationId = subDetails.currentPublication?.id || subDetails.publications?.[0]?.id;
+              } catch (e: any) {
+                addLog('info', `No se pudo consultar el envío en OJS para obtener el publicationId. Usando fallback 1. Detalle: ${e.message}`);
+                publicationId = 1;
+              }
+            }
+            const pubId = publicationId || 1;
+
+            // Sync Publication metadata
+            const keywordsArray = submissionKeywords
+              ? submissionKeywords.split(',').map((k: string) => k.trim()).filter(Boolean)
+              : [];
+            const updatePayload = {
+              title: { [locale]: submissionTitle },
+              abstract: { [locale]: submissionAbstract || `Línea: ${congressJson?.researchLine || ''}. Categoría: ${submissionCategory || 'articulo'}` },
+              ...(keywordsArray.length > 0 && { keywords: { [locale]: keywordsArray } }),
+            };
+
+            addLog('request', `PUT /api/v1/submissions/${subId}/publications/${pubId}`, updatePayload);
+            const updatedPub = await ojsApi.updatePublication(targetOjsUrl, targetOjsApiKey, currentJournal.urlPath, subId, pubId, updatePayload);
+            addLog('response', 'HTTP/1.1 200 OK', updatedPub);
+            addLog('success', `Metadatos de la ponencia actualizados en OJS.`);
+
+            // Sync Contributors: delete old ones and recreate
+            try {
+              const subDetails = await ojsApi.fetchSubmission(targetOjsUrl, targetOjsApiKey, currentJournal.urlPath, subId);
+              const currentPub = subDetails.publications?.find((p: any) => p.id === pubId) 
+                || subDetails.currentPublication 
+                || subDetails.publications?.[0];
+              const existingAuthors = currentPub?.authors || [];
+
+              for (const author of existingAuthors) {
+                await ojsApi.deleteContributor(targetOjsUrl, targetOjsApiKey, currentJournal.urlPath, subId, pubId, author.id);
+              }
+
+              const validContributors = (contributors ?? []).filter((c) => c.email.trim() && c.givenName.trim());
+              if (validContributors.length > 0) {
+                let userGroupId = 14;
+                try {
+                  userGroupId = await ojsApi.fetchUserGroupId(targetOjsUrl, targetOjsApiKey, currentJournal.urlPath, currentJournal.id);
+                } catch { /* fallback */ }
+
+                for (let i = 0; i < validContributors.length; i++) {
+                  const c = validContributors[i];
+                  const contribPayload = {
+                    givenName: { [locale]: c.givenName },
+                    familyName: { [locale]: c.familyName },
+                    email: c.email,
+                    country: c.country || 'PA',
+                    affiliation: { [locale]: c.affiliation },
+                    userGroupId,
+                    includeInBrowse: true,
+                    seq: i,
+                  };
+                  await ojsApi.addContributor(targetOjsUrl, targetOjsApiKey, currentJournal.urlPath, subId, pubId, contribPayload);
+                }
+                addLog('success', 'Colaboradores sincronizados con OJS.');
+              }
+            } catch (contribErr: any) {
+              addLog('error', `Error al sincronizar colaboradores con OJS: ${contribErr.message}`);
+            }
+          }
+        }
+
+        // --- 2. Save changes to Nova database ---
         const payload: any = {
           titulo_articulo: submissionTitle,
           palabras_claves: submissionKeywords ?? '',
@@ -377,26 +439,49 @@ export function useOjsIntegration() {
         });
 
         if (res.ok && data.success) {
-          addLog('success', 'Envío actualizado correctamente.');
+          addLog('success', 'Envío actualizado correctamente en base de datos local.');
           onSuccessSpeaker?.();
         } else {
-          const msg = `Error al actualizar: ${data.error ?? 'Error desconocido'}`;
+          const msg = `Error al actualizar localmente: ${data.error ?? 'Error desconocido'}`;
           addLog('error', msg);
           alert(msg);
         }
       } else if (activeRole === 'admin_org' && congressJson) {
+        // --- 1. OJS Validation for Congress (Admin) ---
+        let targetOjsUrl = ojsUrl;
+        let targetOjsApiKey = ojsApiKey;
+        let targetJournalPath = selectedJournal?.urlPath;
+
+        if (congressJson.ojs_url) {
+          targetOjsUrl = congressJson.ojs_url;
+          targetOjsApiKey = congressJson.ojs_api_key || '';
+          targetJournalPath = congressJson.ojs_journal_path;
+        }
+
+        if (targetOjsUrl.trim() && targetOjsApiKey.trim() && targetJournalPath) {
+          addLog('info', `Validando conexión a OJS para el Congreso...`);
+          const currentJournal = await resolveJournal(targetOjsUrl, targetOjsApiKey, targetJournalPath);
+          if (currentJournal) {
+            addLog('success', `Conexión a OJS validada exitosamente.`);
+          }
+        }
+
+        // --- 2. Save changes to Nova database ---
         const payload = {
           nombre: congressJson.name,
           descripcion: congressJson.description,
           fecha_celebracion: congressJson.date,
+          fecha_finalizacion: congressJson.fecha_finalizacion || null,
           sede: congressJson.venue,
           modalidad: congressJson.modality,
           nivel_academico: congressJson.academicLevel,
           linea_investigacion: congressJson.researchLine,
           aula_canal: congressJson.classroom,
-          ojs_url: ojsUrl,
-          ojs_api_key: ojsApiKey,
-          ojs_journal_path: selectedJournal?.urlPath || null,
+          ojs_url: targetOjsUrl,
+          ojs_api_key: targetOjsApiKey,
+          ojs_journal_path: targetJournalPath || null,
+          ojs_submission_id: null,
+          ojs_publication_id: null,
         };
 
         const res = await fetch(import.meta.env.PROD ? `/api/congresos/${internalId}` : `http://localhost:3001/api/congresos/${internalId}`, {
@@ -410,22 +495,22 @@ export function useOjsIntegration() {
         });
 
         if (res.ok && data.success) {
-          addLog('success', 'Congreso actualizado correctamente.');
+          addLog('success', 'Congreso actualizado correctamente en la base de datos local (Conexión OJS verificada).');
           onSuccessAdmin?.();
         } else {
-          const msg = `Error al actualizar: ${data.error ?? 'Error desconocido'}`;
+          const msg = `Error al actualizar localmente: ${data.error ?? 'Error desconocido'}`;
           addLog('error', msg);
           alert(msg);
         }
       }
     } catch (err: any) {
-      const msg = `Error de red: ${err.message}`;
+      const msg = `Error en sincronización o red: ${err.message}`;
       addLog('error', msg);
       alert(msg);
     } finally {
       setIsPublishing(false);
     }
-  }, [isPublishing, ojsUrl, ojsApiKey, selectedJournal, addLog]);
+  }, [isPublishing, ojsUrl, ojsApiKey, selectedJournal, resolveJournal, addLog]);
 
   return {
     // Connection

@@ -17,7 +17,7 @@ export const AuthPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [nombre, setNombre] = useState('');
-  const [rol, setRol] = useState<Role>('speaker');
+  const [rol, setRol] = useState<Role>('attendee');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -134,6 +134,7 @@ export const AuthPage: React.FC = () => {
               value={rol}
               onChange={(e) => setRol(e.target.value as Role)}
             >
+              <option value="attendee">Asistente / Público General</option>
               <option value="speaker">Ponente (Para enviar artículos)</option>
               <option value="organizer">Organizador (Para gestionar congresos)</option>
               <option value="admin">Súper Administrador</option>

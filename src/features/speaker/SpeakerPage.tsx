@@ -40,6 +40,8 @@ export const SpeakerPage: React.FC = () => {
     setSubmissionStatus,
     resetSpeakerForm,
     internalSubmissionId,
+    ojsSubmissionId,
+    ojsPublicationId,
     selectedCongressId,
     setSelectedCongressId
   } = useSpeaker();
@@ -178,11 +180,15 @@ export const SpeakerPage: React.FC = () => {
         updateAndSyncOjs({
           activeRole: 'ponente',
           internalId: internalSubmissionId,
+          ojsSubmissionId,
+          ojsPublicationId,
           selectedCongressId,
           submissionTitle,
+          submissionAbstract,
           submissionKeywords,
           contributors,
           submissionCategory,
+          congressJson: congressJsonToSync,
           onSuccessSpeaker: () => {
             alert('¡Los cambios de su ponencia han sido guardados con éxito!');
             resetSpeakerForm();
@@ -213,6 +219,8 @@ export const SpeakerPage: React.FC = () => {
     availableCongresses,
     isEditMode,
     internalSubmissionId,
+    ojsSubmissionId,
+    ojsPublicationId,
     submissionTitle,
     submissionAbstract,
     submissionKeywords,
@@ -252,7 +260,8 @@ export const SpeakerPage: React.FC = () => {
           </option>
           {availableCongresses.map(c => (
             <option key={c.id} value={c.id}>
-              {c.nombre} ({new Date(c.fecha_celebracion).toLocaleDateString()})
+              {c.nombre} ({new Date(c.fecha_celebracion).toLocaleDateString()}
+              {c.fecha_finalizacion && c.fecha_finalizacion !== c.fecha_celebracion ? ` al ${new Date(c.fecha_finalizacion).toLocaleDateString()}` : ''})
             </option>
           ))}
         </Select>

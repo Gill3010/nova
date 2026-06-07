@@ -15,6 +15,7 @@ export interface PostgresCongress {
   nombre: string;
   descripcion: string;
   fecha_celebracion: string;
+  fecha_finalizacion?: string;
   sede: string;
   modalidad: string;
   nivel_academico: string;
@@ -23,6 +24,8 @@ export interface PostgresCongress {
   ojs_url?: string;
   ojs_api_key?: string;
   ojs_journal_path?: string;
+  ojs_submission_id?: number;
+  ojs_publication_id?: number;
   created_at: string;
   envios: PostgresEnvio[];
 }
@@ -60,6 +63,7 @@ export const fetchDashboardData = async (scope?: 'all' | 'mine'): Promise<Postgr
 export interface PostgresMySubmission {
   id: number;
   ojs_submission_id: number;
+  ojs_publication_id?: number;
   titulo_articulo: string;
   palabras_claves?: string;
   colaboradores?: string;
@@ -199,3 +203,102 @@ export const toggleUserStatus = async (id: number, isActive: boolean): Promise<a
   
   return response.json();
 };
+
+export const fetchEspacios = async (): Promise<any[]> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/espacios`, {
+      headers: getHeaders()
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return await response.json();
+  } catch (error: any) {
+    console.error('Error fetching espacios:', error);
+    throw new Error('No se pudo conectar con el servidor para obtener los espacios');
+  }
+};
+
+export const createEspacio = async (espacioData: any): Promise<any> => {
+  const response = await fetch(`${API_BASE_URL}/espacios`, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify(espacioData)
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Error al crear el espacio');
+  }
+  return response.json();
+};
+
+export const updateEspacio = async (id: number, espacioData: any): Promise<any> => {
+  const response = await fetch(`${API_BASE_URL}/espacios/${id}`, {
+    method: 'PUT',
+    headers: getHeaders(),
+    body: JSON.stringify(espacioData)
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Error al actualizar el espacio');
+  }
+  return response.json();
+};
+
+export const deleteEspacio = async (id: number): Promise<any> => {
+  const response = await fetch(`${API_BASE_URL}/espacios/${id}`, {
+    method: 'DELETE',
+    headers: getHeaders()
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Error al eliminar el espacio');
+  }
+  return response.json();
+};
+
+// --- Módulo de Actividades (Agenda) ---
+export const fetchActividades = async (congresoId: number) => {
+  const response = await fetch(`${API_BASE_URL}/actividades/congreso/${congresoId}`, { headers: getHeaders() });
+  if (!response.ok) throw new Error('Error al obtener actividades');
+  return response.json();
+};
+
+export const createActividad = async (data: any) => {
+  const response = await fetch(`${API_BASE_URL}/actividades`, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify(data)
+  });
+  if (!response.ok) {
+    const err = await response.json();
+    throw new Error(err.error || 'Error al crear actividad');
+  }
+  return response.json();
+};
+
+export const updateActividad = async (id: number, data: any) => {
+  const response = await fetch(`${API_BASE_URL}/actividades/${id}`, {
+    method: 'PUT',
+    headers: getHeaders(),
+    body: JSON.stringify(data)
+  });
+  if (!response.ok) {
+    const err = await response.json();
+    throw new Error(err.error || 'Error al actualizar actividad');
+  }
+  return response.json();
+};
+
+export const deleteActividad = async (id: number) => {
+  const response = await fetch(`${API_BASE_URL}/actividades/${id}`, {
+    method: 'DELETE',
+    headers: getHeaders()
+  });
+  if (!response.ok) {
+    const err = await response.json();
+    throw new Error(err.error || 'Error al eliminar actividad');
+  }
+  return response.json();
+};
+

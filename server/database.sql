@@ -17,13 +17,29 @@ CREATE TABLE IF NOT EXISTS usuarios (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- 3. Crear la tabla de congresos
+-- 3. Crear la tabla de espacios y ubicaciones
+CREATE TABLE IF NOT EXISTS espacios (
+    id SERIAL PRIMARY KEY,
+    nombre VARCHAR(255) NOT NULL,
+    tipo VARCHAR(100) NOT NULL,
+    ubicacion VARCHAR(255),
+    descripcion TEXT,
+    capacidad INTEGER,
+    equipamiento TEXT, -- Se almacena como JSON string
+    enlace_virtual TEXT,
+    observaciones TEXT,
+    estado VARCHAR(50) DEFAULT 'Activo',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 4. Crear la tabla de congresos
 CREATE TABLE IF NOT EXISTS congresos (
     id SERIAL PRIMARY KEY,
     creador_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
     nombre VARCHAR(255) NOT NULL,
     descripcion TEXT,
     fecha_celebracion VARCHAR(100), -- Almacenado como texto flexible para compatibilidad con la lógica actual
+    fecha_finalizacion VARCHAR(100),
     sede VARCHAR(255),
     modalidad VARCHAR(100),
     nivel_academico VARCHAR(100),
@@ -32,10 +48,13 @@ CREATE TABLE IF NOT EXISTS congresos (
     ojs_url TEXT,
     ojs_api_key TEXT,
     ojs_journal_path VARCHAR(255),
+    ojs_submission_id INTEGER,
+    ojs_publication_id INTEGER,
+    espacio_id INTEGER REFERENCES espacios(id) ON DELETE SET NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- 4. Crear la tabla de envíos OJS relacionados a los congresos
+-- 5. Crear la tabla de envíos OJS relacionados a los congresos
 CREATE TABLE IF NOT EXISTS envios_ojs (
     id SERIAL PRIMARY KEY,
     congreso_id INTEGER REFERENCES congresos(id) ON DELETE CASCADE,
@@ -48,5 +67,28 @@ CREATE TABLE IF NOT EXISTS envios_ojs (
     revista_destino VARCHAR(255),
     categoria VARCHAR(100),
     autor_email VARCHAR(255),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 6. Relación N:M entre Congresos y Múltiples Sedes
+CREATE TABLE IF NOT EXISTS congreso_sedes (
+    congreso_id INTEGER REFERENCES congresos(id) ON DELETE CASCADE,
+    espacio_id INTEGER REFERENCES espacios(id) ON DELETE CASCADE,
+    es_sede_principal BOOLEAN DEFAULT FALSE,
+    PRIMARY KEY (congreso_id, espacio_id)
+);
+
+-- 7. Tabla de Actividades (Agenda del Congreso por Sede)
+CREATE TABLE IF NOT EXISTS actividades (
+    id SERIAL PRIMARY KEY,
+    congreso_id INTEGER REFERENCES congresos(id) ON DELETE CASCADE,
+    espacio_id INTEGER REFERENCES espacios(id) ON DELETE SET NULL,
+    titulo VARCHAR(255) NOT NULL,
+    descripcion TEXT,
+    fecha VARCHAR(100), -- YYYY-MM-DD
+    hora_inicio VARCHAR(10), -- HH:mm
+    hora_fin VARCHAR(10), -- HH:mm
+    enlace_virtual TEXT,
+    estado VARCHAR(50) DEFAULT 'Programada',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );

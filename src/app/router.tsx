@@ -7,6 +7,7 @@ import { DashboardPage } from '../features/dashboard/DashboardPage';
 import { useAuth } from '../context/AuthContext';
 import { useCongress } from '../context/CongressContext';
 import { useSpeaker } from '../context/SpeakerContext';
+import { useOjs } from '../context/OjsContext';
 
 // Lazy loaded page components
 const AdminPage = lazy(() =>
@@ -20,6 +21,15 @@ const MySubmissions = lazy(() =>
 );
 const UsersPage = lazy(() =>
   import('../features/users/UsersPage').then((m) => ({ default: m.UsersPage }))
+);
+const SpacesPage = lazy(() =>
+  import('../features/spaces/SpacesPage').then((m) => ({ default: m.SpacesPage }))
+);
+const AgendaPage = lazy(() =>
+  import('../features/agenda/AgendaAdmin').then((m) => ({ default: m.AgendaAdmin }))
+);
+const AttendeePage = lazy(() =>
+  import('../features/attendee/AttendeePage').then((m) => ({ default: m.AttendeePage }))
 );
 
 // Fallback skeleton loader
@@ -39,7 +49,10 @@ const RouteSkeleton = () => (
 // Wrapper for DashboardPage to adapt callback functions to router navigation
 const RouterDashboardWrapper = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { loadCongress } = useCongress();
+  const { setSelectedCongressId } = useSpeaker();
+  const { setOjsUrl, setOjsApiKey, setSelectedJournal } = useOjs();
 
   const handleClose = () => {
     navigate(-1);
@@ -47,6 +60,32 @@ const RouterDashboardWrapper = () => {
 
   const handleEditCongress = (congress: any) => {
     loadCongress(congress);
+    
+    if (user?.rol === 'attendee') {
+      navigate('/attendee');
+      return;
+    }
+    
+    if (user?.rol === 'speaker') {
+      if (setSelectedCongressId) {
+        setSelectedCongressId(congress.id);
+      }
+      navigate('/speaker/new');
+      return;
+    }
+
+    if (setOjsUrl) setOjsUrl(congress.ojs_url || '');
+    if (setOjsApiKey) setOjsApiKey(congress.ojs_api_key || '');
+    if (setSelectedJournal && congress.ojs_journal_path) {
+      setSelectedJournal({
+        id: 0,
+        name: congress.ojs_journal_path,
+        nameObj: {},
+        urlPath: congress.ojs_journal_path,
+        url: congress.ojs_url || '',
+        enabled: true
+      });
+    }
     navigate('/admin');
   };
 
@@ -73,6 +112,9 @@ const RootIndexRedirect = () => {
   if (!user) return <Navigate to="/login" replace />;
 
   const isAdminOrOrg = user.rol === 'admin' || user.rol === 'organizer';
+  if (user.rol === 'attendee') {
+    return <Navigate to="/dashboard" replace />;
+  }
   return <Navigate to={isAdminOrOrg ? '/admin' : '/speaker/new'} replace />;
 };
 
@@ -131,10 +173,34 @@ export const router = createBrowserRouter([
         ),
       },
       {
+        path: 'espacios',
+        element: (
+          <Suspense fallback={<RouteSkeleton />}>
+            <SpacesPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'agenda',
+        element: (
+          <Suspense fallback={<RouteSkeleton />}>
+            <AgendaPage />
+          </Suspense>
+        ),
+      },
+      {
         path: 'speaker/new',
         element: (
           <Suspense fallback={<RouteSkeleton />}>
             <SpeakerPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'attendee',
+        element: (
+          <Suspense fallback={<RouteSkeleton />}>
+            <AttendeePage />
           </Suspense>
         ),
       },

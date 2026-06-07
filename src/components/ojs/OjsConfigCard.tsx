@@ -29,7 +29,7 @@ export const OjsConfigCard: React.FC = () => {
 
   const { user } = useAuth();
   const activeRole = user?.rol === 'admin' || user?.rol === 'organizer' ? 'admin_org' : 'ponente';
-  const { getCongressJson, setInternalId, resetCongressForm, internalId } = useCongress();
+  const { getCongressJson, setInternalId, internalId } = useCongress();
   const {
     submissionTitle,
     submissionCategory,
@@ -59,7 +59,6 @@ export const OjsConfigCard: React.FC = () => {
           congressJson: getCongressJson(),
           onSuccessAdmin: () => {
             alert('¡Los cambios del Congreso han sido guardados con éxito!');
-            if (resetCongressForm) resetCongressForm();
           }
         });
       }
@@ -73,7 +72,6 @@ export const OjsConfigCard: React.FC = () => {
         onSuccessAdmin: (newInternalId) => {
           if (setInternalId) setInternalId(newInternalId);
           alert('¡El Congreso ha sido creado con éxito y sincronizado con OJS!');
-          if (resetCongressForm) resetCongressForm();
         }
       });
     }

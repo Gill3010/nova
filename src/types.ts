@@ -12,6 +12,40 @@ export interface Congress {
   ojs_url?: string;
   ojs_api_key?: string;
   ojs_journal_path?: string;
+  ojs_submission_id?: number;
+  ojs_publication_id?: number;
+  fecha_finalizacion?: string;
+  espacio_id?: number;
+  sedes?: { espacio_id: number; es_sede_principal: boolean }[];
+}
+
+export interface Actividad {
+  id: number;
+  congreso_id: number;
+  espacio_id: number | null;
+  espacio_nombre?: string;
+  espacio_tipo?: string;
+  titulo: string;
+  descripcion: string;
+  fecha: string;
+  hora_inicio: string;
+  hora_fin: string;
+  enlace_virtual: string;
+  estado: string;
+}
+
+export interface Espacio {
+  id: number;
+  nombre: string;
+  tipo: string;
+  ubicacion: string;
+  descripcion: string;
+  capacidad: number;
+  equipamiento: string[];
+  enlace_virtual: string;
+  observaciones: string;
+  estado: string;
+  created_at?: string;
 }
 
 export interface ResearchLine {

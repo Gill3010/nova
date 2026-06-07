@@ -14,6 +14,7 @@ router.get('/me', verifyToken, (req, res) => {
     SELECT 
       e.id,
       e.ojs_submission_id,
+      e.ojs_publication_id,
       e.titulo_articulo,
       e.palabras_claves,
       e.colaboradores,

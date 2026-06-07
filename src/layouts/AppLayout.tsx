@@ -16,6 +16,29 @@ export const AppLayout: React.FC = () => {
   );
   
   const isAdmin = user?.rol === 'admin';
+  const isNotAttendee = user?.rol !== 'attendee';
+
+  const isAuthorized = useMemo(() => {
+    if (!user) return false;
+    const path = location.pathname;
+
+    // Protect admin, spaces, and agenda management (admin or organizer)
+    if (path.startsWith('/admin') || path.startsWith('/espacios') || path.startsWith('/agenda')) {
+      return user.rol === 'admin' || user.rol === 'organizer';
+    }
+
+    // Protect user administration (admin only)
+    if (path.startsWith('/users')) {
+      return user.rol === 'admin';
+    }
+
+    // Protect speaker features (speaker, admin, or organizer)
+    if (path.startsWith('/speaker')) {
+      return user.rol === 'speaker' || user.rol === 'admin' || user.rol === 'organizer';
+    }
+
+    return true;
+  }, [location.pathname, user]);
 
   if (isLoading) {
     return (
@@ -30,7 +53,10 @@ export const AppLayout: React.FC = () => {
     return <Navigate to="/login" replace />;
   }
 
-  const isRoutingAdmin = location.pathname === '/admin' || location.pathname === '/users';
+  if (!isAuthorized) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
 
   const handleOpenDashboard = () => {
     navigate('/dashboard');
@@ -76,6 +102,38 @@ export const AppLayout: React.FC = () => {
                 Congresos
               </NavLink>
             )}
+            {isAdminOrOrg && (
+              <NavLink
+                to="/espacios"
+                role="tab"
+                id="tab-espacios"
+                className={({ isActive }) =>
+                  `px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 ${
+                    isActive
+                      ? 'border-zinc-900 text-zinc-900 dark:border-zinc-100 dark:text-zinc-100'
+                      : 'border-transparent text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-300'
+                  }`
+                }
+              >
+                Espacios
+              </NavLink>
+            )}
+            {isAdminOrOrg && (
+              <NavLink
+                to="/agenda"
+                role="tab"
+                id="tab-agenda"
+                className={({ isActive }) =>
+                  `px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 ${
+                    isActive
+                      ? 'border-zinc-900 text-zinc-900 dark:border-zinc-100 dark:text-zinc-100'
+                      : 'border-transparent text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-300'
+                  }`
+                }
+              >
+                Agenda
+              </NavLink>
+            )}
             {isAdmin && (
               <NavLink
                 to="/users"
@@ -92,33 +150,51 @@ export const AppLayout: React.FC = () => {
                 Usuarios
               </NavLink>
             )}
+            {isNotAttendee && (
+              <NavLink
+                to="/speaker/new"
+                role="tab"
+                id="tab-speaker-new"
+                className={({ isActive }) =>
+                  `px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 ${
+                    isActive
+                      ? 'border-zinc-900 text-zinc-900 dark:border-zinc-100 dark:text-zinc-100'
+                      : 'border-transparent text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-300'
+                  }`
+                }
+              >
+                Nuevo Envío
+              </NavLink>
+            )}
+            {isNotAttendee && (
+              <NavLink
+                to="/speaker/history"
+                role="tab"
+                id="tab-speaker-history"
+                className={({ isActive }) =>
+                  `px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 ${
+                    isActive
+                      ? 'border-zinc-900 text-zinc-900 dark:border-zinc-100 dark:text-zinc-100'
+                      : 'border-transparent text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-300'
+                  }`
+                }
+              >
+                Mis Envíos
+              </NavLink>
+            )}
             <NavLink
-              to="/speaker/new"
+              to="/attendee"
               role="tab"
-              id="tab-speaker-new"
+              id="tab-attendee"
               className={({ isActive }) =>
                 `px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 ${
                   isActive
-                    ? 'border-zinc-900 text-zinc-900 dark:border-zinc-100 dark:text-zinc-100'
-                    : 'border-transparent text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-300'
+                    ? 'border-indigo-600 text-indigo-700 dark:border-indigo-400 dark:text-indigo-400 font-bold'
+                    : 'border-transparent text-indigo-500 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300'
                 }`
               }
             >
-              Nuevo Envío
-            </NavLink>
-            <NavLink
-              to="/speaker/history"
-              role="tab"
-              id="tab-speaker-history"
-              className={({ isActive }) =>
-                `px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 ${
-                  isActive
-                    ? 'border-zinc-900 text-zinc-900 dark:border-zinc-100 dark:text-zinc-100'
-                    : 'border-transparent text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-300'
-                }`
-              }
-            >
-              Mis Envíos
+              Ticket e Itinerario (Público)
             </NavLink>
           </div>
         </nav>
@@ -127,19 +203,21 @@ export const AppLayout: React.FC = () => {
         <main
           id="main-content"
           className={`grid grid-cols-1 ${
-            isRoutingAdmin ? 'lg:grid-cols-12' : 'max-w-4xl mx-auto'
+            location.pathname === '/admin' ? 'lg:grid-cols-12' : 'max-w-7xl mx-auto'
           } gap-6 items-start w-full`}
         >
           {/* Primary panel */}
           <div
-            className={isRoutingAdmin ? 'lg:col-span-7 w-full' : 'w-full'}
+            className={`${
+              location.pathname === '/admin' ? 'lg:col-span-7' : 'w-full'
+            } flex flex-col gap-6 w-full`}
             role="tabpanel"
           >
             <Outlet />
           </div>
 
           {/* OJS sidebar — only in admin view */}
-          {isRoutingAdmin && (
+          {location.pathname === '/admin' && (
             <aside
               className="lg:col-span-5 w-full flex flex-col gap-5"
               aria-label="Integración con OJS y consola"

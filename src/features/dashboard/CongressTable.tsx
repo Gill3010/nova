@@ -5,10 +5,13 @@ import type { PostgresCongress } from '../../services/dbApi';
 interface CongressTableProps {
   congresos: PostgresCongress[];
   onEdit?: (congress: PostgresCongress) => void;
+  userRole?: string;
 }
 
-export const CongressTable: React.FC<CongressTableProps> = React.memo(({ congresos, onEdit }) => {
+export const CongressTable: React.FC<CongressTableProps> = React.memo(({ congresos, onEdit, userRole }) => {
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
+  
+  const isAttendeeOrSpeaker = userRole === 'attendee' || userRole === 'speaker';
 
   const toggleRow = (id: number) => {
     setExpandedRow(expandedRow === id ? null : id);
@@ -45,8 +48,14 @@ export const CongressTable: React.FC<CongressTableProps> = React.memo(({ congres
                 <td className="px-6 py-4 font-medium text-slate-900 dark:text-white max-w-xs truncate">
                   {congreso.nombre}
                 </td>
-                <td className="px-6 py-4">
+                <td className="px-6 py-4 whitespace-nowrap">
                   {new Date(congreso.fecha_celebracion).toLocaleDateString()}
+                  {congreso.fecha_finalizacion && congreso.fecha_finalizacion !== congreso.fecha_celebracion && (
+                    <>
+                      <span className="mx-1 text-slate-400">al</span>
+                      {new Date(congreso.fecha_finalizacion).toLocaleDateString()}
+                    </>
+                  )}
                 </td>
                 <td className="px-6 py-4 capitalize">
                   {congreso.modalidad}
@@ -65,8 +74,17 @@ export const CongressTable: React.FC<CongressTableProps> = React.memo(({ congres
                       }}
                       className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
                     >
-                      <Pencil className="h-3 w-3" aria-hidden="true" />
-                      Editar
+                      {isAttendeeOrSpeaker ? (
+                        <>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-eye"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                          Ver Evento
+                        </>
+                      ) : (
+                        <>
+                          <Pencil className="h-3 w-3" aria-hidden="true" />
+                          Editar
+                        </>
+                      )}
                     </button>
                   )}
                 </td>

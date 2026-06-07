@@ -15,6 +15,8 @@ interface SpeakerState {
   videoFile: FileInfo | null;
   submissionStatus: Submission['status'];
   internalSubmissionId: number | undefined;
+  ojsSubmissionId: number | undefined;
+  ojsPublicationId: number | undefined;
   selectedCongressId: string;
 }
 
@@ -57,6 +59,8 @@ const INITIAL_STATE: SpeakerState = {
   videoFile: null,
   submissionStatus: 'draft',
   internalSubmissionId: undefined,
+  ojsSubmissionId: undefined,
+  ojsPublicationId: undefined,
   selectedCongressId: '',
 };
 
@@ -139,6 +143,8 @@ interface SpeakerContextType {
   resetSpeakerForm: () => void;
   internalSubmissionId: number | undefined;
   setInternalSubmissionId: (val: number | undefined) => void;
+  ojsSubmissionId: number | undefined;
+  ojsPublicationId: number | undefined;
   loadSubmission: (data: any) => void;
   selectedCongressId: string;
   setSelectedCongressId: React.Dispatch<React.SetStateAction<string>>;
@@ -196,6 +202,8 @@ export const SpeakerProvider: React.FC<{ children: React.ReactNode }> = ({ child
       payload: {
         ...INITIAL_STATE,
         internalSubmissionId: data.id,
+        ojsSubmissionId: data.ojs_submission_id,
+        ojsPublicationId: data.ojs_publication_id,
         selectedCongressId: data.congreso_id ? String(data.congreso_id) : '',
         submissionTitle: data.titulo_articulo || '',
         submissionKeywords: data.palabras_claves || '',
@@ -230,6 +238,8 @@ export const SpeakerProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setSubmissionStatus,
     internalSubmissionId: state.internalSubmissionId,
     setInternalSubmissionId,
+    ojsSubmissionId: state.ojsSubmissionId,
+    ojsPublicationId: state.ojsPublicationId,
     selectedCongressId: state.selectedCongressId,
     setSelectedCongressId: setSelectedCongressId as React.Dispatch<React.SetStateAction<string>>,
     resetSpeakerForm,

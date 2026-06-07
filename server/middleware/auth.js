@@ -25,4 +25,12 @@ const verifyToken = (req, res, next) => {
   });
 };
 
-module.exports = { verifyToken };
+const isAdminOrOrganizer = (req, res, next) => {
+  if (req.user && (req.user.rol === 'admin' || req.user.rol === 'organizador' || req.user.rol === 'organizer')) {
+    return next();
+  }
+  logger.warn('Petición bloqueada: permisos insuficientes', { user: req.user });
+  return res.status(403).json({ error: 'Permisos insuficientes' });
+};
+
+module.exports = { verifyToken, isAdminOrOrganizer };

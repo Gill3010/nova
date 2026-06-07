@@ -5,6 +5,7 @@ import type { PostgresCongress } from '../../services/dbApi';
 import { StatCards } from './StatCards';
 import { CongressTable } from './CongressTable';
 import { Button } from '../../components/common/Button';
+import { useAuth } from '../../context/AuthContext';
 
 interface DashboardPageProps {
   onClose: () => void;
@@ -12,6 +13,9 @@ interface DashboardPageProps {
 }
 
 export const DashboardPage: React.FC<DashboardPageProps> = ({ onClose, onEditCongress }) => {
+  const { user } = useAuth();
+  const isAdminOrOrg = user?.rol === 'admin' || user?.rol === 'organizer';
+
   const [data, setData] = useState<PostgresCongress[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -20,7 +24,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onClose, onEditCon
     setIsLoading(true);
     setError(null);
     try {
-      const result = await fetchDashboardData('mine');
+      const scope = isAdminOrOrg ? 'mine' : 'all';
+      const result = await fetchDashboardData(scope);
       setData(result);
     } catch (err: any) {
       setError(err.message || 'Error al conectar con el servidor local');
@@ -41,10 +46,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onClose, onEditCon
       <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
         <div>
           <h1 className="text-xl font-bold text-zinc-900 dark:text-white flex items-center gap-2.5">
-            <Database className="h-5 w-5 text-zinc-500" aria-hidden="true" /> Base de Datos Local
+            <Database className="h-5 w-5 text-zinc-500" aria-hidden="true" /> {isAdminOrOrg ? 'Base de Datos Local' : 'Directorio de Eventos'}
           </h1>
           <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-            Visualización en tiempo real de los congresos y envíos registrados.
+            {isAdminOrOrg ? 'Visualización en tiempo real de los congresos y envíos registrados.' : 'Explora y selecciona el congreso al que deseas asistir o participar.'}
           </p>
         </div>
         
@@ -67,18 +72,18 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onClose, onEditCon
         </div>
       ) : (
         <>
-          <StatCards totalCongresos={totalCongresos} totalEnvios={totalEnvios} />
+          {isAdminOrOrg && <StatCards totalCongresos={totalCongresos} totalEnvios={totalEnvios} />}
           
           <div className="flex flex-col gap-3 mt-4">
             <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-              Registro de Congresos
+              {isAdminOrOrg ? 'Registro de Congresos' : 'Eventos Disponibles'}
             </h2>
             {isLoading ? (
               <div className="h-60 flex items-center justify-center bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-lg">
                 <div className="text-sm text-zinc-400">Cargando...</div>
               </div>
             ) : (
-              <CongressTable congresos={data} onEdit={onEditCongress} />
+              <CongressTable congresos={data} onEdit={onEditCongress} userRole={user?.rol} />
             )}
           </div>
         </>

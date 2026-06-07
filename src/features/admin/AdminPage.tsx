@@ -7,7 +7,7 @@ import { Select } from '../../components/common/Select';
 import { Textarea } from '../../components/common/Textarea';
 import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
-import { PREDEFINED_CLASSROOMS, DEFAULT_ROLES } from '../../constants/data';
+import { DEFAULT_ROLES } from '../../constants/data';
 
 export const AdminPage: React.FC = () => {
   const {
@@ -17,11 +17,14 @@ export const AdminPage: React.FC = () => {
     setDescription,
     date,
     setDate,
+    endDate,
+    setEndDate,
     venue,
     modality,
     setModality,
-    classroom,
-    setClassroom,
+    espaciosIds,
+    setEspaciosIds,
+    espacios,
     academicLevel,
     setAcademicLevel,
     lines,
@@ -75,13 +78,23 @@ export const AdminPage: React.FC = () => {
 
         {/* Fila: Fecha y Sede */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Input
-            id="cong-date"
-            label="Fecha de Celebración"
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-          />
+          <div className="grid grid-cols-2 gap-3">
+            <Input
+              id="cong-date"
+              label="Fecha de Inicio"
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+            />
+            <Input
+              id="cong-end-date"
+              label="Fecha de Finalización"
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              min={date}
+            />
+          </div>
 
           <div className="relative flex flex-col gap-1.5" ref={autocompleteRef}>
             <label htmlFor="cong-venue" className="text-sm font-medium text-slate-700 dark:text-slate-300">
@@ -148,43 +161,70 @@ export const AdminPage: React.FC = () => {
           </Select>
 
           <div className="flex flex-col gap-1.5">
-            <Select
-              id="cong-classroom"
-              label="Asignación de Aula / Canal"
-              value={classroom}
-              onChange={(e) => setClassroom(e.target.value)}
-            >
-              {PREDEFINED_CLASSROOMS.map((room) => (
-                <option key={room.id} value={room.name}>
-                  {room.name} ({room.type === 'virtual' ? 'Virtual' : 'Presencial'})
-                </option>
-              ))}
-            </Select>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+              Sedes / Espacios <span className="text-xs text-slate-500 font-normal">(Selección múltiple. El primero será la sede principal)</span>
+            </label>
+            <div className="flex flex-wrap gap-2 mt-1">
+              {espacios.map(room => {
+                const isSelected = espaciosIds.includes(room.id);
+                const isMain = espaciosIds[0] === room.id;
+                return (
+                  <button
+                    key={room.id}
+                    type="button"
+                    onClick={() => {
+                      if (isSelected) {
+                        setEspaciosIds(espaciosIds.filter(id => id !== room.id));
+                      } else {
+                        setEspaciosIds([...espaciosIds, room.id]);
+                      }
+                    }}
+                    className={`px-3 py-1.5 rounded-full text-sm border transition-colors flex items-center gap-1 ${
+                      isSelected 
+                        ? 'bg-indigo-100 border-indigo-300 text-indigo-800 dark:bg-indigo-900/50 dark:border-indigo-700 dark:text-indigo-200' 
+                        : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800/80'
+                    }`}
+                  >
+                    {room.nombre}
+                    {isMain && <Badge className="ml-1 text-[9px] py-0 px-1">Principal</Badge>}
+                  </button>
+                );
+              })}
+              {espacios.length === 0 && (
+                <span className="text-sm text-slate-500">No hay espacios disponibles. Créalos en la pestaña Espacios.</span>
+              )}
+            </div>
 
             {/* Aula Asignada - Tarjeta Detallada */}
             {selectedClassroomObj && (
               <div className="mt-2 rounded-xl border border-slate-100 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-900/40 p-4 flex flex-col gap-3 transition-all duration-200">
                 <div className="flex justify-between items-center border-b border-slate-200/60 dark:border-slate-850 pb-2">
                   <h4 className="font-semibold text-sm text-slate-900 dark:text-slate-100">
-                    {selectedClassroomObj.name}
+                    {selectedClassroomObj.nombre}
                   </h4>
-                  <Badge variant={selectedClassroomObj.type === 'virtual' ? 'outline' : 'default'}>
-                    {selectedClassroomObj.type === 'virtual' ? 'Virtual' : 'Física'}
+                  <Badge variant={selectedClassroomObj.tipo === 'virtual' ? 'outline' : 'default'}>
+                    {selectedClassroomObj.tipo === 'virtual' ? 'Virtual' : 'Física'}
                   </Badge>
                 </div>
                 <div className="text-xs flex flex-col gap-1.5 text-slate-600 dark:text-slate-400">
-                  <p>
-                    <strong className="text-slate-800 dark:text-slate-200">Ubicación:</strong>{' '}
-                    {selectedClassroomObj.building}
-                  </p>
+                  <div className="flex flex-col gap-0.5 min-w-0 overflow-hidden w-full">
+                    <strong className="text-slate-800 dark:text-slate-200">Ubicación/Enlace:</strong>
+                    {selectedClassroomObj.tipo === 'virtual' ? (
+                      <a href={selectedClassroomObj.enlace_virtual} target="_blank" rel="noopener noreferrer" className="text-indigo-600 dark:text-indigo-400 hover:underline truncate block">
+                        {selectedClassroomObj.enlace_virtual}
+                      </a>
+                    ) : (
+                      <span className="truncate block">{selectedClassroomObj.ubicacion}</span>
+                    )}
+                  </div>
                   <p>
                     <strong className="text-slate-800 dark:text-slate-200">Capacidad Máxima:</strong>{' '}
-                    {selectedClassroomObj.capacity} personas
+                    {selectedClassroomObj.capacidad} personas
                   </p>
                   <div className="flex flex-col gap-1 mt-1">
                     <strong className="text-slate-800 dark:text-slate-200">Equipamiento disponible:</strong>
                     <div className="flex flex-wrap gap-1 mt-1">
-                      {selectedClassroomObj.equipment.map((equip, idx) => (
+                      {selectedClassroomObj.equipamiento?.map((equip: string, idx: number) => (
                         <span
                           key={idx}
                           className="bg-white dark:bg-slate-950 border border-slate-200/50 dark:border-slate-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded text-[10px]"

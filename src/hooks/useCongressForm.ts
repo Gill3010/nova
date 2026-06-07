@@ -2,10 +2,11 @@ import { useState, useEffect, useRef } from 'react';
 import type { Congress, ResearchLine } from '../types';
 import {
   DEFAULT_RESEARCH_LINES,
-  PREDEFINED_CLASSROOMS,
   DEFAULT_ROLES,
   LATIN_AMERICAN_UNIVERSITIES
 } from '../constants/data';
+import { fetchEspacios } from '../services/dbApi';
+import type { Espacio } from '../types';
 
 export function useCongressForm() {
   // Estado del congreso
@@ -13,10 +14,31 @@ export function useCongressForm() {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [date, setDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [venue, setVenue] = useState('');
   const [modality, setModality] = useState<Congress['modality']>('hibrida');
-  const [classroom, setClassroom] = useState(PREDEFINED_CLASSROOMS[0].name);
+  const [espaciosIds, setEspaciosIds] = useState<number[]>([]);
+  const [espacios, setEspacios] = useState<Espacio[]>([]);
   const [academicLevel, setAcademicLevel] = useState<Congress['academicLevel']>('maestria');
+  const [ojsSubmissionId, setOjsSubmissionId] = useState<number | undefined>(undefined);
+  const [ojsPublicationId, setOjsPublicationId] = useState<number | undefined>(undefined);
+
+  const refreshEspacios = async () => {
+    try {
+      const data = await fetchEspacios();
+      setEspacios(data);
+      if (data.length > 0 && espaciosIds.length === 0) {
+        setEspaciosIds([data[0].id]);
+      }
+    } catch (err) {
+      console.error("Error al refrescar espacios", err);
+    }
+  };
+
+  // Fetch espacios on mount
+  useEffect(() => {
+    refreshEspacios();
+  }, []);
 
   // Estado de líneas de investigación
   const [lines, setLines] = useState<ResearchLine[]>(DEFAULT_RESEARCH_LINES);
@@ -177,28 +199,36 @@ export function useCongressForm() {
       date,
       venue,
       modality,
-      classroom,
+      classroom: espaciosIds.length > 0 ? espacios.find(e => e.id === espaciosIds[0])?.nombre || '' : '',
+      espacio_id: espaciosIds.length > 0 ? espaciosIds[0] : undefined,
+      sedes: espaciosIds.map((id, index) => ({ espacio_id: id, es_sede_principal: index === 0 })),
       academicLevel,
       researchLine: lines.find(l => l.id === selectedLine)?.name || '',
-      roles: selectedRoles.map(id => DEFAULT_ROLES.find(r => r.id === id)?.name || '')
+      roles: selectedRoles.map(id => DEFAULT_ROLES.find(r => r.id === id)?.name || ''),
+      ojs_submission_id: ojsSubmissionId,
+      ojs_publication_id: ojsPublicationId,
+      fecha_finalizacion: endDate || undefined
     };
   };
 
-  const selectedClassroomObj = PREDEFINED_CLASSROOMS.find(r => r.name === classroom) || PREDEFINED_CLASSROOMS[0];
+  const selectedClassroomObj = espaciosIds.length > 0 ? (espacios.find(r => r.id === espaciosIds[0]) || null) : null;
 
   const resetCongressForm = () => {
     setInternalId(undefined);
     setName('');
     setDescription('');
     setDate('');
+    setEndDate('');
     setVenue('');
     setModality('hibrida');
-    setClassroom(PREDEFINED_CLASSROOMS[0].name);
+    setEspaciosIds(espacios.length > 0 ? [espacios[0].id] : []);
     setAcademicLevel('maestria');
     setLines(DEFAULT_RESEARCH_LINES);
     setSelectedLine('1');
     setNewLineName('');
     setSelectedRoles(['ponente', 'revisor', 'organizador', 'editor', 'asistente', 'administrador']);
+    setOjsSubmissionId(undefined);
+    setOjsPublicationId(undefined);
   };
 
   const loadCongress = (data: any) => {
@@ -206,10 +236,17 @@ export function useCongressForm() {
     setName(data.nombre || '');
     setDescription(data.descripcion || '');
     setDate(data.fecha_celebracion || '');
+    setEndDate(data.fecha_finalizacion || '');
     setVenue(data.sede || '');
     setModality(data.modalidad || 'hibrida');
-    setClassroom(data.aula_canal || PREDEFINED_CLASSROOMS[0].name);
+    if (data.sedes && Array.isArray(data.sedes) && data.sedes.length > 0) {
+      setEspaciosIds(data.sedes.map((s: any) => s.espacio_id));
+    } else {
+      setEspaciosIds(data.espacio_id ? [data.espacio_id] : (espacios.length > 0 ? [espacios[0].id] : []));
+    }
     setAcademicLevel(data.nivel_academico || 'maestria');
+    setOjsSubmissionId(data.ojs_submission_id);
+    setOjsPublicationId(data.ojs_publication_id);
     // Research line logic is simplified since it's just stored as string
     if (data.linea_investigacion) {
       const found = lines.find(l => l.name === data.linea_investigacion);
@@ -224,12 +261,15 @@ export function useCongressForm() {
     setDescription,
     date,
     setDate,
+    endDate,
+    setEndDate,
     venue,
     setVenue,
     modality,
     setModality,
-    classroom,
-    setClassroom,
+    espaciosIds,
+    setEspaciosIds,
+    espacios,
     academicLevel,
     setAcademicLevel,
     lines,
@@ -245,6 +285,10 @@ export function useCongressForm() {
     autocompleteRef,
     internalId,
     setInternalId,
+    ojsSubmissionId,
+    setOjsSubmissionId,
+    ojsPublicationId,
+    setOjsPublicationId,
     handleVenueChange,
     handleVenueFocus,
     handleVenueKeyDown,
@@ -254,6 +298,7 @@ export function useCongressForm() {
     toggleRol,
     getCongressJson,
     resetCongressForm,
-    loadCongress
+    loadCongress,
+    refreshEspacios
   };
 }

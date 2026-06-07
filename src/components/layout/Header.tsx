@@ -1,5 +1,5 @@
 import React from 'react';
-import { Database, LogOut } from 'lucide-react';
+import { Home, LogOut } from 'lucide-react';
 import { Button } from '../common/Button';
 import { useAuth } from '../../context/AuthContext';
 
@@ -29,15 +29,17 @@ export const Header: React.FC<HeaderProps> = ({ onOpenDashboard }) => {
               {user.nombre}
             </span>
 
-            {onOpenDashboard && (user.rol === 'admin' || user.rol === 'organizer') && (
+            {onOpenDashboard && (
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={onOpenDashboard}
-                aria-label="Abrir base de datos local"
+                aria-label={(user.rol === 'admin' || user.rol === 'organizer') ? "Volver a Mis Congresos" : "Ir al Directorio"}
               >
-                <Database className="h-3.5 w-3.5" aria-hidden="true" />
-                <span className="hidden sm:inline">Base de datos</span>
+                <Home className="h-3.5 w-3.5" aria-hidden="true" />
+                <span className="hidden sm:inline">
+                  {(user.rol === 'admin' || user.rol === 'organizer') ? 'Mis Congresos' : 'Directorio'}
+                </span>
               </Button>
             )}
 
