@@ -1,6 +1,8 @@
+const path = require('path');
 const { Pool } = require('pg');
 const logger = require('./utils/logger');
-require('dotenv').config();
+// Cargar .env desde el directorio del script, no desde el CWD
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 // Use the Pool directly to ensure proper async/await support
 const dbUser = process.env.DB_USER || process.env.USER || 'postgres';
