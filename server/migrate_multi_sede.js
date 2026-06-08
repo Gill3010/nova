@@ -23,6 +23,24 @@ async function migrate() {
     client = await pool.connect();
     logger.info('Conexión a la base de datos establecida.');
 
+    // Verificar y añadir creador_id a la tabla espacios si no existe
+    const columnCheck = await client.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name='espacios' AND column_name='creador_id'
+    `);
+    
+    if (columnCheck.rows.length === 0) {
+      logger.info('Añadiendo columna creador_id a la tabla espacios...');
+      await client.query(`
+        ALTER TABLE espacios 
+        ADD COLUMN creador_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL
+      `);
+      logger.info('Columna creador_id añadida con éxito.');
+    } else {
+      logger.info('La columna creador_id ya existe en la tabla espacios.');
+    }
+
     // 1. Crear tabla congreso_sedes
     await client.query(`
       CREATE TABLE IF NOT EXISTS congreso_sedes (
