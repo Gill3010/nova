@@ -291,6 +291,8 @@ export function useCongressForm() {
     autocompleteRef,
     internalId,
     setInternalId,
+    creadorId,
+    setCreadorId,
     ojsSubmissionId,
     setOjsSubmissionId,
     ojsPublicationId,

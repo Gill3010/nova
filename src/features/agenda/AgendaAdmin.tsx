@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Trash2, Calendar, MapPin, Edit2, X } from 'lucide-react';
+import { Plus, Trash2, Calendar, MapPin, Edit2, X, Lock } from 'lucide-react';
 import { useCongress } from '../../context/CongressContext';
+import { useAuth } from '../../context/AuthContext';
 import { Card } from '../../components/common/Card';
 import { Input } from '../../components/common/Input';
 import { Select } from '../../components/common/Select';
@@ -9,7 +10,6 @@ import { Badge } from '../../components/common/Badge';
 import { Textarea } from '../../components/common/Textarea';
 import { fetchActividades, createActividad, updateActividad, deleteActividad } from '../../services/dbApi';
 import type { Actividad } from '../../types';
-import { useAuth } from '../../context/AuthContext';
 
 export const AgendaAdmin: React.FC = () => {
   const { user } = useAuth();
@@ -27,7 +27,7 @@ export const AgendaAdmin: React.FC = () => {
   const [enlaceVirtual, setEnlaceVirtual] = useState('');
   const [editingActividadId, setEditingActividadId] = useState<number | null>(null);
 
-  const canEdit = user?.rol === 'admin' || (user?.rol === 'organizer' && creadorId === user?.id);
+  const canEdit = user?.rol === 'admin' || (user?.rol === 'organizer' && user?.id === creadorId);
 
   const cargarActividades = async () => {
     if (!internalId) return;
@@ -142,135 +142,112 @@ export const AgendaAdmin: React.FC = () => {
         <p className="text-sm text-slate-500 mt-1">Programa ponencias y actividades según el horario y las múltiples sedes de este evento.</p>
       </div>
 
+      {/* Read-only notice for non-creator organizers */}
+      {!canEdit && (
+        <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/50 text-amber-700 dark:text-amber-400 text-sm">
+          <Lock className="h-4 w-4 shrink-0" aria-hidden="true" />
+          <span>Solo puedes visualizar el itinerario. Únicamente el creador del congreso o un administrador puede agregar, editar o eliminar actividades.</span>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         
-        {/* Columna Izquierda: Formulario (Solo si tiene permisos) */}
-        <div className="lg:col-span-5 flex flex-col gap-6">
-          {canEdit ? (
-            <Card>
-              <div className="p-5 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
-                <h2 className="text-lg font-bold text-zinc-900 dark:text-white flex items-center gap-2">
-                  <Calendar className="h-5 w-5 text-indigo-500" />
+        {/* Formulario Izquierda — only visible when user can edit */}
+        {canEdit && (
+          <div className="lg:col-span-5 flex flex-col gap-5">
+            <div className={`bg-slate-50 dark:bg-slate-900/50 p-5 rounded-xl border transition-colors ${editingActividadId ? 'border-indigo-400 dark:border-indigo-600 bg-indigo-50/30' : 'border-slate-100 dark:border-slate-800'}`}>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="font-semibold text-slate-900 dark:text-white">
                   {editingActividadId ? 'Editar Actividad' : 'Nueva Actividad'}
-                </h2>
+                </h3>
                 {editingActividadId && (
-                  <Button variant="ghost" size="sm" onClick={cancelEdit}>
-                    <X className="h-4 w-4 mr-1" />
-                    Cancelar
+                  <Button type="button" variant="ghost" size="sm" onClick={cancelEdit} className="text-slate-500 hover:text-slate-800 flex gap-1 items-center">
+                    <X className="h-3 w-3" /> Cancelar
                   </Button>
                 )}
               </div>
-              
-              <div className="p-5">
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                      Título de la Actividad / Ponencia *
-                    </label>
-                    <Input
-                      required
-                      value={titulo}
-                      onChange={(e) => setTitulo(e.target.value)}
-                      placeholder="Ej. Conferencia Magistral"
-                    />
-                  </div>
+              <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                <Input
+                  id="act-titulo"
+                  label="Título de la Actividad / Ponencia *"
+                  value={titulo}
+                  onChange={e => setTitulo(e.target.value)}
+                  placeholder="Ej. Conferencia Magistral"
+                  required
+                />
+                
+                <Textarea
+                  id="act-desc"
+                  label="Descripción / Ponente"
+                  value={descripcion}
+                  onChange={e => setDescripcion(e.target.value)}
+                  rows={2}
+                  placeholder="Breve descripción o nombre del ponente..."
+                />
 
-                  <div>
-                    <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                      Descripción / Ponente
-                    </label>
-                    <Textarea
-                      rows={2}
-                      value={descripcion}
-                      onChange={(e) => setDescripcion(e.target.value)}
-                      placeholder="Breve descripción o nombre del ponente..."
-                    />
-                  </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <Input
+                    id="act-fecha"
+                    type="date"
+                    label="Fecha *"
+                    value={fecha}
+                    onChange={e => setFecha(e.target.value)}
+                    required
+                  />
+                  <Input
+                    id="act-hora-ini"
+                    type="time"
+                    label="Inicio *"
+                    value={horaInicio}
+                    onChange={e => setHoraInicio(e.target.value)}
+                    required
+                  />
+                  <Input
+                    id="act-hora-fin"
+                    type="time"
+                    label="Fin *"
+                    value={horaFin}
+                    onChange={e => setHoraFin(e.target.value)}
+                    required
+                  />
+                </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div className="sm:col-span-1">
-                      <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                        Fecha *
-                      </label>
-                      <Input
-                        type="date"
-                        required
-                        value={fecha}
-                        onChange={(e) => setFecha(e.target.value)}
-                      />
-                    </div>
-                    <div className="sm:col-span-1">
-                      <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                        Inicio *
-                      </label>
-                      <Input
-                        type="time"
-                        required
-                        value={horaInicio}
-                        onChange={(e) => setHoraInicio(e.target.value)}
-                      />
-                    </div>
-                    <div className="sm:col-span-1">
-                      <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                        Fin *
-                      </label>
-                      <Input
-                        type="time"
-                        required
-                        value={horaFin}
-                        onChange={(e) => setHoraFin(e.target.value)}
-                      />
-                    </div>
-                  </div>
+                <Select
+                  id="act-espacio"
+                  label="Sede / Espacio"
+                  value={espacioSeleccionado}
+                  onChange={e => setEspacioSeleccionado(Number(e.target.value) || '')}
+                >
+                  <option value="">-- No asignar sede física --</option>
+                  {sedesDelCongreso.map(sede => (
+                    <option key={sede.id} value={sede.id}>
+                      {sede.tipo === 'virtual' ? (sede.enlace_virtual || sede.nombre) : (sede.ubicacion || sede.nombre)}
+                    </option>
+                  ))}
+                </Select>
 
-                  <div>
-                    <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                      Sede / Espacio
-                    </label>
-                    <Select
-                      value={espacioSeleccionado}
-                      onChange={(e) => setEspacioSeleccionado(e.target.value ? Number(e.target.value) : '')}
-                    >
-                      <option value="">-- No asignar sede física --</option>
-                      {sedesDelCongreso.map(sede => (
-                        <option key={sede.id} value={sede.id}>
-                          {sede.tipo === 'virtual' ? (sede.enlace_virtual || sede.nombre) : (sede.ubicacion || sede.nombre)}
-                        </option>
-                      ))}
-                    </Select>
-                  </div>
+                <Input
+                  id="act-virtual"
+                  label="Enlace Virtual (Opcional)"
+                  value={enlaceVirtual}
+                  onChange={e => setEnlaceVirtual(e.target.value)}
+                  placeholder="https://zoom.us/j/..."
+                />
 
-                  <div>
-                    <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                      Enlace Virtual (Opcional)
-                    </label>
-                    <Input
-                      type="url"
-                      value={enlaceVirtual}
-                      onChange={(e) => setEnlaceVirtual(e.target.value)}
-                      placeholder="https://zoom.us/j/..."
-                    />
-                  </div>
-
-                  <div className="pt-2">
-                    <Button type="submit" variant="primary" className="w-full" disabled={isLoading}>
-                      {isLoading ? 'Guardando...' : (editingActividadId ? 'Actualizar Actividad' : 'Agregar a la Agenda')}
-                    </Button>
-                  </div>
-                </form>
-              </div>
-            </Card>
-          ) : (
-            <Card>
-              <div className="p-5 text-center text-zinc-500">
-                <p>No tienes permisos para editar la agenda de este congreso.</p>
-              </div>
-            </Card>
-          )}
-        </div>
+                <Button type="submit" variant="primary" className="mt-2 w-full flex items-center justify-center gap-2">
+                  {editingActividadId ? (
+                    <>Guardar Cambios</>
+                  ) : (
+                    <><Plus className="h-4 w-4" /> Agregar al Itinerario</>
+                  )}
+                </Button>
+              </form>
+            </div>
+          </div>
+        )}
 
         {/* Listado Derecha */}
-        <div className="lg:col-span-7 flex flex-col gap-4">
+        <div className={`${canEdit ? 'lg:col-span-7' : 'lg:col-span-12'} flex flex-col gap-4`}>
           <h3 className="font-semibold text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-2">
             Actividades Programadas
           </h3>
@@ -298,24 +275,21 @@ export const AgendaAdmin: React.FC = () => {
                     <div className="flex justify-between items-start gap-2">
                       <h4 className="font-semibold text-slate-900 dark:text-slate-100 truncate">{act.titulo}</h4>
                       {canEdit && (
-                        <div className="flex flex-col sm:items-end gap-2 shrink-0">
-                          <Button 
-                            variant="secondary" 
-                            size="sm" 
+                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button 
                             onClick={() => handleEditClick(act)}
+                            className="text-slate-400 hover:text-indigo-600 transition-colors p-1"
+                            title="Editar actividad"
                           >
-                            <Edit2 className="h-4 w-4 mr-1.5" />
-                            Editar
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                            <Edit2 className="h-4 w-4" />
+                          </button>
+                          <button 
                             onClick={() => handleDelete(act.id)}
+                            className="text-slate-400 hover:text-red-600 transition-colors p-1"
+                            title="Eliminar actividad"
                           >
-                            <Trash2 className="h-4 w-4 mr-1.5" />
-                            Eliminar
-                          </Button>
+                            <Trash2 className="h-4 w-4" />
+                          </button>
                         </div>
                       )}
                     </div>
