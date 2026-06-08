@@ -190,8 +190,12 @@ const Card: React.FC<AgendaCardProps> = ({ actividad }) => {
 
             {actividad.espacio_nombre && (
               <div className="flex items-center gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-400">
-                <MapPin className="h-3.5 w-3.5 text-emerald-500" />
-                <span>{actividad.espacio_nombre}</span>
+                <MapPin className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                <span className="truncate max-w-[200px] sm:max-w-[300px]">
+                  {actividad.espacio_tipo === 'virtual' 
+                    ? (actividad.espacio_enlace_virtual || actividad.espacio_nombre) 
+                    : (actividad.espacio_ubicacion || actividad.espacio_nombre)}
+                </span>
               </div>
             )}
 
