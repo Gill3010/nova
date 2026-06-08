@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, CheckCircle, CalendarDays, MapPin, Clock, Tag, Award, BookOpen } from 'lucide-react';
 import { useCongress } from '../../context/CongressContext';
+import { useAuth } from '../../context/AuthContext';
 import { useOjs } from '../../context/OjsContext';
 import { Card } from '../../components/common/Card';
 import { Input } from '../../components/common/Input';
@@ -13,6 +14,7 @@ import { Agenda } from '../../components/agenda/PublicAgenda';
 
 export const AttendeePage: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const {
     internalId,
     name: congressName,
@@ -337,7 +339,7 @@ export const AttendeePage: React.FC = () => {
                   <div className="grid grid-cols-2 gap-4 text-xs">
                     <div className="flex flex-col gap-0.5">
                       <span className="text-slate-400 dark:text-slate-500 font-medium">Asistente:</span>
-                      <strong className="text-slate-900 dark:text-slate-200">Israel Samuels</strong>
+                      <strong className="text-slate-900 dark:text-slate-200">{user?.nombre || 'Israel Samuels'}</strong>
                     </div>
                     <div className="flex flex-col gap-0.5">
                       <span className="text-slate-400 dark:text-slate-500 font-medium">Modalidad:</span>

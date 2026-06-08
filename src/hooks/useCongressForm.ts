@@ -11,6 +11,7 @@ import type { Espacio } from '../types';
 export function useCongressForm() {
   // Estado del congreso
   const [internalId, setInternalId] = useState<number | undefined>(undefined);
+  const [creadorId, setCreadorId] = useState<number | undefined>(undefined);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [date, setDate] = useState('');
@@ -214,6 +215,7 @@ export function useCongressForm() {
 
   const resetCongressForm = () => {
     setInternalId(undefined);
+    setCreadorId(undefined);
     setName('');
     setDescription('');
     setDate('');
@@ -232,6 +234,7 @@ export function useCongressForm() {
 
   const loadCongress = (data: any) => {
     setInternalId(data.id);
+    setCreadorId(data.creador_id);
     setName(data.nombre || '');
     setDescription(data.descripcion || '');
     setDate(data.fecha_celebracion || '');
@@ -284,6 +287,8 @@ export function useCongressForm() {
     autocompleteRef,
     internalId,
     setInternalId,
+    creadorId,
+    setCreadorId,
     ojsSubmissionId,
     setOjsSubmissionId,
     ojsPublicationId,

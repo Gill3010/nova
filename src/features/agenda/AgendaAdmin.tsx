@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Calendar, MapPin, Edit2, X } from 'lucide-react';
+import { Plus, Trash2, Calendar, MapPin, Edit2, X, Lock } from 'lucide-react';
 import { useCongress } from '../../context/CongressContext';
+import { useAuth } from '../../context/AuthContext';
 import { Card } from '../../components/common/Card';
 import { Input } from '../../components/common/Input';
 import { Select } from '../../components/common/Select';
@@ -11,7 +12,11 @@ import { fetchActividades, createActividad, updateActividad, deleteActividad } f
 import type { Actividad } from '../../types';
 
 export const AgendaAdmin: React.FC = () => {
-  const { internalId, name: congressName, espaciosIds, espacios } = useCongress();
+  const { internalId, name: congressName, espaciosIds, espacios, creadorId } = useCongress();
+  const { user } = useAuth();
+  // An organizer can only manage activities if they created the congress.
+  // Admins always have full access.
+  const canEdit = user?.rol === 'admin' || (user?.id !== undefined && user.id === creadorId);
   const [actividades, setActividades] = useState<Actividad[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -138,10 +143,18 @@ export const AgendaAdmin: React.FC = () => {
         <p className="text-sm text-slate-500 mt-1">Programa ponencias y actividades según el horario y las múltiples sedes de este evento.</p>
       </div>
 
+      {/* Read-only notice for non-creator organizers */}
+      {!canEdit && (
+        <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/50 text-amber-700 dark:text-amber-400 text-sm">
+          <Lock className="h-4 w-4 shrink-0" aria-hidden="true" />
+          <span>Solo puedes visualizar el itinerario. Únicamente el creador del congreso o un administrador puede agregar, editar o eliminar actividades.</span>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         
-        {/* Formulario Izquierda */}
-        <div className="lg:col-span-5 flex flex-col gap-5">
+        {/* Formulario Izquierda — only visible when user can edit */}
+        {canEdit && <div className="lg:col-span-5 flex flex-col gap-5">
           <div className={`bg-slate-50 dark:bg-slate-900/50 p-5 rounded-xl border transition-colors ${editingActividadId ? 'border-indigo-400 dark:border-indigo-600 bg-indigo-50/30' : 'border-slate-100 dark:border-slate-800'}`}>
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-semibold text-slate-900 dark:text-white">
@@ -230,10 +243,10 @@ export const AgendaAdmin: React.FC = () => {
               </Button>
             </form>
           </div>
-        </div>
+        </div>}
 
         {/* Listado Derecha */}
-        <div className="lg:col-span-7 flex flex-col gap-4">
+        <div className={`${canEdit ? 'lg:col-span-7' : 'lg:col-span-12'} flex flex-col gap-4`}>
           <h3 className="font-semibold text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-2">
             Actividades Programadas
           </h3>
@@ -260,22 +273,24 @@ export const AgendaAdmin: React.FC = () => {
                   <div className="flex-1 flex flex-col justify-center min-w-0">
                     <div className="flex justify-between items-start gap-2">
                       <h4 className="font-semibold text-slate-900 dark:text-slate-100 truncate">{act.titulo}</h4>
-                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button 
-                          onClick={() => handleEditClick(act)}
-                          className="text-slate-400 hover:text-indigo-600 transition-colors p-1"
-                          title="Editar actividad"
-                        >
-                          <Edit2 className="h-4 w-4" />
-                        </button>
-                        <button 
-                          onClick={() => handleDelete(act.id)}
-                          className="text-slate-400 hover:text-red-600 transition-colors p-1"
-                          title="Eliminar actividad"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
+                      {canEdit && (
+                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button 
+                            onClick={() => handleEditClick(act)}
+                            className="text-slate-400 hover:text-indigo-600 transition-colors p-1"
+                            title="Editar actividad"
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </button>
+                          <button 
+                            onClick={() => handleDelete(act.id)}
+                            className="text-slate-400 hover:text-red-600 transition-colors p-1"
+                            title="Eliminar actividad"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      )}
                     </div>
                     
                     {act.descripcion && <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 truncate">{act.descripcion}</p>}

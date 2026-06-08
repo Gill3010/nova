@@ -6,9 +6,10 @@ interface CongressTableProps {
   congresos: PostgresCongress[];
   onEdit?: (congress: PostgresCongress, action?: 'view' | 'edit') => void;
   userRole?: string;
+  userId?: number;
 }
 
-export const CongressTable: React.FC<CongressTableProps> = React.memo(({ congresos, onEdit, userRole }) => {
+export const CongressTable: React.FC<CongressTableProps> = React.memo(({ congresos, onEdit, userRole, userId }) => {
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
   
   const isAttendeeOrSpeaker = userRole === 'attendee' || userRole === 'speaker';
@@ -79,7 +80,7 @@ export const CongressTable: React.FC<CongressTableProps> = React.memo(({ congres
                           <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-eye"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
                           Ver Evento
                         </button>
-                        {!isAttendeeOrSpeaker && (
+                        {!isAttendeeOrSpeaker && (userRole === 'admin' || congreso.creador_id === userId) ? (
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -90,7 +91,7 @@ export const CongressTable: React.FC<CongressTableProps> = React.memo(({ congres
                             <Pencil className="h-3 w-3" aria-hidden="true" />
                             Editar
                           </button>
-                        )}
+                        ) : null}
                       </>
                     )}
                   </div>
