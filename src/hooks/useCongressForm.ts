@@ -304,7 +304,6 @@ export function useCongressForm() {
     toggleRol,
     getCongressJson,
     resetCongressForm,
-    loadCongress,
-    refreshEspacios
+    loadCongress
   };
 }

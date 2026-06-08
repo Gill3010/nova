@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Calendar, MapPin, Edit2, X } from 'lucide-react';
+import { Trash2, Calendar, MapPin, Edit2, X } from 'lucide-react';
 import { useCongress } from '../../context/CongressContext';
 import { Card } from '../../components/common/Card';
 import { Input } from '../../components/common/Input';
@@ -154,7 +154,7 @@ export const AgendaAdmin: React.FC = () => {
                   {editingActividadId ? 'Editar Actividad' : 'Nueva Actividad'}
                 </h2>
                 {editingActividadId && (
-                  <Button variant="ghost" size="sm" onClick={resetForm}>
+                  <Button variant="ghost" size="sm" onClick={cancelEdit}>
                     <X className="h-4 w-4 mr-1" />
                     Cancelar
                   </Button>
@@ -232,8 +232,10 @@ export const AgendaAdmin: React.FC = () => {
                       onChange={(e) => setEspacioSeleccionado(e.target.value ? Number(e.target.value) : '')}
                     >
                       <option value="">-- No asignar sede física --</option>
-                      {espacios.filter(e => espaciosIds?.includes(e.id)).map(esp => (
-                        <option key={esp.id} value={esp.id}>{esp.nombre}</option>
+                      {sedesDelCongreso.map(sede => (
+                        <option key={sede.id} value={sede.id}>
+                          {sede.tipo === 'virtual' ? (sede.enlace_virtual || sede.nombre) : (sede.ubicacion || sede.nombre)}
+                        </option>
                       ))}
                     </Select>
                   </div>
@@ -298,9 +300,9 @@ export const AgendaAdmin: React.FC = () => {
                       {canEdit && (
                         <div className="flex flex-col sm:items-end gap-2 shrink-0">
                           <Button 
-                            variant="outline" 
+                            variant="secondary" 
                             size="sm" 
-                            onClick={() => handleEdit(act)}
+                            onClick={() => handleEditClick(act)}
                           >
                             <Edit2 className="h-4 w-4 mr-1.5" />
                             Editar
