@@ -198,24 +198,24 @@ export const AdminPage: React.FC = () => {
             {/* Aula Asignada - Tarjeta Detallada */}
             {selectedClassroomObj && (
               <div className="mt-2 rounded-xl border border-slate-100 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-900/40 p-4 flex flex-col gap-3 transition-all duration-200">
-                <div className="flex justify-between items-center border-b border-slate-200/60 dark:border-slate-850 pb-2">
-                  <h4 className="font-semibold text-sm text-slate-900 dark:text-slate-100">
-                    {selectedClassroomObj.nombre}
+                <div className="flex justify-between items-center border-b border-slate-200/60 dark:border-slate-850 pb-2 gap-2">
+                  <h4 className="font-semibold text-sm text-slate-900 dark:text-slate-100 min-w-0 flex-1">
+                    {selectedClassroomObj.tipo === 'virtual' ? (
+                      <a href={selectedClassroomObj.enlace_virtual} target="_blank" rel="noopener noreferrer" className="hover:underline truncate block text-indigo-600 dark:text-indigo-400">
+                        {selectedClassroomObj.enlace_virtual || 'Enlace virtual no especificado'}
+                      </a>
+                    ) : (
+                      <span className="truncate block" title={selectedClassroomObj.ubicacion}>{selectedClassroomObj.ubicacion || 'Institución no especificada'}</span>
+                    )}
                   </h4>
-                  <Badge variant={selectedClassroomObj.tipo === 'virtual' ? 'outline' : 'default'}>
+                  <Badge variant={selectedClassroomObj.tipo === 'virtual' ? 'outline' : 'default'} className="shrink-0">
                     {selectedClassroomObj.tipo === 'virtual' ? 'Virtual' : 'Física'}
                   </Badge>
                 </div>
                 <div className="text-xs flex flex-col gap-1.5 text-slate-600 dark:text-slate-400">
                   <div className="flex flex-col gap-0.5 min-w-0 overflow-hidden w-full">
-                    <strong className="text-slate-800 dark:text-slate-200">Institución / Edificio / Enlace:</strong>
-                    {selectedClassroomObj.tipo === 'virtual' ? (
-                      <a href={selectedClassroomObj.enlace_virtual} target="_blank" rel="noopener noreferrer" className="text-indigo-600 dark:text-indigo-400 hover:underline truncate block">
-                        {selectedClassroomObj.enlace_virtual}
-                      </a>
-                    ) : (
-                      <span className="truncate">{selectedClassroomObj.ubicacion || 'No especificada'}</span>
-                    )}
+                    <strong className="text-slate-800 dark:text-slate-200">Nombre del espacio (Aula, Salón, Auditorio):</strong>
+                    <span className="truncate" title={selectedClassroomObj.nombre}>{selectedClassroomObj.nombre}</span>
                   </div>
                   <p>
                     <strong className="text-slate-800 dark:text-slate-200">Capacidad Máxima:</strong>{' '}
