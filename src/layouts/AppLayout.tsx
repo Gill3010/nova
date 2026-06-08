@@ -62,6 +62,10 @@ export const AppLayout: React.FC = () => {
     navigate('/dashboard');
   };
 
+  const handleOpenDirectorio = () => {
+    navigate('/directorio');
+  };
+
   return (
     <>
       {/* ---- Skip Navigation (Accesibilidad WCAG 2.4.1) ---- */}
@@ -74,7 +78,7 @@ export const AppLayout: React.FC = () => {
 
       <div className="max-w-7xl mx-auto px-4 py-6 flex flex-col gap-5 w-full animate-fade-in">
         {/* ---- Header ---- */}
-        <Header onOpenDashboard={handleOpenDashboard} />
+        <Header onOpenDashboard={handleOpenDashboard} onOpenDirectorio={handleOpenDirectorio} />
 
         {/* ---- Navigation Tabs ---- */}
         <nav

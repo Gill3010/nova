@@ -5,9 +5,10 @@ import { useAuth } from '../../context/AuthContext';
 
 interface HeaderProps {
   onOpenDashboard?: () => void;
+  onOpenDirectorio?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onOpenDashboard }) => {
+export const Header: React.FC<HeaderProps> = ({ onOpenDashboard, onOpenDirectorio }) => {
   const { user, logout } = useAuth();
 
   return (
@@ -29,21 +30,27 @@ export const Header: React.FC<HeaderProps> = ({ onOpenDashboard }) => {
               {user.nombre}
             </span>
 
-            {onOpenDashboard && (
+            {onOpenDashboard && (user.rol === 'admin' || user.rol === 'organizer') && (
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={onOpenDashboard}
-                aria-label={(user.rol === 'admin' || user.rol === 'organizer') ? "Volver a Mis Congresos" : "Ir al Directorio"}
+                aria-label="Volver a Mis Congresos"
               >
-                {(user.rol === 'admin' || user.rol === 'organizer') ? (
-                  <Briefcase className="h-3.5 w-3.5" aria-hidden="true" />
-                ) : (
-                  <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
-                )}
-                <span className="hidden sm:inline">
-                  {(user.rol === 'admin' || user.rol === 'organizer') ? 'Mis Congresos' : 'Directorio'}
-                </span>
+                <Briefcase className="h-3.5 w-3.5" aria-hidden="true" />
+                <span className="hidden sm:inline">Mis Congresos</span>
+              </Button>
+            )}
+
+            {onOpenDirectorio && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onOpenDirectorio}
+                aria-label="Ir al Directorio"
+              >
+                <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
+                <span className="hidden sm:inline">Directorio</span>
               </Button>
             )}
 

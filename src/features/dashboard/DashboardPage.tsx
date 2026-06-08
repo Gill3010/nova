@@ -10,11 +10,13 @@ import { useAuth } from '../../context/AuthContext';
 interface DashboardPageProps {
   onClose: () => void;
   onEditCongress?: (congress: PostgresCongress, action?: 'view' | 'edit') => void;
+  forceDirectorio?: boolean;
 }
 
-export const DashboardPage: React.FC<DashboardPageProps> = ({ onClose, onEditCongress }) => {
+export const DashboardPage: React.FC<DashboardPageProps> = ({ onClose, onEditCongress, forceDirectorio }) => {
   const { user } = useAuth();
   const isAdminOrOrg = user?.rol === 'admin' || user?.rol === 'organizer';
+  const isDirectorio = forceDirectorio || !isAdminOrOrg;
 
   const [data, setData] = useState<PostgresCongress[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -24,7 +26,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onClose, onEditCon
     setIsLoading(true);
     setError(null);
     try {
-      const scope = isAdminOrOrg ? 'mine' : 'all';
+      const scope = isDirectorio ? 'all' : 'mine';
       const result = await fetchDashboardData(scope);
       setData(result);
     } catch (err: any) {
@@ -46,15 +48,15 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onClose, onEditCon
       <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
         <div>
           <h1 className="text-xl font-bold text-zinc-900 dark:text-white flex items-center gap-2.5">
-            {isAdminOrOrg ? (
+            {!isDirectorio ? (
               <Briefcase className="h-5 w-5 text-zinc-500" aria-hidden="true" />
             ) : (
               <CalendarDays className="h-5 w-5 text-zinc-500" aria-hidden="true" />
             )}
-            {isAdminOrOrg ? 'Mis Congresos' : 'Directorio de Eventos'}
+            {!isDirectorio ? 'Mis Congresos' : 'Directorio de Eventos'}
           </h1>
           <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-            {isAdminOrOrg ? 'Gestiona y visualiza los congresos que tienes a tu cargo.' : 'Explora y selecciona el congreso al que deseas asistir o participar.'}
+            {!isDirectorio ? 'Gestiona y visualiza los congresos que tienes a tu cargo.' : 'Explora y selecciona el congreso al que deseas asistir o participar.'}
           </p>
         </div>
         

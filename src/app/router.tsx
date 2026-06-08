@@ -89,9 +89,35 @@ const RouterDashboardWrapper = () => {
     navigate('/admin');
   };
 
-  return (
     <main id="main-content">
       <DashboardPage onClose={handleClose} onEditCongress={handleEditCongress} />
+    </main>
+  );
+};
+
+// Wrapper for DashboardPage to force Directorio view
+const RouterDirectorioWrapper = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { loadCongress } = useCongress();
+  const { setSelectedCongressId } = useSpeaker();
+  const { setOjsUrl, setOjsApiKey, setSelectedJournal } = useOjs();
+
+  const handleClose = () => {
+    navigate(-1);
+  };
+
+  const handleEditCongress = (congress: any, action?: 'view' | 'edit') => {
+    loadCongress(congress);
+    if (action === 'view' || user?.rol === 'attendee' || user?.rol === 'organizer' || user?.rol === 'admin') {
+      navigate('/attendee');
+      return;
+    }
+  };
+
+  return (
+    <main id="main-content">
+      <DashboardPage forceDirectorio={true} onClose={handleClose} onEditCongress={handleEditCongress} />
     </main>
   );
 };
@@ -147,6 +173,10 @@ export const router = createBrowserRouter([
   {
     path: '/dashboard',
     element: <RouterDashboardWrapper />,
+  },
+  {
+    path: '/directorio',
+    element: <RouterDirectorioWrapper />,
   },
   {
     path: '/',

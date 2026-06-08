@@ -61,7 +61,7 @@ export const AttendeePage: React.FC = () => {
             Para ver el itinerario completo, los detalles generales y registrar tu asistencia, primero debes seleccionar un evento desde el Directorio.
           </p>
         </div>
-        <Button onClick={() => navigate('/dashboard')} variant="primary" className="px-6">
+        <Button onClick={() => navigate('/directorio')} variant="primary" className="px-6">
           Ver Directorio de Eventos
         </Button>
       </div>
