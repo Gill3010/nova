@@ -27,9 +27,8 @@ export function useCongressForm() {
     try {
       const data = await fetchEspacios();
       setEspacios(data);
-      if (data.length > 0 && espaciosIds.length === 0) {
-        setEspaciosIds([data[0].id]);
-      }
+      // Eliminamos el auto-seleccionar la primera sede para evitar confusiones
+      // cuando el usuario crea un congreso nuevo.
     } catch (err) {
       console.error("Error al refrescar espacios", err);
     }
@@ -221,7 +220,7 @@ export function useCongressForm() {
     setEndDate('');
     setVenue('');
     setModality('hibrida');
-    setEspaciosIds(espacios.length > 0 ? [espacios[0].id] : []);
+    setEspaciosIds([]);
     setAcademicLevel('maestria');
     setLines(DEFAULT_RESEARCH_LINES);
     setSelectedLine('1');
@@ -242,7 +241,7 @@ export function useCongressForm() {
     if (data.sedes && Array.isArray(data.sedes) && data.sedes.length > 0) {
       setEspaciosIds(data.sedes.map((s: any) => s.espacio_id));
     } else {
-      setEspaciosIds(data.espacio_id ? [data.espacio_id] : (espacios.length > 0 ? [espacios[0].id] : []));
+      setEspaciosIds(data.espacio_id ? [data.espacio_id] : []);
     }
     setAcademicLevel(data.nivel_academico || 'maestria');
     setOjsSubmissionId(data.ojs_submission_id);
