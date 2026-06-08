@@ -6,12 +6,17 @@ interface CongressTableProps {
   congresos: PostgresCongress[];
   onEdit?: (congress: PostgresCongress, action?: 'view' | 'edit') => void;
   userRole?: string;
+  currentUserId?: number;
 }
 
-export const CongressTable: React.FC<CongressTableProps> = React.memo(({ congresos, onEdit, userRole }) => {
+export const CongressTable: React.FC<CongressTableProps> = React.memo(({ congresos, onEdit, userRole, currentUserId }) => {
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
   
-  const isAttendeeOrSpeaker = userRole === 'attendee' || userRole === 'speaker';
+  const canEditCongress = (congreso: PostgresCongress) => {
+    if (userRole === 'admin') return true;
+    if (userRole === 'organizer' && congreso.creador_id === currentUserId) return true;
+    return false;
+  };
 
   const toggleRow = (id: number) => {
     setExpandedRow(expandedRow === id ? null : id);
@@ -79,7 +84,7 @@ export const CongressTable: React.FC<CongressTableProps> = React.memo(({ congres
                           <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-eye"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
                           Ver Evento
                         </button>
-                        {!isAttendeeOrSpeaker && (
+                        {canEditCongress(congreso) && (
                           <button
                             onClick={(e) => {
                               e.stopPropagation();

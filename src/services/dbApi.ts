@@ -12,6 +12,7 @@ export interface PostgresEnvio {
 
 export interface PostgresCongress {
   id: number;
+  creador_id?: number;
   nombre: string;
   descripcion: string;
   fecha_celebracion: string;

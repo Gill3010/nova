@@ -90,7 +90,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onClose, onEditCon
                 <div className="text-sm text-zinc-400">Cargando...</div>
               </div>
             ) : (
-              <CongressTable congresos={data} onEdit={onEditCongress} userRole={user?.rol} />
+              <CongressTable congresos={data} onEdit={onEditCongress} userRole={user?.rol} currentUserId={user?.id} />
             )}
           </div>
         </>
