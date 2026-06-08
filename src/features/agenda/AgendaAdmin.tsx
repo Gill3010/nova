@@ -207,7 +207,9 @@ export const AgendaAdmin: React.FC = () => {
               >
                 <option value="">-- No asignar sede física --</option>
                 {sedesDelCongreso.map(sede => (
-                  <option key={sede.id} value={sede.id}>{sede.nombre}</option>
+                  <option key={sede.id} value={sede.id}>
+                    {sede.tipo === 'virtual' ? (sede.enlace_virtual || sede.nombre) : (sede.ubicacion || sede.nombre)}
+                  </option>
                 ))}
               </Select>
 
@@ -280,8 +282,13 @@ export const AgendaAdmin: React.FC = () => {
                     
                     <div className="flex flex-wrap gap-2 mt-2">
                       {act.espacio_nombre && (
-                        <Badge variant="outline" className="text-[10px] flex items-center gap-1">
-                          <MapPin className="h-3 w-3" /> {act.espacio_nombre}
+                        <Badge variant="outline" className="text-[10px] flex items-center gap-1 max-w-full">
+                          <MapPin className="h-3 w-3 shrink-0" />
+                          <span className="truncate">
+                            {act.espacio_tipo === 'virtual' 
+                              ? (act.espacio_enlace_virtual || act.espacio_nombre) 
+                              : (act.espacio_ubicacion || act.espacio_nombre)}
+                          </span>
                         </Badge>
                       )}
                       {act.enlace_virtual && (

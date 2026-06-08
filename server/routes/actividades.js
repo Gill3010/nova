@@ -9,7 +9,7 @@ router.get('/congreso/:id', verifyToken, (req, res) => {
   const congresoId = req.params.id;
   
   const query = `
-    SELECT a.*, e.nombre as espacio_nombre, e.tipo as espacio_tipo 
+    SELECT a.*, e.nombre as espacio_nombre, e.tipo as espacio_tipo, e.ubicacion as espacio_ubicacion, e.enlace_virtual as espacio_enlace_virtual
     FROM actividades a
     LEFT JOIN espacios e ON a.espacio_id = e.id
     WHERE a.congreso_id = $1

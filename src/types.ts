@@ -25,6 +25,8 @@ export interface Actividad {
   espacio_id: number | null;
   espacio_nombre?: string;
   espacio_tipo?: string;
+  espacio_ubicacion?: string;
+  espacio_enlace_virtual?: string;
   titulo: string;
   descripcion: string;
   fecha: string;
