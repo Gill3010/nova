@@ -58,10 +58,10 @@ const RouterDashboardWrapper = () => {
     navigate(-1);
   };
 
-  const handleEditCongress = (congress: any) => {
+  const handleEditCongress = (congress: any, action?: 'view' | 'edit') => {
     loadCongress(congress);
     
-    if (user?.rol === 'attendee') {
+    if (action === 'view' || user?.rol === 'attendee') {
       navigate('/attendee');
       return;
     }

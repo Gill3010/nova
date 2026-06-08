@@ -4,7 +4,7 @@ import type { PostgresCongress } from '../../services/dbApi';
 
 interface CongressTableProps {
   congresos: PostgresCongress[];
-  onEdit?: (congress: PostgresCongress) => void;
+  onEdit?: (congress: PostgresCongress, action?: 'view' | 'edit') => void;
   userRole?: string;
 }
 
@@ -66,27 +66,34 @@ export const CongressTable: React.FC<CongressTableProps> = React.memo(({ congres
                   </span>
                 </td>
                 <td className="px-6 py-4 text-center">
-                  {onEdit && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onEdit(congreso);
-                      }}
-                      className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      {isAttendeeOrSpeaker ? (
-                        <>
+                  <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {onEdit && (
+                      <>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEdit(congreso, 'view');
+                          }}
+                          className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-lg"
+                        >
                           <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-eye"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
                           Ver Evento
-                        </>
-                      ) : (
-                        <>
-                          <Pencil className="h-3 w-3" aria-hidden="true" />
-                          Editar
-                        </>
-                      )}
-                    </button>
-                  )}
+                        </button>
+                        {!isAttendeeOrSpeaker && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onEdit(congreso, 'edit');
+                            }}
+                            className="inline-flex items-center gap-1 text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 bg-indigo-50 dark:bg-indigo-900/20 px-3 py-1.5 rounded-lg"
+                          >
+                            <Pencil className="h-3 w-3" aria-hidden="true" />
+                            Editar
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </div>
                 </td>
               </tr>
               

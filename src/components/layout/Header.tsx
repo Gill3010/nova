@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, LogOut } from 'lucide-react';
+import { LogOut, Briefcase, CalendarDays } from 'lucide-react';
 import { Button } from '../common/Button';
 import { useAuth } from '../../context/AuthContext';
 
@@ -36,7 +36,11 @@ export const Header: React.FC<HeaderProps> = ({ onOpenDashboard }) => {
                 onClick={onOpenDashboard}
                 aria-label={(user.rol === 'admin' || user.rol === 'organizer') ? "Volver a Mis Congresos" : "Ir al Directorio"}
               >
-                <Home className="h-3.5 w-3.5" aria-hidden="true" />
+                {(user.rol === 'admin' || user.rol === 'organizer') ? (
+                  <Briefcase className="h-3.5 w-3.5" aria-hidden="true" />
+                ) : (
+                  <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
+                )}
                 <span className="hidden sm:inline">
                   {(user.rol === 'admin' || user.rol === 'organizer') ? 'Mis Congresos' : 'Directorio'}
                 </span>

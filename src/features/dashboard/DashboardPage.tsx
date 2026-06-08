@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { RefreshCw, X, Database } from 'lucide-react';
+import { RefreshCw, X, Briefcase, CalendarDays } from 'lucide-react';
 import { fetchDashboardData } from '../../services/dbApi';
 import type { PostgresCongress } from '../../services/dbApi';
 import { StatCards } from './StatCards';
@@ -9,7 +9,7 @@ import { useAuth } from '../../context/AuthContext';
 
 interface DashboardPageProps {
   onClose: () => void;
-  onEditCongress?: (congress: PostgresCongress) => void;
+  onEditCongress?: (congress: PostgresCongress, action?: 'view' | 'edit') => void;
 }
 
 export const DashboardPage: React.FC<DashboardPageProps> = ({ onClose, onEditCongress }) => {
@@ -46,10 +46,15 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onClose, onEditCon
       <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
         <div>
           <h1 className="text-xl font-bold text-zinc-900 dark:text-white flex items-center gap-2.5">
-            <Database className="h-5 w-5 text-zinc-500" aria-hidden="true" /> {isAdminOrOrg ? 'Base de Datos Local' : 'Directorio de Eventos'}
+            {isAdminOrOrg ? (
+              <Briefcase className="h-5 w-5 text-zinc-500" aria-hidden="true" />
+            ) : (
+              <CalendarDays className="h-5 w-5 text-zinc-500" aria-hidden="true" />
+            )}
+            {isAdminOrOrg ? 'Mis Congresos' : 'Directorio de Eventos'}
           </h1>
           <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-            {isAdminOrOrg ? 'Visualización en tiempo real de los congresos y envíos registrados.' : 'Explora y selecciona el congreso al que deseas asistir o participar.'}
+            {isAdminOrOrg ? 'Gestiona y visualiza los congresos que tienes a tu cargo.' : 'Explora y selecciona el congreso al que deseas asistir o participar.'}
           </p>
         </div>
         
@@ -76,7 +81,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onClose, onEditCon
           
           <div className="flex flex-col gap-3 mt-4">
             <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-              {isAdminOrOrg ? 'Registro de Congresos' : 'Eventos Disponibles'}
+              {isAdminOrOrg ? 'Listado de Congresos' : 'Eventos Disponibles'}
             </h2>
             {isLoading ? (
               <div className="h-60 flex items-center justify-center bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-lg">

@@ -34,10 +34,10 @@ router.get('/', verifyToken, checkAdmin, (req, res) => {
 router.put('/:id/rol', verifyToken, checkAdmin, (req, res) => {
   const targetUserId = req.params.id;
   const { rol } = req.body;
-  const rolesPermitidos = ['speaker', 'organizer', 'admin'];
+  const rolesPermitidos = ['attendee', 'speaker', 'organizer', 'admin'];
 
   if (!rolesPermitidos.includes(rol)) {
-    return res.status(400).json({ success: false, error: 'Rol no válido' });
+    return res.status(400).json({ success: false, error: 'Rol no válido: ' + rol });
   }
 
   // Prevenir que un admin se quite a sí mismo el rol de admin por error

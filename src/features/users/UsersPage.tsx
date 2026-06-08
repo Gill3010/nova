@@ -62,6 +62,8 @@ export const UsersPage: React.FC = () => {
         return <Badge variant="destructive" className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border-red-200"><ShieldAlert className="w-3 h-3 mr-1" /> Admin</Badge>;
       case 'organizer':
         return <Badge variant="outline" className="bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400 border-orange-200"><Shield className="w-3 h-3 mr-1" /> Organizer</Badge>;
+      case 'attendee':
+        return <Badge variant="success" className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-200"><Users className="w-3 h-3 mr-1" /> Asistente</Badge>;
       case 'speaker':
       default:
         return <Badge variant="default" className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200">Speaker</Badge>;
@@ -136,6 +138,7 @@ export const UsersPage: React.FC = () => {
                           onChange={(e) => handleRoleChange(user.id, e.target.value)}
                           disabled={processingId === user.id}
                         >
+                          <option value="attendee">Asistente</option>
                           <option value="speaker">Speaker</option>
                           <option value="organizer">Organizer</option>
                           <option value="admin">Admin</option>
