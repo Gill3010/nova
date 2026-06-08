@@ -4,15 +4,26 @@ const db = require('../db');
 const { verifyToken, isAdminOrOrganizer } = require('../middleware/auth');
 const logger = require('../utils/logger');
 
-// Obtener todos los espacios (público para poder listarlos en formularios, aunque podría requerir token)
+// Obtener todos los espacios (filtrado por rol)
 router.get('/', verifyToken, (req, res) => {
+  const { rol, id } = req.user;
+  
+  let whereClause = '';
+  let queryParams = [];
+
+  if (rol !== 'admin') {
+    whereClause = 'WHERE creador_id = $1';
+    queryParams.push(id);
+  }
+
   const query = `
-    SELECT id, nombre, tipo, ubicacion, descripcion, capacidad, equipamiento, enlace_virtual, observaciones, estado, created_at
+    SELECT id, creador_id, nombre, tipo, ubicacion, descripcion, capacidad, equipamiento, enlace_virtual, observaciones, estado, created_at
     FROM espacios
+    ${whereClause}
     ORDER BY nombre ASC
   `;
   
-  db.all(query, [], (err, rows) => {
+  db.all(query, queryParams, (err, rows) => {
     if (err) {
       logger.error('Error al obtener espacios:', err);
       return res.status(500).json({ error: 'Error interno del servidor al obtener espacios' });
@@ -49,13 +60,13 @@ router.post('/', [verifyToken, isAdminOrOrganizer], (req, res) => {
 
   const query = `
     INSERT INTO espacios 
-    (nombre, tipo, ubicacion, descripcion, capacidad, equipamiento, enlace_virtual, observaciones, estado) 
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+    (creador_id, nombre, tipo, ubicacion, descripcion, capacidad, equipamiento, enlace_virtual, observaciones, estado) 
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
   `;
   
   const equipString = Array.isArray(equipamiento) ? JSON.stringify(equipamiento) : '[]';
 
-  db.run(query, [nombre, tipo, ubicacion, descripcion, capacidad || 0, equipString, enlace_virtual, observaciones, estado || 'Activo'], function(err) {
+  db.run(query, [req.user.id, nombre, tipo, ubicacion, descripcion, capacidad || 0, equipString, enlace_virtual, observaciones, estado || 'Activo'], function(err) {
     if (err) {
       logger.error('Error al crear espacio:', err);
       return res.status(500).json({ error: 'Error al crear el espacio' });

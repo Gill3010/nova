@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
 -- 3. Crear la tabla de espacios y ubicaciones
 CREATE TABLE IF NOT EXISTS espacios (
     id SERIAL PRIMARY KEY,
+    creador_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
     nombre VARCHAR(255) NOT NULL,
     tipo VARCHAR(100) NOT NULL,
     ubicacion VARCHAR(255),
