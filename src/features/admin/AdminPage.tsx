@@ -8,9 +8,13 @@ import { Textarea } from '../../components/common/Textarea';
 import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
 import { DEFAULT_ROLES } from '../../constants/data';
+import { useAuth } from '../../context/AuthContext';
 
 export const AdminPage: React.FC = () => {
+  const { user } = useAuth();
   const {
+    internalId,
+    creadorId,
     name,
     setName,
     description,
@@ -46,6 +50,16 @@ export const AdminPage: React.FC = () => {
     selectLine,
     toggleRol
   } = useCongress();
+
+  const canEdit = !internalId || user?.rol === 'admin' || (user?.rol === 'organizer' && creadorId === user?.id);
+
+  if (!canEdit) {
+    return (
+      <Card className="flex flex-col gap-6 w-full animate-fade-in p-8 text-center text-zinc-500">
+        <p>No tienes permisos para editar los datos de este congreso.</p>
+      </Card>
+    );
+  }
 
   return (
     <Card className="flex flex-col gap-6 w-full animate-fade-in">

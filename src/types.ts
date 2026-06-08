@@ -16,6 +16,7 @@ export interface Congress {
   ojs_publication_id?: number;
   fecha_finalizacion?: string;
   espacio_id?: number;
+  creador_id?: number;
   sedes?: { espacio_id: number; es_sede_principal: boolean }[];
 }
 

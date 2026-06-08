@@ -9,9 +9,11 @@ import { Badge } from '../../components/common/Badge';
 import { Textarea } from '../../components/common/Textarea';
 import { fetchActividades, createActividad, updateActividad, deleteActividad } from '../../services/dbApi';
 import type { Actividad } from '../../types';
+import { useAuth } from '../../context/AuthContext';
 
 export const AgendaAdmin: React.FC = () => {
-  const { internalId, name: congressName, espaciosIds, espacios } = useCongress();
+  const { user } = useAuth();
+  const { internalId, creadorId, name: congressName, espaciosIds, espacios } = useCongress();
   const [actividades, setActividades] = useState<Actividad[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -24,6 +26,8 @@ export const AgendaAdmin: React.FC = () => {
   const [espacioSeleccionado, setEspacioSeleccionado] = useState<number | ''>('');
   const [enlaceVirtual, setEnlaceVirtual] = useState('');
   const [editingActividadId, setEditingActividadId] = useState<number | null>(null);
+
+  const canEdit = user?.rol === 'admin' || (user?.rol === 'organizer' && creadorId === user?.id);
 
   const cargarActividades = async () => {
     if (!internalId) return;
@@ -140,96 +144,127 @@ export const AgendaAdmin: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         
-        {/* Formulario Izquierda */}
-        <div className="lg:col-span-5 flex flex-col gap-5">
-          <div className={`bg-slate-50 dark:bg-slate-900/50 p-5 rounded-xl border transition-colors ${editingActividadId ? 'border-indigo-400 dark:border-indigo-600 bg-indigo-50/30' : 'border-slate-100 dark:border-slate-800'}`}>
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="font-semibold text-slate-900 dark:text-white">
-                {editingActividadId ? 'Editar Actividad' : 'Nueva Actividad'}
-              </h3>
-              {editingActividadId && (
-                <Button type="button" variant="ghost" size="sm" onClick={cancelEdit} className="text-slate-500 hover:text-slate-800 flex gap-1 items-center">
-                  <X className="h-3 w-3" /> Cancelar
-                </Button>
-              )}
-            </div>
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-              <Input
-                id="act-titulo"
-                label="Título de la Actividad / Ponencia *"
-                value={titulo}
-                onChange={e => setTitulo(e.target.value)}
-                placeholder="Ej. Conferencia Magistral"
-                required
-              />
-              
-              <Textarea
-                id="act-desc"
-                label="Descripción / Ponente"
-                value={descripcion}
-                onChange={e => setDescripcion(e.target.value)}
-                rows={2}
-                placeholder="Breve descripción o nombre del ponente..."
-              />
-
-              <div className="grid grid-cols-3 gap-3">
-                <Input
-                  id="act-fecha"
-                  type="date"
-                  label="Fecha *"
-                  value={fecha}
-                  onChange={e => setFecha(e.target.value)}
-                  required
-                />
-                <Input
-                  id="act-hora-ini"
-                  type="time"
-                  label="Inicio *"
-                  value={horaInicio}
-                  onChange={e => setHoraInicio(e.target.value)}
-                  required
-                />
-                <Input
-                  id="act-hora-fin"
-                  type="time"
-                  label="Fin *"
-                  value={horaFin}
-                  onChange={e => setHoraFin(e.target.value)}
-                  required
-                />
-              </div>
-
-              <Select
-                id="act-espacio"
-                label="Sede / Espacio"
-                value={espacioSeleccionado}
-                onChange={e => setEspacioSeleccionado(Number(e.target.value) || '')}
-              >
-                <option value="">-- No asignar sede física --</option>
-                {sedesDelCongreso.map(sede => (
-                  <option key={sede.id} value={sede.id}>
-                    {sede.tipo === 'virtual' ? (sede.enlace_virtual || sede.nombre) : (sede.ubicacion || sede.nombre)}
-                  </option>
-                ))}
-              </Select>
-
-              <Input
-                id="act-virtual"
-                label="Enlace Virtual (Opcional)"
-                value={enlaceVirtual}
-                onChange={e => setEnlaceVirtual(e.target.value)}
-                placeholder="https://zoom.us/j/..."
-              />
-
-              <Button type="submit" variant="primary" className="mt-2 w-full flex items-center justify-center gap-2">
-                {editingActividadId ? (
-                  <>Guardar Cambios</>
-                ) : (
-                  <><Plus className="h-4 w-4" /> Agregar al Itinerario</>
+        {/* Columna Izquierda: Formulario (Solo si tiene permisos) */}
+        <div className="lg:col-span-5 flex flex-col gap-6">
+          {canEdit ? (
+            <Card>
+              <div className="p-5 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
+                <h2 className="text-lg font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+                  <Calendar className="h-5 w-5 text-indigo-500" />
+                  {editingActividadId ? 'Editar Actividad' : 'Nueva Actividad'}
+                </h2>
+                {editingActividadId && (
+                  <Button variant="ghost" size="sm" onClick={resetForm}>
+                    <X className="h-4 w-4 mr-1" />
+                    Cancelar
+                  </Button>
                 )}
-              </Button>
-            </form>
-          </div>
+              </div>
+              
+              <div className="p-5">
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                      Título de la Actividad / Ponencia *
+                    </label>
+                    <Input
+                      required
+                      value={titulo}
+                      onChange={(e) => setTitulo(e.target.value)}
+                      placeholder="Ej. Conferencia Magistral"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                      Descripción / Ponente
+                    </label>
+                    <Textarea
+                      rows={2}
+                      value={descripcion}
+                      onChange={(e) => setDescripcion(e.target.value)}
+                      placeholder="Breve descripción o nombre del ponente..."
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="sm:col-span-1">
+                      <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                        Fecha *
+                      </label>
+                      <Input
+                        type="date"
+                        required
+                        value={fecha}
+                        onChange={(e) => setFecha(e.target.value)}
+                      />
+                    </div>
+                    <div className="sm:col-span-1">
+                      <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                        Inicio *
+                      </label>
+                      <Input
+                        type="time"
+                        required
+                        value={horaInicio}
+                        onChange={(e) => setHoraInicio(e.target.value)}
+                      />
+                    </div>
+                    <div className="sm:col-span-1">
+                      <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                        Fin *
+                      </label>
+                      <Input
+                        type="time"
+                        required
+                        value={horaFin}
+                        onChange={(e) => setHoraFin(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                      Sede / Espacio
+                    </label>
+                    <Select
+                      value={espacioSeleccionado}
+                      onChange={(e) => setEspacioSeleccionado(e.target.value ? Number(e.target.value) : '')}
+                    >
+                      <option value="">-- No asignar sede física --</option>
+                      {espacios.filter(e => espaciosIds?.includes(e.id)).map(esp => (
+                        <option key={esp.id} value={esp.id}>{esp.nombre}</option>
+                      ))}
+                    </Select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                      Enlace Virtual (Opcional)
+                    </label>
+                    <Input
+                      type="url"
+                      value={enlaceVirtual}
+                      onChange={(e) => setEnlaceVirtual(e.target.value)}
+                      placeholder="https://zoom.us/j/..."
+                    />
+                  </div>
+
+                  <div className="pt-2">
+                    <Button type="submit" variant="primary" className="w-full" disabled={isLoading}>
+                      {isLoading ? 'Guardando...' : (editingActividadId ? 'Actualizar Actividad' : 'Agregar a la Agenda')}
+                    </Button>
+                  </div>
+                </form>
+              </div>
+            </Card>
+          ) : (
+            <Card>
+              <div className="p-5 text-center text-zinc-500">
+                <p>No tienes permisos para editar la agenda de este congreso.</p>
+              </div>
+            </Card>
+          )}
         </div>
 
         {/* Listado Derecha */}
@@ -260,22 +295,27 @@ export const AgendaAdmin: React.FC = () => {
                   <div className="flex-1 flex flex-col justify-center min-w-0">
                     <div className="flex justify-between items-start gap-2">
                       <h4 className="font-semibold text-slate-900 dark:text-slate-100 truncate">{act.titulo}</h4>
-                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button 
-                          onClick={() => handleEditClick(act)}
-                          className="text-slate-400 hover:text-indigo-600 transition-colors p-1"
-                          title="Editar actividad"
-                        >
-                          <Edit2 className="h-4 w-4" />
-                        </button>
-                        <button 
-                          onClick={() => handleDelete(act.id)}
-                          className="text-slate-400 hover:text-red-600 transition-colors p-1"
-                          title="Eliminar actividad"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
+                      {canEdit && (
+                        <div className="flex flex-col sm:items-end gap-2 shrink-0">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => handleEdit(act)}
+                          >
+                            <Edit2 className="h-4 w-4 mr-1.5" />
+                            Editar
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                            onClick={() => handleDelete(act.id)}
+                          >
+                            <Trash2 className="h-4 w-4 mr-1.5" />
+                            Eliminar
+                          </Button>
+                        </div>
+                      )}
                     </div>
                     
                     {act.descripcion && <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 truncate">{act.descripcion}</p>}
