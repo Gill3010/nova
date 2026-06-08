@@ -185,8 +185,10 @@ export const AdminPage: React.FC = () => {
                         : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800/80'
                     }`}
                   >
-                    {room.nombre}
-                    {isMain && <Badge className="ml-1 text-[9px] py-0 px-1">Principal</Badge>}
+                    <span className="truncate max-w-[200px]" title={room.tipo === 'virtual' ? room.enlace_virtual : room.ubicacion}>
+                      {room.tipo === 'virtual' ? (room.enlace_virtual || room.nombre) : (room.ubicacion || room.nombre)}
+                    </span>
+                    {isMain && <Badge className="ml-1 text-[9px] py-0 px-1 shrink-0">Principal</Badge>}
                   </button>
                 );
               })}
