@@ -166,12 +166,12 @@ export const SpacesPage: React.FC = () => {
             <form onSubmit={handleSubmit} className="flex flex-col gap-5">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <Input
-                  label="Nombre del Espacio"
-                  value={nombre}
-                  onChange={(e) => setNombre(e.target.value)}
-                  placeholder="Ej. Aula Magna"
-                  required
+                  label={tipo === 'virtual' ? 'Servidor / Plataforma' : 'Institución / Sede / Edificio'}
+                  value={ubicacion}
+                  onChange={(e) => setUbicacion(e.target.value)}
+                  placeholder={tipo === 'virtual' ? 'Ej. Servidor Central' : 'Ej. TEC de Monterrey, Edificio A'}
                 />
+                
                 <Select
                   label="Tipo de Espacio"
                   value={tipo}
@@ -182,10 +182,11 @@ export const SpacesPage: React.FC = () => {
                 </Select>
                 
                 <Input
-                  label={tipo === 'virtual' ? 'Servidor / Plataforma' : 'Ubicación / Edificio'}
-                  value={ubicacion}
-                  onChange={(e) => setUbicacion(e.target.value)}
-                  placeholder={tipo === 'virtual' ? 'Ej. Servidor Central' : 'Ej. Edificio A'}
+                  label="Nombre del Espacio (Aula, Salón, Auditorio)"
+                  value={nombre}
+                  onChange={(e) => setNombre(e.target.value)}
+                  placeholder="Ej. Auditorio Principal"
+                  required
                 />
                 
                 <Input

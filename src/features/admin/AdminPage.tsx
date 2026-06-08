@@ -162,7 +162,7 @@ export const AdminPage: React.FC = () => {
 
           <div className="flex flex-col gap-1.5">
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-              Sedes / Espacios <span className="text-xs text-slate-500 font-normal">(Selección múltiple. El primero será la sede principal)</span>
+              Aulas y Subsedes <span className="text-xs text-slate-500 font-normal">(Haz clic en varios para selección múltiple)</span>
             </label>
             <div className="flex flex-wrap gap-2 mt-1">
               {espacios.map(room => {
@@ -208,13 +208,13 @@ export const AdminPage: React.FC = () => {
                 </div>
                 <div className="text-xs flex flex-col gap-1.5 text-slate-600 dark:text-slate-400">
                   <div className="flex flex-col gap-0.5 min-w-0 overflow-hidden w-full">
-                    <strong className="text-slate-800 dark:text-slate-200">Ubicación/Enlace:</strong>
+                    <strong className="text-slate-800 dark:text-slate-200">Institución / Edificio / Enlace:</strong>
                     {selectedClassroomObj.tipo === 'virtual' ? (
                       <a href={selectedClassroomObj.enlace_virtual} target="_blank" rel="noopener noreferrer" className="text-indigo-600 dark:text-indigo-400 hover:underline truncate block">
                         {selectedClassroomObj.enlace_virtual}
                       </a>
                     ) : (
-                      <span className="truncate block">{selectedClassroomObj.ubicacion}</span>
+                      <span className="truncate">{selectedClassroomObj.ubicacion || 'No especificada'}</span>
                     )}
                   </div>
                   <p>

@@ -92,7 +92,7 @@ router.get('/', verifyToken, (req, res) => {
 });
 
 // 2. Guardar un nuevo congreso con validación de inputs
-router.post('/', verifyToken, (req, res) => {
+router.post('/', verifyToken, async (req, res) => {
   const {
     nombre,
     descripcion,
@@ -114,7 +114,34 @@ router.post('/', verifyToken, (req, res) => {
   const creador_id = req.user.id;
   
   // Retrocompatibilidad o seteo del primary space
-  const primarySpaceId = (espaciosIds && espaciosIds.length > 0) ? espaciosIds[0] : (espacio_id || null);
+  let finalPrimarySpaceId = (espaciosIds && espaciosIds.length > 0) ? espaciosIds[0] : (espacio_id || null);
+  let finalEspaciosIds = espaciosIds ? [...espaciosIds] : [];
+
+  if (sede && sede.trim() !== '') {
+    const sedeName = sede.trim();
+    try {
+      // Buscar si existe algún espacio con esta misma ubicación/institución y nombre genérico
+      const resQuery = await db.query(`SELECT id FROM espacios WHERE nombre = 'Espacio Principal' AND ubicacion ILIKE $1 LIMIT 1`, [sedeName]);
+      if (resQuery.rows && resQuery.rows.length > 0) {
+        finalPrimarySpaceId = resQuery.rows[0].id;
+      } else {
+        const insertRes = await db.query(
+          `INSERT INTO espacios (nombre, tipo, ubicacion, estado) VALUES ($1, $2, $3, $4) RETURNING id`,
+          ['Espacio Principal', 'física', sedeName, 'Activo']
+        );
+        if (insertRes.rows && insertRes.rows.length > 0) {
+          finalPrimarySpaceId = insertRes.rows[0].id;
+        }
+      }
+      
+      if (finalPrimarySpaceId) {
+        finalEspaciosIds = finalEspaciosIds.filter(id => id !== finalPrimarySpaceId);
+        finalEspaciosIds.unshift(finalPrimarySpaceId);
+      }
+    } catch (error) {
+      logger.error('Error al autogestionar sede principal', { error: error.message });
+    }
+  }
 
   // Validación de inputs
   if (!nombre || !nombre.trim()) {
@@ -156,7 +183,7 @@ router.post('/', verifyToken, (req, res) => {
     ojs_journal_path ? ojs_journal_path.trim() : null,
     ojs_submission_id || null,
     ojs_publication_id || null,
-    primarySpaceId
+    finalPrimarySpaceId
   ];
   
   db.run(query, values, async function(err) {
@@ -168,12 +195,12 @@ router.post('/', verifyToken, (req, res) => {
     const insertedId = this.lastID;
     logger.info('Congreso registrado con éxito', { insertedId, creador_id });
     
-    if (espaciosIds && Array.isArray(espaciosIds) && espaciosIds.length > 0) {
+    if (finalEspaciosIds && Array.isArray(finalEspaciosIds) && finalEspaciosIds.length > 0) {
       try {
-        for (let i = 0; i < espaciosIds.length; i++) {
+        for (let i = 0; i < finalEspaciosIds.length; i++) {
           await db.query(
             `INSERT INTO congreso_sedes (congreso_id, espacio_id, es_sede_principal) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`,
-            [insertedId, espaciosIds[i], i === 0]
+            [insertedId, finalEspaciosIds[i], i === 0]
           );
         }
       } catch (e) {
@@ -191,7 +218,7 @@ router.post('/', verifyToken, (req, res) => {
 });
 
 // 3. Actualizar un congreso existente con validación de inputs
-router.put('/:id', verifyToken, (req, res) => {
+router.put('/:id', verifyToken, async (req, res) => {
   const congressId = req.params.id;
   const {
     nombre, descripcion, fecha_celebracion, fecha_finalizacion, sede, modalidad,
@@ -203,7 +230,34 @@ router.put('/:id', verifyToken, (req, res) => {
   const userId = req.user.id;
   const rol = req.user.rol;
   
-  const primarySpaceId = (espaciosIds && espaciosIds.length > 0) ? espaciosIds[0] : (espacio_id || null);
+  let finalPrimarySpaceId = (espaciosIds && espaciosIds.length > 0) ? espaciosIds[0] : (espacio_id || null);
+  let finalEspaciosIds = espaciosIds ? [...espaciosIds] : [];
+
+  if (sede && sede.trim() !== '') {
+    const sedeName = sede.trim();
+    try {
+      // Buscar si existe algún espacio con esta misma ubicación/institución y nombre genérico
+      const resQuery = await db.query(`SELECT id FROM espacios WHERE nombre = 'Espacio Principal' AND ubicacion ILIKE $1 LIMIT 1`, [sedeName]);
+      if (resQuery.rows && resQuery.rows.length > 0) {
+        finalPrimarySpaceId = resQuery.rows[0].id;
+      } else {
+        const insertRes = await db.query(
+          `INSERT INTO espacios (nombre, tipo, ubicacion, estado) VALUES ($1, $2, $3, $4) RETURNING id`,
+          ['Espacio Principal', 'física', sedeName, 'Activo']
+        );
+        if (insertRes.rows && insertRes.rows.length > 0) {
+          finalPrimarySpaceId = insertRes.rows[0].id;
+        }
+      }
+      
+      if (finalPrimarySpaceId) {
+        finalEspaciosIds = finalEspaciosIds.filter(id => id !== finalPrimarySpaceId);
+        finalEspaciosIds.unshift(finalPrimarySpaceId);
+      }
+    } catch (error) {
+      logger.error('Error al autogestionar sede principal en PUT', { error: error.message });
+    }
+  }
 
   // Validación de inputs
   if (!nombre || !nombre.trim()) {
@@ -239,7 +293,7 @@ router.put('/:id', verifyToken, (req, res) => {
     ojs_journal_path ? ojs_journal_path.trim() : null,
     ojs_submission_id || null,
     ojs_publication_id || null,
-    primarySpaceId
+    finalPrimarySpaceId
   ];
   let counter = 16;
 
@@ -262,13 +316,13 @@ router.put('/:id', verifyToken, (req, res) => {
       return res.status(404).json({ success: false, error: 'Congreso no encontrado o no autorizado' });
     }
     
-    if (espaciosIds && Array.isArray(espaciosIds)) {
+    if (finalEspaciosIds && Array.isArray(finalEspaciosIds)) {
       try {
         await db.query(`DELETE FROM congreso_sedes WHERE congreso_id = $1`, [congressId]);
-        for (let i = 0; i < espaciosIds.length; i++) {
+        for (let i = 0; i < finalEspaciosIds.length; i++) {
           await db.query(
             `INSERT INTO congreso_sedes (congreso_id, espacio_id, es_sede_principal) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`,
-            [congressId, espaciosIds[i], i === 0]
+            [congressId, finalEspaciosIds[i], i === 0]
           );
         }
       } catch (e) {
