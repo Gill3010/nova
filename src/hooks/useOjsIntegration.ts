@@ -260,6 +260,7 @@ export function useOjsIntegration() {
           headers: apiHeaders(token),
           body: JSON.stringify({
             nombre: congressJson.name,
+            lema: congressJson.motto || null,
             descripcion: congressJson.description,
             fecha_celebracion: congressJson.date,
             fecha_finalizacion: congressJson.fecha_finalizacion || null,
@@ -308,6 +309,9 @@ export function useOjsIntegration() {
     submissionKeywords,
     contributors,
     submissionCategory,
+    oldCongressJson,
+    isMovingCongress,
+    files,
     onSuccessSpeaker,
     onSuccessAdmin,
   }: {
@@ -322,6 +326,9 @@ export function useOjsIntegration() {
     submissionKeywords?: string;
     contributors?: import('../types').Contributor[];
     submissionCategory?: 'poster' | 'libro' | 'articulo';
+    oldCongressJson?: Congress;
+    isMovingCongress?: boolean;
+    files?: { key: string; file: FileInfo | null; label: string }[];
     onSuccessSpeaker?: () => void;
     onSuccessAdmin?: () => void;
   }) => {
@@ -343,15 +350,84 @@ export function useOjsIntegration() {
           targetJournalPath = (congressJson as any).ojs_journal_path;
         }
 
-        if (ojsSubmissionId && targetOjsUrl.trim() && targetOjsApiKey.trim() && targetJournalPath) {
-          const subId = ojsSubmissionId;
+        let currentSubId = ojsSubmissionId;
+        let currentPubId = ojsPublicationId;
+
+        if (isMovingCongress && oldCongressJson && ojsSubmissionId) {
+          addLog('info', `Mudanza de Congreso detectada. Intentando eliminar envío ID ${ojsSubmissionId} del OJS anterior...`);
+          try {
+            const oldUrl = (oldCongressJson as any).ojs_url;
+            const oldKey = (oldCongressJson as any).ojs_api_key;
+            const oldPath = (oldCongressJson as any).ojs_journal_path;
+            await ojsApi.deleteSubmission(oldUrl, oldKey, oldPath, ojsSubmissionId);
+            addLog('success', 'Envío eliminado correctamente del OJS anterior.');
+          } catch (delErr: any) {
+            const errorMsg = delErr.data && typeof delErr.data === 'object' ? JSON.stringify(delErr.data) : (delErr.message ?? delErr.statusText ?? JSON.stringify(delErr));
+            addLog('error', `No se pudo eliminar el envío del congreso anterior. Posiblemente OJS lo ha bloqueado (por avance editorial). Detalle: ${errorMsg}`);
+            alert(`Error: No se puede mover el envío a otro congreso.\nEl sistema del congreso anterior rechazó la eliminación porque el envío ya se encuentra en proceso.\n\nDetalle: ${errorMsg}`);
+            setIsPublishing(false);
+            return;
+          }
+
+          addLog('info', 'Creando el envío en el nuevo OJS...');
+          const currentJournal = await resolveJournal(targetOjsUrl, targetOjsApiKey, targetJournalPath);
+          if (!currentJournal) {
+            setIsPublishing(false);
+            return;
+          }
+          const locale = getJournalLocale(currentJournal.nameObj);
+          
+          let sectionId = 1;
+          try { sectionId = await ojsApi.fetchSectionId(targetOjsUrl, targetOjsApiKey, currentJournal.urlPath); } catch {}
+          
+          const submissionPayload = {
+            locale, sectionId, publication: { title: { [locale]: submissionTitle }, abstract: { [locale]: `Línea: ${(congressJson as any).researchLine}. Categoría: ${submissionCategory}` } }
+          };
+          const subData = await ojsApi.createSubmission(targetOjsUrl, targetOjsApiKey, currentJournal.urlPath, submissionPayload);
+          const newSubmissionId: number = subData.id ?? 412;
+          const newPublicationId: number = subData.currentPublication?.id ?? subData.publications?.[0]?.id ?? 1;
+          addLog('success', `Envío creado en el nuevo OJS. ID: ${newSubmissionId}`);
+          
+          const keywordsArray = submissionKeywords ? submissionKeywords.split(',').map((k: string) => k.trim()).filter(Boolean) : [];
+          const updatePayload = {
+            title: { [locale]: submissionTitle }, abstract: { [locale]: submissionAbstract || `Línea: ${(congressJson as any).researchLine}` }, ...(keywordsArray.length > 0 && { keywords: { [locale]: keywordsArray } })
+          };
+          await ojsApi.updatePublication(targetOjsUrl, targetOjsApiKey, currentJournal.urlPath, newSubmissionId, newPublicationId, updatePayload);
+          
+          const validContributors = (contributors ?? []).filter((c) => c.email.trim() && c.givenName.trim());
+          if (validContributors.length > 0) {
+            let userGroupId = 14;
+            try { userGroupId = await ojsApi.fetchUserGroupId(targetOjsUrl, targetOjsApiKey, currentJournal.urlPath, currentJournal.id); } catch {}
+            for (let i = 0; i < validContributors.length; i++) {
+              const c = validContributors[i];
+              await ojsApi.addContributor(targetOjsUrl, targetOjsApiKey, currentJournal.urlPath, newSubmissionId, newPublicationId, {
+                givenName: { [locale]: c.givenName }, familyName: { [locale]: c.familyName }, email: c.email, country: c.country || 'PA', affiliation: { [locale]: c.affiliation }, userGroupId, includeInBrowse: true, seq: i
+              });
+            }
+          }
+          
+          const filesToUpload = (files || []).filter((x) => x.file !== null);
+          for (const item of filesToUpload) {
+            if (!item.file) continue;
+            const fileObject = item.file.rawFile ?? new File([`Contenido de prueba Nova: ${item.file.name}`], item.file.name, { type: 'text/plain' });
+            const fileData = await ojsApi.uploadSubmissionFile(targetOjsUrl, targetOjsApiKey, currentJournal.urlPath, newSubmissionId, fileObject, '2', item.key === 'manuscript' ? '1' : '2');
+            const fileId = fileData.id ?? Math.floor(Math.random() * 5000);
+            try {
+              await ojsApi.createGalley(targetOjsUrl, targetOjsApiKey, currentJournal.urlPath, newSubmissionId, newPublicationId, { label: item.label, submissionFileId: fileId, locale });
+            } catch {}
+          }
+          
+          currentSubId = newSubmissionId;
+          currentPubId = newPublicationId;
+        } else if (currentSubId && targetOjsUrl.trim() && targetOjsApiKey.trim() && targetJournalPath) {
+          const subId = currentSubId;
           addLog('info', `Iniciando sincronización de cambios con OJS para Envío ID ${subId}...`);
           const currentJournal = await resolveJournal(targetOjsUrl, targetOjsApiKey, targetJournalPath);
           if (currentJournal) {
             const locale = getJournalLocale(currentJournal.nameObj);
 
             // Fetch correct publication ID if not provided
-            let publicationId = ojsPublicationId;
+            let publicationId = currentPubId;
             if (!publicationId) {
               try {
                 const subDetails = await ojsApi.fetchSubmission(targetOjsUrl, targetOjsApiKey, currentJournal.urlPath, subId);
@@ -426,6 +502,8 @@ export function useOjsIntegration() {
           colaboradores: JSON.stringify(contributors ?? []),
           categoria: submissionCategory ?? 'articulo',
           ...(selectedCongressId && { congreso_id: parseInt(selectedCongressId, 10) }),
+          ...(currentSubId && { ojs_submission_id: currentSubId }),
+          ...(currentPubId && { ojs_publication_id: currentPubId }),
         };
 
         const res = await fetch(import.meta.env.PROD ? `/api/envios/${internalId}` : `http://localhost:3001/api/envios/${internalId}`, {
@@ -469,6 +547,7 @@ export function useOjsIntegration() {
         // --- 2. Save changes to Nova database ---
         const payload = {
           nombre: congressJson.name,
+          lema: congressJson.motto || null,
           descripcion: congressJson.description,
           fecha_celebracion: congressJson.date,
           fecha_finalizacion: congressJson.fecha_finalizacion || null,
@@ -504,7 +583,8 @@ export function useOjsIntegration() {
         }
       }
     } catch (err: any) {
-      const msg = `Error en sincronización o red: ${err.message}`;
+      const errorMsg = err.data && typeof err.data === 'object' ? JSON.stringify(err.data) : (err.message ?? err.statusText ?? JSON.stringify(err));
+      const msg = `Error en sincronización o red: ${errorMsg}`;
       addLog('error', msg);
       alert(msg);
     } finally {

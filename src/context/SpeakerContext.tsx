@@ -18,6 +18,7 @@ interface SpeakerState {
   ojsSubmissionId: number | undefined;
   ojsPublicationId: number | undefined;
   selectedCongressId: string;
+  originalCongressId: string;
 }
 
 // ---- Actions ----------------------------------------------------------------
@@ -62,6 +63,7 @@ const INITIAL_STATE: SpeakerState = {
   ojsSubmissionId: undefined,
   ojsPublicationId: undefined,
   selectedCongressId: '',
+  originalCongressId: '',
 };
 
 // ---- Reducer ----------------------------------------------------------------
@@ -147,6 +149,7 @@ interface SpeakerContextType {
   ojsPublicationId: number | undefined;
   loadSubmission: (data: any) => void;
   selectedCongressId: string;
+  originalCongressId: string;
   setSelectedCongressId: React.Dispatch<React.SetStateAction<string>>;
 }
 
@@ -205,6 +208,7 @@ export const SpeakerProvider: React.FC<{ children: React.ReactNode }> = ({ child
         ojsSubmissionId: data.ojs_submission_id,
         ojsPublicationId: data.ojs_publication_id,
         selectedCongressId: data.congreso_id ? String(data.congreso_id) : '',
+        originalCongressId: data.congreso_id ? String(data.congreso_id) : '',
         submissionTitle: data.titulo_articulo || '',
         submissionKeywords: data.palabras_claves || '',
         submissionCategory: (data.categoria as Submission['category']) || 'articulo',
@@ -241,6 +245,7 @@ export const SpeakerProvider: React.FC<{ children: React.ReactNode }> = ({ child
     ojsSubmissionId: state.ojsSubmissionId,
     ojsPublicationId: state.ojsPublicationId,
     selectedCongressId: state.selectedCongressId,
+    originalCongressId: state.originalCongressId,
     setSelectedCongressId: setSelectedCongressId as React.Dispatch<React.SetStateAction<string>>,
     resetSpeakerForm,
     loadSubmission,

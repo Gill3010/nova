@@ -51,7 +51,14 @@ export const CongressTable: React.FC<CongressTableProps> = React.memo(({ congres
                 onClick={() => toggleRow(congreso.id)}
               >
                 <td className="px-6 py-4 font-medium text-slate-900 dark:text-white max-w-xs truncate">
-                  {congreso.nombre}
+                  <div className="flex flex-col">
+                    <span className="truncate">{congreso.nombre}</span>
+                    {congreso.lema && (
+                      <span className="text-xs font-normal text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                        "{congreso.lema}"
+                      </span>
+                    )}
+                  </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   {new Date(congreso.fecha_celebracion).toLocaleDateString()}
@@ -116,6 +123,9 @@ export const CongressTable: React.FC<CongressTableProps> = React.memo(({ congres
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800/50 p-4 rounded-lg border border-slate-200 dark:border-slate-700/50">
                           <div className="col-span-full">
                             <span className="font-semibold block text-slate-500">Descripción / Convocatoria:</span>
+                            {congreso.lema && (
+                              <p className="mt-1 text-indigo-600 dark:text-indigo-400 italic mb-2">"{congreso.lema}"</p>
+                            )}
                             <p className="mt-1">{congreso.descripcion}</p>
                           </div>
                           <div>

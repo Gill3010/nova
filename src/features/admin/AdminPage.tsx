@@ -17,6 +17,8 @@ export const AdminPage: React.FC = () => {
     creadorId,
     name,
     setName,
+    motto,
+    setMotto,
     description,
     setDescription,
     date,
@@ -78,6 +80,16 @@ export const AdminPage: React.FC = () => {
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Ej. Congreso Internacional de Posgrado"
+        />
+
+        {/* Lema del Congreso */}
+        <Input
+          id="cong-motto"
+          label="Lema del Congreso"
+          type="text"
+          value={motto}
+          onChange={(e) => setMotto(e.target.value)}
+          placeholder="Ej. Innovando para un futuro sostenible"
         />
 
         {/* Descripción */}

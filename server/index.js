@@ -26,6 +26,11 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
+
+// Importar rutas de proxy ANTES de express.json() para evitar consumir el stream de subidas y POSTs
+const ojsProxyRoutes = require('./routes/ojsProxy');
+app.use('/api/ojs-proxy', ojsProxyRoutes);
+
 app.use(express.json());
 
 // Middleware de registro de peticiones (Logging estructurado)

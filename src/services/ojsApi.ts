@@ -1,21 +1,24 @@
 import type { OjsJournal } from '../types';
 import { getPortalBaseUrl } from '../utils/ojsUtils';
 
-const getHeaders = (apiKey: string, portalUrl: string) => {
+const API_BASE_URL = import.meta.env.PROD ? '/api' : 'http://localhost:3001/api';
+const PROXY_URL = `${API_BASE_URL}/ojs-proxy`;
+
+const getHeaders = (apiKey: string, targetOjsUrl: string) => {
   return {
     'Accept': 'application/json',
     'Content-Type': 'application/json',
     'Authorization': `Bearer ${apiKey}`,
-    'x-ojs-base-url': portalUrl
+    'x-ojs-target-url': targetOjsUrl
   };
 };
 
 export const fetchJournals = async (ojsUrl: string, apiKey: string): Promise<OjsJournal[]> => {
   const portalUrl = getPortalBaseUrl(ojsUrl);
-  const targetUrl = `/ojs-api/index.php/index/api/v1/contexts`;
-  const headers = getHeaders(apiKey, portalUrl);
+  const targetOjsUrl = `${portalUrl}/index.php/index/api/v1/contexts`;
+  const headers = getHeaders(apiKey, targetOjsUrl);
 
-  const response = await fetch(targetUrl, {
+  const response = await fetch(PROXY_URL, {
     method: 'GET',
     headers
   });
@@ -39,10 +42,10 @@ export const fetchJournals = async (ojsUrl: string, apiKey: string): Promise<Ojs
 
 export const fetchSectionId = async (ojsUrl: string, apiKey: string, journalPath: string): Promise<number> => {
   const portalUrl = getPortalBaseUrl(ojsUrl);
-  const targetUrl = `/ojs-api/index.php/${journalPath}/api/v1/submissions?count=1`;
-  const headers = getHeaders(apiKey, portalUrl);
+  const targetOjsUrl = `${portalUrl}/index.php/${journalPath}/api/v1/submissions?count=1`;
+  const headers = getHeaders(apiKey, targetOjsUrl);
 
-  const response = await fetch(targetUrl, {
+  const response = await fetch(PROXY_URL, {
     method: 'GET',
     headers
   });
@@ -69,10 +72,10 @@ export const createSubmission = async (
   payload: any
 ): Promise<any> => {
   const portalUrl = getPortalBaseUrl(ojsUrl);
-  const targetUrl = `/ojs-api/index.php/${journalPath}/api/v1/submissions`;
-  const headers = getHeaders(apiKey, portalUrl);
+  const targetOjsUrl = `${portalUrl}/index.php/${journalPath}/api/v1/submissions`;
+  const headers = getHeaders(apiKey, targetOjsUrl);
 
-  const response = await fetch(targetUrl, {
+  const response = await fetch(PROXY_URL, {
     method: 'POST',
     headers,
     body: JSON.stringify(payload)
@@ -107,7 +110,7 @@ export const uploadSubmissionFile = async (
   genreId: string = '2'
 ): Promise<any> => {
   const portalUrl = getPortalBaseUrl(ojsUrl);
-  const targetUrl = `/ojs-api/index.php/${journalPath}/api/v1/submissions/${submissionId}/files`;
+  const targetOjsUrl = `${portalUrl}/index.php/${journalPath}/api/v1/submissions/${submissionId}/files`;
 
   const formData = new FormData();
   formData.append('file', file);
@@ -116,10 +119,10 @@ export const uploadSubmissionFile = async (
 
   const uploadHeaders = {
     'Authorization': `Bearer ${apiKey}`,
-    'x-ojs-base-url': portalUrl
+    'x-ojs-target-url': targetOjsUrl
   };
 
-  const response = await fetch(targetUrl, {
+  const response = await fetch(PROXY_URL, {
     method: 'POST',
     headers: uploadHeaders,
     body: formData
@@ -153,10 +156,10 @@ export const createGalley = async (
   payload: any
 ): Promise<any> => {
   const portalUrl = getPortalBaseUrl(ojsUrl);
-  const targetUrl = `/ojs-api/index.php/${journalPath}/api/v1/submissions/${submissionId}/publications/${publicationId}/galleys`;
-  const headers = getHeaders(apiKey, portalUrl);
+  const targetOjsUrl = `${portalUrl}/index.php/${journalPath}/api/v1/submissions/${submissionId}/publications/${publicationId}/galleys`;
+  const headers = getHeaders(apiKey, targetOjsUrl);
 
-  const response = await fetch(targetUrl, {
+  const response = await fetch(PROXY_URL, {
     method: 'POST',
     headers,
     body: JSON.stringify(payload)
@@ -187,10 +190,10 @@ export const fetchIssues = async (
   journalPath: string
 ): Promise<any> => {
   const portalUrl = getPortalBaseUrl(ojsUrl);
-  const targetUrl = `/ojs-api/index.php/${journalPath}/api/v1/issues?count=5`;
-  const headers = getHeaders(apiKey, portalUrl);
+  const targetOjsUrl = `${portalUrl}/index.php/${journalPath}/api/v1/issues?count=5`;
+  const headers = getHeaders(apiKey, targetOjsUrl);
 
-  const response = await fetch(targetUrl, {
+  const response = await fetch(PROXY_URL, {
     method: 'GET',
     headers
   });
@@ -211,10 +214,10 @@ export const updatePublication = async (
   payload: any
 ): Promise<any> => {
   const portalUrl = getPortalBaseUrl(ojsUrl);
-  const targetUrl = `/ojs-api/index.php/${journalPath}/api/v1/submissions/${submissionId}/publications/${publicationId}`;
-  const headers = getHeaders(apiKey, portalUrl);
+  const targetOjsUrl = `${portalUrl}/index.php/${journalPath}/api/v1/submissions/${submissionId}/publications/${publicationId}`;
+  const headers = getHeaders(apiKey, targetOjsUrl);
 
-  const response = await fetch(targetUrl, {
+  const response = await fetch(PROXY_URL, {
     method: 'PUT',
     headers,
     body: JSON.stringify(payload)
@@ -254,9 +257,9 @@ export const fetchUserGroupId = async (
 
   try {
     const portalUrl = getPortalBaseUrl(ojsUrl);
-    const targetUrl = `/ojs-api/index.php/${journalPath}/api/v1/submissions?count=1`;
-    const headers = getHeaders(apiKey, portalUrl);
-    const response = await fetch(targetUrl, { method: 'GET', headers });
+    const targetOjsUrl = `${portalUrl}/index.php/${journalPath}/api/v1/submissions?count=1`;
+    const headers = getHeaders(apiKey, targetOjsUrl);
+    const response = await fetch(PROXY_URL, { method: 'GET', headers });
     if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
     const data = await response.json();
     const firstSub = data?.items?.[0];
@@ -279,10 +282,10 @@ export const addContributor = async (
   payload: any
 ): Promise<any> => {
   const portalUrl = getPortalBaseUrl(ojsUrl);
-  const targetUrl = `/ojs-api/index.php/${journalPath}/api/v1/submissions/${submissionId}/publications/${publicationId}/contributors`;
-  const headers = getHeaders(apiKey, portalUrl);
+  const targetOjsUrl = `${portalUrl}/index.php/${journalPath}/api/v1/submissions/${submissionId}/publications/${publicationId}/contributors`;
+  const headers = getHeaders(apiKey, targetOjsUrl);
 
-  const response = await fetch(targetUrl, {
+  const response = await fetch(PROXY_URL, {
     method: 'POST',
     headers,
     body: JSON.stringify(payload)
@@ -310,10 +313,10 @@ export const fetchSubmission = async (
   submissionId: number
 ): Promise<any> => {
   const portalUrl = getPortalBaseUrl(ojsUrl);
-  const targetUrl = `/ojs-api/index.php/${journalPath}/api/v1/submissions/${submissionId}`;
-  const headers = getHeaders(apiKey, portalUrl);
+  const targetOjsUrl = `${portalUrl}/index.php/${journalPath}/api/v1/submissions/${submissionId}`;
+  const headers = getHeaders(apiKey, targetOjsUrl);
 
-  const response = await fetch(targetUrl, {
+  const response = await fetch(PROXY_URL, {
     method: 'GET',
     headers
   });
@@ -334,16 +337,54 @@ export const deleteContributor = async (
   contributorId: number
 ): Promise<any> => {
   const portalUrl = getPortalBaseUrl(ojsUrl);
-  const targetUrl = `/ojs-api/index.php/${journalPath}/api/v1/submissions/${submissionId}/publications/${publicationId}/contributors/${contributorId}`;
-  const headers = getHeaders(apiKey, portalUrl);
+  const targetOjsUrl = `${portalUrl}/index.php/${journalPath}/api/v1/submissions/${submissionId}/publications/${publicationId}/contributors/${contributorId}`;
+  const headers = getHeaders(apiKey, targetOjsUrl);
 
-  const response = await fetch(targetUrl, {
+  const response = await fetch(PROXY_URL, {
     method: 'DELETE',
     headers
   });
 
   if (!response.ok) {
     throw new Error(`HTTP Error: ${response.status} ${response.statusText}`);
+  }
+
+  const responseText = await response.text();
+  try {
+    return JSON.parse(responseText);
+  } catch {
+    return responseText;
+  }
+};
+
+export const deleteSubmission = async (
+  ojsUrl: string,
+  apiKey: string,
+  journalPath: string,
+  submissionId: number
+): Promise<any> => {
+  const portalUrl = getPortalBaseUrl(ojsUrl);
+  const targetOjsUrl = `${portalUrl}/index.php/${journalPath}/api/v1/submissions/${submissionId}`;
+  const headers = getHeaders(apiKey, targetOjsUrl);
+
+  const response = await fetch(PROXY_URL, {
+    method: 'DELETE',
+    headers
+  });
+
+  if (!response.ok) {
+    const responseText = await response.text();
+    let responseData: any;
+    try {
+      responseData = JSON.parse(responseText);
+    } catch {
+      responseData = responseText;
+    }
+    throw {
+      status: response.status,
+      statusText: response.statusText,
+      data: responseData
+    };
   }
 
   const responseText = await response.text();

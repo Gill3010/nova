@@ -13,6 +13,7 @@ export function useCongressForm() {
   const [internalId, setInternalId] = useState<number | undefined>(undefined);
   const [creadorId, setCreadorId] = useState<number | undefined>(undefined);
   const [name, setName] = useState('');
+  const [motto, setMotto] = useState('');
   const [description, setDescription] = useState('');
   const [date, setDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -196,6 +197,7 @@ export function useCongressForm() {
       id: internalId,
       creador_id: creadorId,
       name,
+      motto,
       description,
       date,
       venue,
@@ -218,6 +220,7 @@ export function useCongressForm() {
     setInternalId(undefined);
     setCreadorId(undefined);
     setName('');
+    setMotto('');
     setDescription('');
     setDate('');
     setEndDate('');
@@ -237,6 +240,7 @@ export function useCongressForm() {
     setInternalId(data.id);
     setCreadorId(data.creador_id);
     setName(data.nombre || '');
+    setMotto(data.lema || '');
     setDescription(data.descripcion || '');
     setDate(data.fecha_celebracion || '');
     setEndDate(data.fecha_finalizacion || '');
@@ -260,6 +264,8 @@ export function useCongressForm() {
   return {
     name,
     setName,
+    motto,
+    setMotto,
     description,
     setDescription,
     date,

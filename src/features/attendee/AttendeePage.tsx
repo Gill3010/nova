@@ -18,6 +18,7 @@ export const AttendeePage: React.FC = () => {
   const {
     internalId,
     name: congressName,
+    motto,
     description,
     date,
     endDate,
@@ -114,6 +115,11 @@ export const AttendeePage: React.FC = () => {
           <h1 className="text-2xl font-extrabold text-zinc-900 dark:text-white tracking-tight mt-1">
             {congressName || 'Congreso Académico'}
           </h1>
+          {motto && (
+            <p className="text-sm font-medium text-indigo-600 dark:text-indigo-400 italic mt-0.5">
+              "{motto}"
+            </p>
+          )}
           {description && (
             <p className="text-sm text-zinc-650 dark:text-zinc-400 mt-2 leading-relaxed whitespace-pre-line bg-zinc-50/50 dark:bg-zinc-900/30 p-4 rounded-xl border border-zinc-150 dark:border-zinc-800">
               {description}

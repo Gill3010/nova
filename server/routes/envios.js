@@ -101,7 +101,7 @@ router.post('/', verifyToken, (req, res) => {
 // 3. Actualizar un envío de OJS existente con validación de inputs
 router.put('/:id', verifyToken, (req, res) => {
   const envioId = req.params.id;
-  const { titulo_articulo, palabras_claves, colaboradores, categoria, congreso_id } = req.body;
+  const { titulo_articulo, palabras_claves, colaboradores, categoria, congreso_id, ojs_submission_id, ojs_publication_id } = req.body;
   const userId = req.user.id;
   const rol = req.user.rol;
   
@@ -126,6 +126,14 @@ router.put('/:id', verifyToken, (req, res) => {
   if (congreso_id) {
     query += `, congreso_id = $${counter++}`;
     values.push(congreso_id);
+  }
+  if (ojs_submission_id) {
+    query += `, ojs_submission_id = $${counter++}`;
+    values.push(ojs_submission_id);
+  }
+  if (ojs_publication_id) {
+    query += `, ojs_publication_id = $${counter++}`;
+    values.push(ojs_publication_id);
   }
 
   query += ` WHERE id = $${counter++}`;

@@ -43,12 +43,14 @@ export const SpeakerPage: React.FC = () => {
     ojsSubmissionId,
     ojsPublicationId,
     selectedCongressId,
+    originalCongressId,
     setSelectedCongressId
   } = useSpeaker();
 
   const { isPublishing, publishAndSyncOjs, updateAndSyncOjs, addLog } = useOjs();
 
   const isEditMode = !!internalSubmissionId;
+  const isMovingCongress = isEditMode && !!internalSubmissionId && !!originalCongressId && selectedCongressId !== originalCongressId;
 
   // --- Selector de Congreso ---
   const [availableCongresses, setAvailableCongresses] = useState<PostgresCongress[]>([]);
@@ -175,6 +177,36 @@ export const SpeakerPage: React.FC = () => {
       { key: 'video', file: videoFile, label: 'Video de Presentación' }
     ];
 
+    if (isMovingCongress) {
+      const hasFiles = filesList.some(f => f.file !== null);
+      if (!hasFiles) {
+        alert('Error: Al mover un envío a un nuevo congreso, debe seleccionar nuevamente al menos un archivo para subir (ya que los archivos originales se encuentran en el servidor del congreso anterior).');
+        return;
+      }
+    }
+
+    let oldCongressJsonToSync = undefined;
+    if (isMovingCongress) {
+      const oldDbCongress = availableCongresses.find(c => c.id.toString() === originalCongressId);
+      if (oldDbCongress) {
+        oldCongressJsonToSync = {
+          id: oldDbCongress.id,
+          name: oldDbCongress.nombre,
+          description: oldDbCongress.descripcion,
+          date: oldDbCongress.fecha_celebracion,
+          venue: oldDbCongress.sede,
+          modality: oldDbCongress.modalidad as any,
+          classroom: oldDbCongress.aula_canal,
+          academicLevel: oldDbCongress.nivel_academico as any,
+          researchLine: oldDbCongress.linea_investigacion,
+          roles: [],
+          ojs_url: oldDbCongress.ojs_url,
+          ojs_api_key: oldDbCongress.ojs_api_key,
+          ojs_journal_path: oldDbCongress.ojs_journal_path
+        };
+      }
+    }
+
     if (isEditMode && internalSubmissionId) {
       if (updateAndSyncOjs) {
         updateAndSyncOjs({
@@ -189,6 +221,9 @@ export const SpeakerPage: React.FC = () => {
           contributors,
           submissionCategory,
           congressJson: congressJsonToSync,
+          oldCongressJson: oldCongressJsonToSync,
+          isMovingCongress,
+          files: filesList,
           onSuccessSpeaker: () => {
             alert('¡Los cambios de su ponencia han sido guardados con éxito!');
             resetSpeakerForm();
@@ -216,8 +251,10 @@ export const SpeakerPage: React.FC = () => {
     }
   }, [
     selectedCongressId,
+    originalCongressId,
     availableCongresses,
     isEditMode,
+    isMovingCongress,
     internalSubmissionId,
     ojsSubmissionId,
     ojsPublicationId,

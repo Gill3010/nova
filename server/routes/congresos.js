@@ -95,6 +95,7 @@ router.get('/', verifyToken, (req, res) => {
 router.post('/', verifyToken, async (req, res) => {
   const {
     nombre,
+    lema,
     descripcion,
     fecha_celebracion,
     fecha_finalizacion,
@@ -163,13 +164,14 @@ router.post('/', verifyToken, async (req, res) => {
 
   const query = `
     INSERT INTO congresos 
-      (creador_id, nombre, descripcion, fecha_celebracion, fecha_finalizacion, sede, modalidad, nivel_academico, linea_investigacion, aula_canal, ojs_url, ojs_api_key, ojs_journal_path, ojs_submission_id, ojs_publication_id, espacio_id) 
+      (creador_id, nombre, lema, descripcion, fecha_celebracion, fecha_finalizacion, sede, modalidad, nivel_academico, linea_investigacion, aula_canal, ojs_url, ojs_api_key, ojs_journal_path, ojs_submission_id, ojs_publication_id, espacio_id) 
     VALUES 
-      ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+      ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
   `;
   const values = [
     creador_id,
     nombre.trim(),
+    lema ? lema.trim() : null,
     descripcion ? descripcion.trim() : null,
     fecha_celebracion,
     fecha_finalizacion || null,
@@ -221,7 +223,7 @@ router.post('/', verifyToken, async (req, res) => {
 router.put('/:id', verifyToken, async (req, res) => {
   const congressId = req.params.id;
   const {
-    nombre, descripcion, fecha_celebracion, fecha_finalizacion, sede, modalidad,
+    nombre, lema, descripcion, fecha_celebracion, fecha_finalizacion, sede, modalidad,
     nivel_academico, linea_investigacion, aula_canal,
     ojs_url, ojs_api_key, ojs_journal_path,
     ojs_submission_id, ojs_publication_id, espacio_id,
@@ -273,13 +275,14 @@ router.put('/:id', verifyToken, async (req, res) => {
 
   let query = `
     UPDATE congresos 
-    SET nombre = $1, descripcion = $2, fecha_celebracion = $3, fecha_finalizacion = $4, sede = $5, 
-        modalidad = $6, nivel_academico = $7, linea_investigacion = $8, aula_canal = $9,
-        ojs_url = $10, ojs_api_key = $11, ojs_journal_path = $12,
-        ojs_submission_id = $13, ojs_publication_id = $14, espacio_id = $15
+    SET nombre = $1, lema = $2, descripcion = $3, fecha_celebracion = $4, fecha_finalizacion = $5, sede = $6, 
+        modalidad = $7, nivel_academico = $8, linea_investigacion = $9, aula_canal = $10,
+        ojs_url = $11, ojs_api_key = $12, ojs_journal_path = $13,
+        ojs_submission_id = $14, ojs_publication_id = $15, espacio_id = $16
   `;
   let values = [
     nombre.trim(),
+    lema ? lema.trim() : null,
     descripcion ? descripcion.trim() : null,
     fecha_celebracion,
     fecha_finalizacion || null,
@@ -295,7 +298,7 @@ router.put('/:id', verifyToken, async (req, res) => {
     ojs_publication_id || null,
     finalPrimarySpaceId
   ];
-  let counter = 16;
+  let counter = 17;
 
   if (rol !== 'admin') {
     query += ` WHERE id = $${counter++} AND creador_id = $${counter++}`;

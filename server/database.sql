@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS congresos (
     id SERIAL PRIMARY KEY,
     creador_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
     nombre VARCHAR(255) NOT NULL,
+    lema VARCHAR(500),
     descripcion TEXT,
     fecha_celebracion VARCHAR(100), -- Almacenado como texto flexible para compatibilidad con la lógica actual
     fecha_finalizacion VARCHAR(100),

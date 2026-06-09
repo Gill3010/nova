@@ -1,6 +1,7 @@
 export interface Congress {
   id?: number; // ID de la base de datos interna (PostgreSQL)
   name: string;
+  motto?: string;
   description: string;
   date: string;
   venue: string;

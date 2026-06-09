@@ -14,6 +14,7 @@ export interface PostgresCongress {
   id: number;
   creador_id?: number;
   nombre: string;
+  lema?: string;
   descripcion: string;
   fecha_celebracion: string;
   fecha_finalizacion?: string;
