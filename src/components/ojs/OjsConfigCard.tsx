@@ -29,7 +29,7 @@ export const OjsConfigCard: React.FC = () => {
 
   const { user } = useAuth();
   const activeRole = user?.rol === 'admin' || user?.rol === 'organizer' ? 'admin_org' : 'ponente';
-  const { getCongressJson, setInternalId, internalId } = useCongress();
+  const { getCongressJson, setInternalId, internalId, setCreadorId } = useCongress();
   const {
     submissionTitle,
     submissionCategory,
@@ -71,6 +71,7 @@ export const OjsConfigCard: React.FC = () => {
         files: filesList,
         onSuccessAdmin: (newInternalId) => {
           if (setInternalId) setInternalId(newInternalId);
+          if (setCreadorId && user?.id) setCreadorId(user.id);
           alert('¡El Congreso ha sido creado con éxito y sincronizado con OJS!');
         }
       });

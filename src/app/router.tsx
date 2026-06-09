@@ -101,6 +101,8 @@ const RouterDirectorioWrapper = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { loadCongress } = useCongress();
+  const { setSelectedCongressId } = useSpeaker();
+  const { setOjsUrl, setOjsApiKey, setSelectedJournal } = useOjs();
 
   const handleClose = () => {
     navigate(-1);
@@ -108,10 +110,33 @@ const RouterDirectorioWrapper = () => {
 
   const handleEditCongress = (congress: any, action?: 'view' | 'edit') => {
     loadCongress(congress);
-    if (action === 'view' || user?.rol === 'attendee' || user?.rol === 'organizer' || user?.rol === 'admin') {
+    
+    if (action === 'view' || user?.rol === 'attendee') {
       navigate('/attendee');
       return;
     }
+    
+    if (user?.rol === 'speaker') {
+      if (setSelectedCongressId) {
+        setSelectedCongressId(congress.id);
+      }
+      navigate('/speaker/new');
+      return;
+    }
+
+    if (setOjsUrl) setOjsUrl(congress.ojs_url || '');
+    if (setOjsApiKey) setOjsApiKey(congress.ojs_api_key || '');
+    if (setSelectedJournal && congress.ojs_journal_path) {
+      setSelectedJournal({
+        id: 0,
+        name: congress.ojs_journal_path,
+        nameObj: {},
+        urlPath: congress.ojs_journal_path,
+        url: congress.ojs_url || '',
+        enabled: true
+      });
+    }
+    navigate('/admin');
   };
 
   return (
