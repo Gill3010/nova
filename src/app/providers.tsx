@@ -6,11 +6,11 @@ import { OjsProvider } from '../context/OjsContext';
 
 const ProtectedProviders: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
-  if (!user) return <>{children}</>;
+  
   return (
-    <CongressProvider key={`congress-${user.id}`}>
-      <SpeakerProvider key={`speaker-${user.id}`}>
-        <OjsProvider key={`ojs-${user.id}`}>
+    <CongressProvider key={`congress-${user?.id || 'guest'}`}>
+      <SpeakerProvider key={`speaker-${user?.id || 'guest'}`}>
+        <OjsProvider key={`ojs-${user?.id || 'guest'}`}>
           {children}
         </OjsProvider>
       </SpeakerProvider>

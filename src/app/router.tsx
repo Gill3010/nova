@@ -54,6 +54,10 @@ const RouterDashboardWrapper = () => {
   const { setSelectedCongressId } = useSpeaker();
   const { setOjsUrl, setOjsApiKey, setSelectedJournal } = useOjs();
 
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
   const handleClose = () => {
     navigate(-1);
   };
@@ -103,6 +107,10 @@ const RouterDirectorioWrapper = () => {
   const { loadCongress } = useCongress();
   const { setSelectedCongressId } = useSpeaker();
   const { setOjsUrl, setOjsApiKey, setSelectedJournal } = useOjs();
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
 
   const handleClose = () => {
     navigate(-1);
@@ -163,7 +171,7 @@ const RootIndexRedirect = () => {
 
   const isAdminOrOrg = user.rol === 'admin' || user.rol === 'organizer';
   if (user.rol === 'attendee') {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/attendee" replace />;
   }
   return <Navigate to={isAdminOrOrg ? '/admin' : '/speaker/new'} replace />;
 };

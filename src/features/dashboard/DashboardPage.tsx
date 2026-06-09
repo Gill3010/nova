@@ -63,7 +63,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onClose, onEditCon
               : 'Explora todos los eventos registrados en la plataforma y accede a su itinerario público.'}
           </p>
         </div>
-        
+
         <div className="flex items-center gap-3">
           <Button variant="secondary" size="sm" onClick={() => loadData(viewScope)} disabled={isLoading}>
             <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`} aria-hidden="true" />
@@ -79,21 +79,19 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onClose, onEditCon
         <div className="flex bg-zinc-100 dark:bg-zinc-800 p-1 rounded-xl self-start gap-1 border border-zinc-200 dark:border-zinc-700/50 shadow-xs">
           <button
             onClick={() => setViewScope('mine')}
-            className={`px-4 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200 ${
-              viewScope === 'mine'
+            className={`px-4 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200 ${viewScope === 'mine'
                 ? 'bg-white dark:bg-zinc-700 text-zinc-950 dark:text-white shadow-xs'
                 : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
-            }`}
+              }`}
           >
             Mis Congresos
           </button>
           <button
             onClick={() => setViewScope('all')}
-            className={`px-4 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200 ${
-              viewScope === 'all'
+            className={`px-4 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200 ${viewScope === 'all'
                 ? 'bg-white dark:bg-zinc-700 text-zinc-950 dark:text-white shadow-xs'
                 : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
-            }`}
+              }`}
           >
             Directorio de Eventos
           </button>
@@ -111,7 +109,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onClose, onEditCon
           {isAdminOrOrg && isMine ? (
             <StatCards totalCongresos={totalCongresos} totalEnvios={totalEnvios} />
           ) : null}
-          
+
           <div className="flex flex-col gap-3 mt-4">
             <h2 className="text-lg font-bold text-slate-900 dark:text-white">
               {isMine ? 'Listado de Congresos' : 'Eventos Disponibles'}
