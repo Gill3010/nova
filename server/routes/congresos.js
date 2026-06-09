@@ -127,8 +127,8 @@ router.post('/', verifyToken, async (req, res) => {
         finalPrimarySpaceId = resQuery.rows[0].id;
       } else {
         const insertRes = await db.query(
-          `INSERT INTO espacios (nombre, tipo, ubicacion, estado) VALUES ($1, $2, $3, $4) RETURNING id`,
-          ['Espacio Principal', 'física', sedeName, 'Activo']
+          `INSERT INTO espacios (creador_id, nombre, tipo, ubicacion, estado) VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+          [creador_id, 'Espacio Principal', 'física', sedeName, 'Activo']
         );
         if (insertRes.rows && insertRes.rows.length > 0) {
           finalPrimarySpaceId = insertRes.rows[0].id;
@@ -244,8 +244,8 @@ router.put('/:id', verifyToken, async (req, res) => {
         finalPrimarySpaceId = resQuery.rows[0].id;
       } else {
         const insertRes = await db.query(
-          `INSERT INTO espacios (nombre, tipo, ubicacion, estado) VALUES ($1, $2, $3, $4) RETURNING id`,
-          ['Espacio Principal', 'física', sedeName, 'Activo']
+          `INSERT INTO espacios (creador_id, nombre, tipo, ubicacion, estado) VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+          [userId, 'Espacio Principal', 'física', sedeName, 'Activo']
         );
         if (insertRes.rows && insertRes.rows.length > 0) {
           finalPrimarySpaceId = insertRes.rows[0].id;
