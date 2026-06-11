@@ -259,7 +259,7 @@ router.get('/congreso/:congresoId/revistas', verifyToken, (req, res) => {
     FROM revistas_ojs r
     JOIN portales_ojs p ON p.id = r.portal_ojs_id
     JOIN congreso_portal_ojs cp ON cp.portal_ojs_id = p.id
-    WHERE cp.congreso_id = $1 AND r.habilitada = true AND p.habilitado = true
+    WHERE cp.congreso_id = $1 AND p.habilitado = true
     ORDER BY p.nombre ASC, r.nombre ASC;
   `;
 

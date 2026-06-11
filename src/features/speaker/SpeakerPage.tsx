@@ -388,8 +388,8 @@ export const SpeakerPage: React.FC = () => {
                   : '-- Seleccione una revista --'}
             </option>
             {availableRevistas.map((r: any) => (
-              <option key={r.id} value={r.id}>
-                {r.nombre || r.ojs_journal_path}
+              <option key={r.id} value={r.id} disabled={!r.habilitada}>
+                {r.nombre || r.ojs_journal_path} {!r.habilitada ? '(No publicada)' : ''}
               </option>
             ))}
           </Select>
