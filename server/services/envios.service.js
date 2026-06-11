@@ -34,6 +34,18 @@ class EnviosService {
       error.statusCode = 400;
       throw error;
     }
+    if (!envioData.nivel_academico || !envioData.nivel_academico.trim()) {
+      logger.warn('Registro de envío OJS fallido: falta nivel_academico', { userId });
+      const error = new Error('El nivel académico es requerido');
+      error.statusCode = 400;
+      throw error;
+    }
+    if (!envioData.linea_investigacion || !envioData.linea_investigacion.trim()) {
+      logger.warn('Registro de envío OJS fallido: falta linea_investigacion', { userId });
+      const error = new Error('La línea de investigación es requerida');
+      error.statusCode = 400;
+      throw error;
+    }
 
     // Validación de email
     if (envioData.autor_email && !EMAIL_REGEX.test(envioData.autor_email)) {
@@ -62,6 +74,18 @@ class EnviosService {
       error.statusCode = 400;
       throw error;
     }
+    if (updates.nivel_academico !== undefined && (!updates.nivel_academico || !updates.nivel_academico.trim())) {
+      logger.warn('Actualización de envío OJS fallida: nivel_academico vacío', { envioId, userId });
+      const error = new Error('El nivel académico es requerido');
+      error.statusCode = 400;
+      throw error;
+    }
+    if (updates.linea_investigacion !== undefined && (!updates.linea_investigacion || !updates.linea_investigacion.trim())) {
+      logger.warn('Actualización de envío OJS fallida: linea_investigacion vacía', { envioId, userId });
+      const error = new Error('La línea de investigación es requerida');
+      error.statusCode = 400;
+      throw error;
+    }
 
     try {
       // Limpiar datos
@@ -69,6 +93,8 @@ class EnviosService {
       if (cleanedUpdates.titulo_articulo) cleanedUpdates.titulo_articulo = cleanedUpdates.titulo_articulo.trim();
       if (cleanedUpdates.palabras_claves) cleanedUpdates.palabras_claves = cleanedUpdates.palabras_claves.trim();
       if (cleanedUpdates.resumen) cleanedUpdates.resumen = cleanedUpdates.resumen.trim();
+      if (cleanedUpdates.nivel_academico) cleanedUpdates.nivel_academico = cleanedUpdates.nivel_academico.trim();
+      if (cleanedUpdates.linea_investigacion) cleanedUpdates.linea_investigacion = cleanedUpdates.linea_investigacion.trim();
 
       const result = await enviosRepository.update(envioId, userId, rol, cleanedUpdates);
       

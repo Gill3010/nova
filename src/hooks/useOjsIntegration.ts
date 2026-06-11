@@ -51,6 +51,8 @@ export function useOjsIntegration() {
     files,
     revistaOjsId,
     revistaOjsData,
+    academicLevel,
+    researchLine,
     onSuccessSpeaker,
     onSuccessAdmin,
   }: {
@@ -64,6 +66,8 @@ export function useOjsIntegration() {
     files: { key: string; file: FileInfo | null; label: string }[];
     revistaOjsId?: number;
     revistaOjsData?: { portal_url: string; portal_api_key: string; ojs_journal_path: string; nombre: string };
+    academicLevel?: 'maestria' | 'doctorado' | 'otros';
+    researchLine?: string;
     onSuccessSpeaker?: () => void;
     onSuccessAdmin?: (internalId: number) => void;
   }) => {
@@ -136,7 +140,7 @@ export function useOjsIntegration() {
           sectionId,
           publication: {
             title: { [locale]: submissionTitle },
-            abstract: { [locale]: submissionAbstract || `Línea: ${(congressJson as any).researchLine}. Categoría: ${submissionCategory}` },
+            abstract: { [locale]: submissionAbstract || `Línea: ${researchLine || (congressJson as any).researchLine}. Categoría: ${submissionCategory}` },
           },
         };
         addLog('request', `POST /api/v1/submissions`, submissionPayload);
@@ -153,7 +157,7 @@ export function useOjsIntegration() {
           : [];
         const updatePayload = {
           title: { [locale]: submissionTitle },
-          abstract: { [locale]: submissionAbstract || `Línea: ${congressJson.researchLine}` },
+          abstract: { [locale]: submissionAbstract || `Línea: ${researchLine || congressJson.researchLine}` },
           ...(keywordsArray.length > 0 && { keywords: { [locale]: keywordsArray } }),
         };
         addLog('request', `PUT /api/v1/submissions/${submissionId}/publications/${publicationId}`, updatePayload);
@@ -236,6 +240,8 @@ export function useOjsIntegration() {
                 colaboradores: JSON.stringify(validContributors),
                 revista_destino: revistaOjsData?.nombre || currentJournal.name,
                 revista_ojs_id: revistaOjsId || null,
+                nivel_academico: academicLevel,
+                linea_investigacion: researchLine,
               }),
             });
             const pgData = await pgRes.json();
@@ -329,6 +335,8 @@ export function useOjsIntegration() {
     revistaOjsId,
     revistaOjsData,
     oldRevistaOjsData,
+    academicLevel,
+    researchLine,
     onSuccessSpeaker,
     onSuccessAdmin,
   }: {
@@ -349,6 +357,8 @@ export function useOjsIntegration() {
     revistaOjsId?: number;
     revistaOjsData?: { portal_url: string; portal_api_key: string; ojs_journal_path: string; nombre: string };
     oldRevistaOjsData?: { url: string; key: string; path: string };
+    academicLevel?: 'maestria' | 'doctorado' | 'otros';
+    researchLine?: string;
     onSuccessSpeaker?: () => void;
     onSuccessAdmin?: () => void;
   }) => {
@@ -385,11 +395,11 @@ export function useOjsIntegration() {
             const oldUrl = oldRevistaOjsData?.url || (oldCongressJson as any)?.ojs_url;
             const oldKey = oldRevistaOjsData?.key || (oldCongressJson as any)?.ojs_api_key;
             const oldPath = oldRevistaOjsData?.path || (oldCongressJson as any)?.ojs_journal_path;
-            
+
             if (!oldUrl || !oldKey || !oldPath) {
               throw new Error("No se encontraron credenciales válidas para el congreso/revista anterior. No se puede eliminar de OJS automáticamente.");
             }
-            
+
             await ojsApi.deleteSubmission(oldUrl, oldKey, oldPath, ojsSubmissionId);
             addLog('success', 'Envío eliminado correctamente del OJS anterior.');
           } catch (delErr: any) {
@@ -407,28 +417,28 @@ export function useOjsIntegration() {
             return;
           }
           const locale = getJournalLocale(currentJournal.nameObj);
-          
+
           let sectionId = 1;
-          try { sectionId = await ojsApi.fetchSectionId(targetOjsUrl, targetOjsApiKey, currentJournal.urlPath); } catch {}
-          
+          try { sectionId = await ojsApi.fetchSectionId(targetOjsUrl, targetOjsApiKey, currentJournal.urlPath); } catch { }
+
           const submissionPayload = {
-            locale, sectionId, publication: { title: { [locale]: submissionTitle }, abstract: { [locale]: submissionAbstract || `Línea: ${(congressJson as any).researchLine}. Categoría: ${submissionCategory}` } }
+            locale, sectionId, publication: { title: { [locale]: submissionTitle }, abstract: { [locale]: submissionAbstract || `Línea: ${researchLine || (congressJson as any).researchLine}. Categoría: ${submissionCategory}` } }
           };
           const subData = await ojsApi.createSubmission(targetOjsUrl, targetOjsApiKey, currentJournal.urlPath, submissionPayload);
           const newSubmissionId: number = subData.id ?? 412;
           const newPublicationId: number = subData.currentPublication?.id ?? subData.publications?.[0]?.id ?? 1;
           addLog('success', `Envío creado en el nuevo OJS. ID: ${newSubmissionId}`);
-          
+
           const keywordsArray = submissionKeywords ? submissionKeywords.split(',').map((k: string) => k.trim()).filter(Boolean) : [];
           const updatePayload = {
-            title: { [locale]: submissionTitle }, abstract: { [locale]: submissionAbstract || `Línea: ${(congressJson as any).researchLine}` }, ...(keywordsArray.length > 0 && { keywords: { [locale]: keywordsArray } })
+            title: { [locale]: submissionTitle }, abstract: { [locale]: submissionAbstract || `Línea: ${researchLine || (congressJson as any).researchLine}` }, ...(keywordsArray.length > 0 && { keywords: { [locale]: keywordsArray } })
           };
           await ojsApi.updatePublication(targetOjsUrl, targetOjsApiKey, currentJournal.urlPath, newSubmissionId, newPublicationId, updatePayload);
-          
+
           const validContributors = (contributors ?? []).filter((c) => c.email.trim() && c.givenName.trim());
           if (validContributors.length > 0) {
             let userGroupId = 14;
-            try { userGroupId = await ojsApi.fetchUserGroupId(targetOjsUrl, targetOjsApiKey, currentJournal.urlPath, currentJournal.id); } catch {}
+            try { userGroupId = await ojsApi.fetchUserGroupId(targetOjsUrl, targetOjsApiKey, currentJournal.urlPath, currentJournal.id); } catch { }
             for (let i = 0; i < validContributors.length; i++) {
               const c = validContributors[i];
               await ojsApi.addContributor(targetOjsUrl, targetOjsApiKey, currentJournal.urlPath, newSubmissionId, newPublicationId, {
@@ -436,7 +446,7 @@ export function useOjsIntegration() {
               });
             }
           }
-          
+
           const filesToUpload = (files || []).filter((x) => x.file !== null);
           for (const item of filesToUpload) {
             if (!item.file) continue;
@@ -445,9 +455,9 @@ export function useOjsIntegration() {
             const fileId = fileData.id ?? Math.floor(Math.random() * 5000);
             try {
               await ojsApi.createGalley(targetOjsUrl, targetOjsApiKey, currentJournal.urlPath, newSubmissionId, newPublicationId, { label: item.label, submissionFileId: fileId, locale });
-            } catch {}
+            } catch { }
           }
-          
+
           currentSubId = newSubmissionId;
           currentPubId = newPublicationId;
         } else if (currentSubId && targetOjsUrl.trim() && targetOjsApiKey.trim() && targetJournalPath) {
@@ -476,7 +486,7 @@ export function useOjsIntegration() {
               : [];
             const updatePayload = {
               title: { [locale]: submissionTitle },
-              abstract: { [locale]: submissionAbstract || `Línea: ${congressJson?.researchLine || ''}. Categoría: ${submissionCategory || 'articulo'}` },
+              abstract: { [locale]: submissionAbstract || `Línea: ${researchLine || congressJson?.researchLine || ''}. Categoría: ${submissionCategory || 'articulo'}` },
               ...(keywordsArray.length > 0 && { keywords: { [locale]: keywordsArray } }),
             };
 
@@ -488,8 +498,8 @@ export function useOjsIntegration() {
             // Sync Contributors: delete old ones and recreate
             try {
               const subDetails = await ojsApi.fetchSubmission(targetOjsUrl, targetOjsApiKey, currentJournal.urlPath, subId);
-              const currentPub = subDetails.publications?.find((p: any) => p.id === pubId) 
-                || subDetails.currentPublication 
+              const currentPub = subDetails.publications?.find((p: any) => p.id === pubId)
+                || subDetails.currentPublication
                 || subDetails.publications?.[0];
               const existingAuthors = currentPub?.authors || [];
 
@@ -533,6 +543,8 @@ export function useOjsIntegration() {
           palabras_claves: submissionKeywords ?? '',
           colaboradores: JSON.stringify(contributors ?? []),
           categoria: submissionCategory ?? 'articulo',
+          nivel_academico: academicLevel,
+          linea_investigacion: researchLine,
           ...(selectedCongressId && { congreso_id: parseInt(selectedCongressId, 10) }),
           ...(currentSubId && { ojs_submission_id: currentSubId }),
           ...(currentPubId && { ojs_publication_id: currentPubId }),

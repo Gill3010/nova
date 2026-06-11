@@ -1,12 +1,11 @@
 import React from 'react';
-import { Building2, Plus } from 'lucide-react';
+import { Building2 } from 'lucide-react';
 import { useCongress } from '../../context/CongressContext';
 import { Card } from '../../components/common/Card';
 import { Input } from '../../components/common/Input';
 import { Select } from '../../components/common/Select';
 import { Textarea } from '../../components/common/Textarea';
 import { Badge } from '../../components/common/Badge';
-import { Button } from '../../components/common/Button';
 import { DEFAULT_ROLES } from '../../constants/data';
 import { useAuth } from '../../context/AuthContext';
 
@@ -31,12 +30,6 @@ export const AdminPage: React.FC = () => {
     espaciosIds,
     setEspaciosIds,
     espacios,
-    academicLevel,
-    setAcademicLevel,
-    lines,
-    selectedLine,
-    newLineName,
-    setNewLineName,
     selectedRoles,
     selectedClassroomObj,
     showSuggestions,
@@ -48,8 +41,6 @@ export const AdminPage: React.FC = () => {
     handleVenueFocus,
     handleVenueKeyDown,
     handleSuggestionClick,
-    handleAddCustomLine,
-    selectLine,
     toggleRol
   } = useCongress();
 
@@ -268,83 +259,7 @@ export const AdminPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Nivel Académico */}
-        <Select
-          id="cong-level"
-          label="Nivel Académico del Evento"
-          value={academicLevel}
-          onChange={(e) => setAcademicLevel(e.target.value as 'maestria' | 'doctorado' | 'otros')}
-        >
-          <option value="maestria">Maestría (Enfoque en formación académica y profesional)</option>
-          <option value="doctorado">Doctorado (Enfoque en alta investigación original)</option>
-          <option value="otros">Otros (Eventos de extensión, cursos o seminarios generales)</option>
-        </Select>
 
-        {/* Líneas de Investigación */}
-        <div className="flex flex-col gap-3">
-          <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-            Línea de Investigación Seleccionada
-          </label>
-          <div className="min-h-12 border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/20 rounded-xl p-3 flex items-center justify-center">
-            {!selectedLine ? (
-              <span className="text-xs text-slate-400 dark:text-slate-500 italic">
-                Ninguna línea seleccionada. Selecciona una de abajo.
-              </span>
-            ) : (
-              (() => {
-                const line = lines.find((l) => l.id === selectedLine);
-                if (!line) return null;
-                return (
-                  <Badge variant={line.isCustom ? 'outline' : 'default'} className="text-xs py-1 px-3">
-                    {line.name}
-                  </Badge>
-                );
-              })()
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-52 overflow-y-auto border border-slate-250 dark:border-slate-800 rounded-lg p-3">
-            {lines.map((line) => {
-              const isSelected = selectedLine === line.id;
-              return (
-                <div
-                  key={line.id}
-                  className={`flex items-center gap-2.5 p-2.5 rounded-lg border text-xs cursor-pointer select-none transition-all ${
-                    isSelected
-                      ? line.isCustom
-                        ? 'bg-teal-50 dark:bg-teal-950/20 border-teal-500 text-teal-700 dark:text-teal-400 font-medium'
-                        : 'bg-blue-50 dark:bg-blue-950/20 border-blue-500 text-blue-700 dark:text-blue-400 font-medium'
-                      : 'bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/40 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300'
-                  }`}
-                  onClick={() => selectLine(line.id)}
-                >
-                  <input
-                    type="radio"
-                    name="research-line-group"
-                    checked={isSelected}
-                    readOnly
-                    className="cursor-pointer accent-blue-600 h-3.5 w-3.5"
-                  />
-                  <span>{line.name}</span>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Formulario para agregar nueva línea */}
-          <form onSubmit={handleAddCustomLine} className="flex gap-2 w-full mt-1">
-            <input
-              type="text"
-              placeholder="Agregar línea de investigación relevante..."
-              value={newLineName}
-              onChange={(e) => setNewLineName(e.target.value)}
-              className="flex-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 text-sm text-slate-950 dark:text-white outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/30"
-            />
-            <Button type="submit" variant="secondary" size="sm" className="shrink-0">
-              <Plus className="h-3.5 w-3.5" aria-hidden="true" /> Agregar
-            </Button>
-          </form>
-        </div>
 
         {/* Roles Habilitados */}
         <div className="flex flex-col gap-3">

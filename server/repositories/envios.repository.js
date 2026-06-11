@@ -7,6 +7,7 @@ class EnviosRepository {
         SELECT 
           e.id, e.ojs_submission_id, e.ojs_publication_id, e.titulo_articulo,
           e.resumen, e.palabras_claves, e.colaboradores, e.categoria,
+          e.nivel_academico, e.linea_investigacion,
           e.created_at, e.congreso_id, e.revista_ojs_id, e.revista_destino,
           c.nombre AS congreso_nombre, r.nombre AS revista_nombre,
           r.ojs_journal_path AS revista_path, p.ojs_url AS portal_url,
@@ -29,9 +30,9 @@ class EnviosRepository {
     return new Promise((resolve, reject) => {
       const query = `
         INSERT INTO envios_ojs 
-          (congreso_id, usuario_id, ojs_submission_id, ojs_publication_id, categoria, autor_email, titulo_articulo, resumen, palabras_claves, colaboradores, revista_destino, revista_ojs_id) 
+          (congreso_id, usuario_id, ojs_submission_id, ojs_publication_id, categoria, autor_email, titulo_articulo, resumen, palabras_claves, colaboradores, revista_destino, revista_ojs_id, nivel_academico, linea_investigacion) 
         VALUES 
-          ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+          ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
       `;
       const values = [
         envioData.congreso_id, envioData.usuario_id, envioData.ojs_submission_id,
@@ -40,7 +41,9 @@ class EnviosRepository {
         envioData.titulo_articulo.trim(), envioData.resumen ? envioData.resumen.trim() : null,
         envioData.palabras_claves ? envioData.palabras_claves.trim() : null,
         envioData.colaboradores, envioData.revista_destino ? envioData.revista_destino.trim() : null,
-        envioData.revista_ojs_id || null
+        envioData.revista_ojs_id || null,
+        envioData.nivel_academico ? envioData.nivel_academico.trim() : null,
+        envioData.linea_investigacion ? envioData.linea_investigacion.trim() : null
       ];
       
       db.run(query, values, function(err) {
@@ -64,7 +67,8 @@ class EnviosRepository {
       const allowedFields = [
         'titulo_articulo', 'resumen', 'palabras_claves', 
         'colaboradores', 'categoria', 'congreso_id', 
-        'ojs_submission_id', 'ojs_publication_id', 'revista_ojs_id'
+        'ojs_submission_id', 'ojs_publication_id', 'revista_ojs_id',
+        'nivel_academico', 'linea_investigacion'
       ];
 
       for (const [key, value] of Object.entries(updates)) {

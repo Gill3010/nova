@@ -9,6 +9,8 @@ export interface PostgresEnvio {
   categoria: string;
   autor_email: string;
   created_at: string;
+  nivel_academico?: string;
+  linea_investigacion?: string;
 }
 
 export interface PostgresPortalOjs {
@@ -88,6 +90,8 @@ export interface PostgresMySubmission {
   revista_destino?: string;
   portal_url?: string;
   portal_api_key?: string;
+  nivel_academico?: string;
+  linea_investigacion?: string;
 }
 
 export const saveCongress = async (congressData: any, token: string) => {

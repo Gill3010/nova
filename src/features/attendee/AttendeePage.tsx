@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, CheckCircle, CalendarDays, MapPin, Clock, Tag, Award, BookOpen } from 'lucide-react';
+import { Users, CheckCircle, CalendarDays, MapPin, Clock, Tag } from 'lucide-react';
 import { useCongress } from '../../context/CongressContext';
 import { useAuth } from '../../context/AuthContext';
 import { useOjs } from '../../context/OjsContext';
@@ -24,9 +24,6 @@ export const AttendeePage: React.FC = () => {
     endDate,
     venue,
     modality,
-    academicLevel,
-    lines,
-    selectedLine,
     espaciosIds,
     espacios
   } = useCongress();
@@ -127,7 +124,7 @@ export const AttendeePage: React.FC = () => {
           )}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {/* Fecha */}
           <div className="flex gap-3 items-start p-3 bg-slate-50/50 dark:bg-slate-900/10 rounded-xl border border-slate-100 dark:border-slate-800/60">
             <Clock className="h-5 w-5 text-indigo-500 mt-0.5 shrink-0" />
@@ -156,17 +153,6 @@ export const AttendeePage: React.FC = () => {
             </div>
           </div>
 
-          {/* Nivel Académico */}
-          <div className="flex gap-3 items-start p-3 bg-slate-50/50 dark:bg-slate-900/10 rounded-xl border border-slate-100 dark:border-slate-800/60">
-            <Award className="h-5 w-5 text-indigo-500 mt-0.5 shrink-0" />
-            <div className="flex flex-col">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Nivel Académico</span>
-              <span className="text-sm font-semibold text-slate-800 dark:text-slate-200 uppercase">
-                {academicLevel === 'maestria' ? 'Maestría' : academicLevel === 'doctorado' ? 'Doctorado' : academicLevel || '-'}
-              </span>
-            </div>
-          </div>
-
           {/* Sede Principal */}
           <div className="flex gap-3 items-start p-3 bg-slate-50/50 dark:bg-slate-900/10 rounded-xl border border-slate-100 dark:border-slate-800/60 min-w-0">
             <MapPin className="h-5 w-5 text-indigo-500 mt-0.5 shrink-0" />
@@ -179,17 +165,8 @@ export const AttendeePage: React.FC = () => {
           </div>
         </div>
 
-        {/* Línea de Investigación y Espacios */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-4 border-t border-zinc-100 dark:border-zinc-800">
-          <div className="flex flex-col gap-1.5">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-              <BookOpen className="h-4 w-4 text-slate-400" /> Línea de Investigación
-            </span>
-            <div className="bg-slate-50 dark:bg-slate-900/30 px-4 py-3 rounded-xl border border-slate-100 dark:border-slate-800 text-sm text-slate-800 dark:text-slate-200 font-medium">
-              {lines?.find(l => l.id === selectedLine)?.name || 'No asignada'}
-            </div>
-          </div>
-
+        {/* Espacios Asignados */}
+        <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800">
           <div className="flex flex-col gap-1.5">
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
               <MapPin className="h-4 w-4 text-slate-400" /> Espacios / Sedes Asignadas

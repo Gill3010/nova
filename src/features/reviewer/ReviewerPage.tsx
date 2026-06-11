@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { ClipboardCheck, Check } from 'lucide-react';
 import { useSpeaker } from '../../context/SpeakerContext';
-import { useCongress } from '../../context/CongressContext';
 import { useOjs } from '../../context/OjsContext';
 import { Card } from '../../components/common/Card';
 import { Textarea } from '../../components/common/Textarea';
@@ -10,8 +9,7 @@ import { Badge } from '../../components/common/Badge';
 import type { Evaluation } from '../../types';
 
 export const ReviewerPage: React.FC = () => {
-  const { submissionTitle, submissionCategory, setSubmissionStatus } = useSpeaker();
-  const { lines, selectedLine } = useCongress();
+  const { submissionTitle, submissionCategory, setSubmissionStatus, researchLine } = useSpeaker();
   const { addLog } = useOjs();
 
   // Local state for Reviewer (encapsulated)
@@ -23,7 +21,7 @@ export const ReviewerPage: React.FC = () => {
   );
   const [evalStatus, setEvalStatus] = useState<'pending' | 'submitted'>('pending');
 
-  const selectedLineName = lines.find((l) => l.id === selectedLine)?.name || 'General';
+  const selectedLineName = researchLine || 'General';
   const averageScore = (scoreScientific + scoreOriginality + scorePresentation) / 3;
   const isApproved = averageScore >= 7;
 

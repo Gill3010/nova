@@ -97,6 +97,7 @@ export interface Submission {
   title: string;
   category: 'poster' | 'libro' | 'articulo';
   researchLine: string;
+  academicLevel: 'maestria' | 'doctorado' | 'otros';
   audioFile: FileInfo | null;
   posterFile: FileInfo | null;
   abstractFile: FileInfo | null;

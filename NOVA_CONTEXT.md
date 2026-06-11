@@ -24,7 +24,8 @@ El código fuente es idéntico, pero el comportamiento varía según el `.env`.
 
 ### 🌐 Producción (AWS EC2 + Cloudflare)
 1. **Dominio:** `https://eventonexus.com`
-2. **Git:** Para subir cambios, el usuario hace `git commit` y `git push` desde su Mac. Luego, en la terminal de AWS (vía SSM Session Manager), el usuario corre `git pull`.
+2. **Git:** Para subir cambios, el usuario hace `git commit` y `git push` desde su Mac. Luego, en la terminal de AWS
+ (vía SSM Session Manager), el usuario corre `git pull`.
 3. **Frontend:** Una vez hecho el `git pull`, se **DEBE** ejecutar `npm run build` en AWS para generar la carpeta `/dist`. Nginx sirve estos archivos estáticos.
 4. **Backend:** El servidor Node.js es mantenido vivo por **PM2** (`pm2 status nova-backend`). Si hay cambios en los archivos de `/server`, se debe correr `pm2 restart nova-backend`. Si cambian variables de entorno, se usa `pm2 restart nova-backend --update-env`.
 

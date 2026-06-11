@@ -86,6 +86,8 @@ export const MySubmissions: React.FC<MySubmissionsProps> = ({ onEditSubmission }
               <th className="py-4 px-6 font-semibold">Título del Artículo</th>
               <th className="py-4 px-6 font-semibold">Congreso Destino</th>
               <th className="py-4 px-6 font-semibold">Categoría</th>
+              <th className="py-4 px-6 font-semibold">Nivel Académico</th>
+              <th className="py-4 px-6 font-semibold">Línea de Investigación</th>
               <th className="py-4 px-6 font-semibold">Estado (OJS ID)</th>
               <th className="py-4 px-6 font-semibold text-right">Fecha</th>
               <th className="py-4 px-6 font-semibold text-center">Acciones</th>
@@ -111,6 +113,12 @@ export const MySubmissions: React.FC<MySubmissionsProps> = ({ onEditSubmission }
                   <Badge variant="default" className="capitalize">
                     {envio.categoria || 'Ponencia'}
                   </Badge>
+                </td>
+                <td className="py-4 px-6 capitalize text-slate-700 dark:text-slate-300">
+                  {envio.nivel_academico === 'maestria' ? 'Maestría' : envio.nivel_academico === 'doctorado' ? 'Doctorado' : envio.nivel_academico || 'N/A'}
+                </td>
+                <td className="py-4 px-6 text-slate-700 dark:text-slate-300">
+                  {envio.linea_investigacion || 'N/A'}
                 </td>
                 <td className="py-4 px-6">
                   <div className="flex flex-col gap-1 items-start">

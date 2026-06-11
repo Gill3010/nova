@@ -133,14 +133,6 @@ export const CongressTable: React.FC<CongressTableProps> = React.memo(({ congres
                             {congreso.sede}
                           </div>
                           <div>
-                            <span className="font-semibold block text-slate-500">Nivel Académico:</span>
-                            {congreso.nivel_academico}
-                          </div>
-                          <div>
-                            <span className="font-semibold block text-slate-500">Línea de Investigación:</span>
-                            {congreso.linea_investigacion}
-                          </div>
-                          <div>
                             <span className="font-semibold block text-slate-500">Aula / Canal Asignado:</span>
                             {congreso.aula_canal}
                           </div>
@@ -161,6 +153,8 @@ export const CongressTable: React.FC<CongressTableProps> = React.memo(({ congres
                                   <th className="p-3 font-semibold text-left min-w-[200px]">Título del Artículo</th>
                                   <th className="p-3 font-semibold text-left min-w-[150px]">Revista Destino</th>
                                   <th className="p-3 font-semibold text-left">Categoría</th>
+                                  <th className="p-3 font-semibold text-left">Nivel Académico</th>
+                                  <th className="p-3 font-semibold text-left">Línea de Investigación</th>
                                   <th className="p-3 font-semibold text-left min-w-[150px]">Colaboradores</th>
                                   <th className="p-3 font-semibold text-left min-w-[150px]">Palabras Claves</th>
                                 </tr>
@@ -182,6 +176,8 @@ export const CongressTable: React.FC<CongressTableProps> = React.memo(({ congres
                                       <td className="p-3 font-medium text-slate-900 dark:text-white">{envio.titulo_articulo || 'Sin título'}</td>
                                       <td className="p-3 text-slate-600 dark:text-slate-400 font-medium">{envio.revista_destino || 'N/A'}</td>
                                       <td className="p-3 capitalize">{envio.categoria}</td>
+                                      <td className="p-3 capitalize">{envio.nivel_academico === 'maestria' ? 'Maestría' : envio.nivel_academico === 'doctorado' ? 'Doctorado' : envio.nivel_academico || 'N/A'}</td>
+                                      <td className="p-3 text-slate-600 dark:text-slate-450">{envio.linea_investigacion || 'N/A'}</td>
                                       <td className="p-3 text-slate-600 dark:text-slate-400">{autores}</td>
                                       <td className="p-3 text-slate-500 italic">{envio.palabras_claves || '-'}</td>
                                     </tr>

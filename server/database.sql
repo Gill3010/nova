@@ -70,6 +70,8 @@ CREATE TABLE IF NOT EXISTS envios_ojs (
     revista_destino VARCHAR(255),
     categoria VARCHAR(100),
     autor_email VARCHAR(255),
+    nivel_academico VARCHAR(100),
+    linea_investigacion VARCHAR(255),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 

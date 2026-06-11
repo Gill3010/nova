@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useReducer, useCallback } from 'react';
 import type { Submission, FileInfo, Contributor } from '../types';
+import { DEFAULT_RESEARCH_LINES } from '../constants/data';
 
 // ---- State shape ------------------------------------------------------------
 interface SpeakerState {
@@ -21,6 +22,8 @@ interface SpeakerState {
   originalCongressId: string;
   selectedRevistaOjsId: number | undefined;
   originalRevistaOjsData?: { url: string; key: string; path: string };
+  academicLevel: 'maestria' | 'doctorado' | 'otros';
+  researchLine: string;
 }
 
 // ---- Actions ----------------------------------------------------------------
@@ -39,6 +42,8 @@ type SpeakerAction =
   | { type: 'SET_SUBMISSION_ID';   payload: number | undefined }
   | { type: 'SET_CONGRESS_ID';     payload: string }
   | { type: 'SET_REVISTA_OJS_ID';  payload: number | undefined }
+  | { type: 'SET_ACADEMIC_LEVEL';  payload: 'maestria' | 'doctorado' | 'otros' }
+  | { type: 'SET_RESEARCH_LINE';   payload: string }
   | { type: 'RESET' }
   | { type: 'LOAD'; payload: SpeakerState };
 
@@ -69,6 +74,8 @@ const INITIAL_STATE: SpeakerState = {
   originalCongressId: '',
   selectedRevistaOjsId: undefined,
   originalRevistaOjsData: undefined,
+  academicLevel: 'maestria',
+  researchLine: DEFAULT_RESEARCH_LINES[0]?.name || '',
 };
 
 // ---- Reducer ----------------------------------------------------------------
@@ -118,6 +125,8 @@ function speakerReducer(state: SpeakerState, action: SpeakerAction): SpeakerStat
     case 'SET_SUBMISSION_ID':   return { ...state, internalSubmissionId: action.payload };
     case 'SET_CONGRESS_ID':     return { ...state, selectedCongressId: action.payload };
     case 'SET_REVISTA_OJS_ID':  return { ...state, selectedRevistaOjsId: action.payload };
+    case 'SET_ACADEMIC_LEVEL':  return { ...state, academicLevel: action.payload };
+    case 'SET_RESEARCH_LINE':   return { ...state, researchLine: action.payload };
     case 'RESET':               return INITIAL_STATE;
     case 'LOAD':                return { ...INITIAL_STATE, ...action.payload };
     default:                    return state;
@@ -160,6 +169,10 @@ interface SpeakerContextType {
   selectedRevistaOjsId: number | undefined;
   setSelectedRevistaOjsId: (val: number | undefined) => void;
   originalRevistaOjsData?: { url: string; key: string; path: string };
+  academicLevel: 'maestria' | 'doctorado' | 'otros';
+  setAcademicLevel: (val: 'maestria' | 'doctorado' | 'otros') => void;
+  researchLine: string;
+  setResearchLine: (val: string) => void;
 }
 
 const SpeakerContext = createContext<SpeakerContextType | undefined>(undefined);
@@ -194,6 +207,8 @@ export const SpeakerProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, [state.selectedCongressId]);
   const setSelectedRevistaOjsId = useCallback((v: number | undefined) =>
     dispatch({ type: 'SET_REVISTA_OJS_ID', payload: v }), []);
+  const setAcademicLevel     = useCallback((v: 'maestria' | 'doctorado' | 'otros') => dispatch({ type: 'SET_ACADEMIC_LEVEL', payload: v }), []);
+  const setResearchLine      = useCallback((v: string) => dispatch({ type: 'SET_RESEARCH_LINE', payload: v }), []);
   const resetSpeakerForm     = useCallback(() => dispatch({ type: 'RESET' }), []);
 
   const loadSubmission = useCallback((data: any) => {
@@ -231,6 +246,8 @@ export const SpeakerProvider: React.FC<{ children: React.ReactNode }> = ({ child
         submissionKeywords: data.palabras_claves || '',
         submissionCategory: (data.categoria as Submission['category']) || 'articulo',
         contributors,
+        academicLevel: (data.nivel_academico as any) || 'maestria',
+        researchLine: data.linea_investigacion || (DEFAULT_RESEARCH_LINES[0]?.name || ''),
       },
     });
   }, []);
@@ -268,6 +285,10 @@ export const SpeakerProvider: React.FC<{ children: React.ReactNode }> = ({ child
     selectedRevistaOjsId: state.selectedRevistaOjsId,
     setSelectedRevistaOjsId,
     originalRevistaOjsData: state.originalRevistaOjsData,
+    academicLevel: state.academicLevel,
+    setAcademicLevel,
+    researchLine: state.researchLine,
+    setResearchLine,
     resetSpeakerForm,
     loadSubmission,
   };

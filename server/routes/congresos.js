@@ -45,7 +45,9 @@ router.get('/', verifyToken, (req, res) => {
               'categoria', e.categoria,
               'autor_email', e.autor_email,
               'created_at', e.created_at,
-              'revista_ojs_id', e.revista_ojs_id
+              'revista_ojs_id', e.revista_ojs_id,
+              'nivel_academico', e.nivel_academico,
+              'linea_investigacion', e.linea_investigacion
             )
           )
           FROM envios_ojs e WHERE e.congreso_id = c.id

@@ -8,6 +8,7 @@ import { Card } from '../../components/common/Card';
 import { Input } from '../../components/common/Input';
 import { Select } from '../../components/common/Select';
 import type { Contributor, FileInfo } from '../../types';
+import { DEFAULT_RESEARCH_LINES } from '../../constants/data';
 
 // Subcomponents
 import { FileUploadCard } from './components/FileUploadCard';
@@ -47,7 +48,11 @@ export const SpeakerPage: React.FC = () => {
     setSelectedCongressId,
     originalRevistaOjsData,
     selectedRevistaOjsId,
-    setSelectedRevistaOjsId
+    setSelectedRevistaOjsId,
+    academicLevel,
+    setAcademicLevel,
+    researchLine,
+    setResearchLine
   } = useSpeaker();
 
   const { isPublishing, publishAndSyncOjs, updateAndSyncOjs, addLog } = useOjs();
@@ -132,10 +137,10 @@ export const SpeakerPage: React.FC = () => {
 
     const fileSetter =
       fileKey === 'audio' ? setAudioFile
-      : fileKey === 'poster' ? setPosterFile
-      : fileKey === 'abstract' ? setAbstractFile
-      : fileKey === 'manuscript' ? setManuscriptFile
-      : setVideoFile;
+        : fileKey === 'poster' ? setPosterFile
+          : fileKey === 'abstract' ? setAbstractFile
+            : fileKey === 'manuscript' ? setManuscriptFile
+              : setVideoFile;
 
     const initialFile: FileInfo = {
       name: fileName,
@@ -168,10 +173,10 @@ export const SpeakerPage: React.FC = () => {
   const deleteUploadedFile = useCallback((fileKey: string) => {
     const fileSetter =
       fileKey === 'audio' ? setAudioFile
-      : fileKey === 'poster' ? setPosterFile
-      : fileKey === 'abstract' ? setAbstractFile
-      : fileKey === 'manuscript' ? setManuscriptFile
-      : setVideoFile;
+        : fileKey === 'poster' ? setPosterFile
+          : fileKey === 'abstract' ? setAbstractFile
+            : fileKey === 'manuscript' ? setManuscriptFile
+              : setVideoFile;
     fileSetter(null);
     addLog('info', `Archivo eliminado de la categoría "${fileKey}".`);
   }, [setAudioFile, setPosterFile, setAbstractFile, setManuscriptFile, setVideoFile, addLog]);
@@ -280,6 +285,8 @@ export const SpeakerPage: React.FC = () => {
           revistaOjsId: selectedRevistaOjsId,
           revistaOjsData,
           oldRevistaOjsData: originalRevistaOjsData,
+          academicLevel,
+          researchLine,
           onSuccessSpeaker: () => {
             alert('¡Los cambios de su ponencia han sido guardados con éxito!');
             resetSpeakerForm();
@@ -300,6 +307,8 @@ export const SpeakerPage: React.FC = () => {
         files: filesList,
         revistaOjsId: selectedRevistaOjsId,
         revistaOjsData,
+        academicLevel,
+        researchLine,
         onSuccessSpeaker: () => {
           setSubmissionStatus('submitted');
           alert('¡Su ponencia ha sido enviada con éxito y sincronizada con OJS!');
@@ -335,7 +344,9 @@ export const SpeakerPage: React.FC = () => {
     resetSpeakerForm,
     setSelectedCongressId,
     setSelectedRevistaOjsId,
-    setSubmissionStatus
+    setSubmissionStatus,
+    academicLevel,
+    researchLine
   ]);
 
   return (
@@ -444,6 +455,55 @@ export const SpeakerPage: React.FC = () => {
             onChange={(e) => setSubmissionKeywords(e.target.value)}
             placeholder="ej: inteligencia artificial, medicina, algoritmos..."
           />
+        </div>
+
+        {/* — Nivel Académico — */}
+        <Select
+          id="sub-academic-level"
+          label="Nivel Académico"
+          value={academicLevel}
+          onChange={(e) => setAcademicLevel(e.target.value as 'maestria' | 'doctorado' | 'otros')}
+        >
+          <option value="maestria">Maestría (Enfoque en formación académica y profesional)</option>
+          <option value="doctorado">Doctorado (Enfoque en alta investigación original)</option>
+          <option value="otros">Otros (Seminarios, cursos o grado general)</option>
+        </Select>
+
+        {/* — Línea de Investigación — */}
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="sub-research-line" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+            Línea de Investigación
+          </label>
+          <Select
+            id="sub-research-line"
+            value={DEFAULT_RESEARCH_LINES.some(l => l.name === researchLine) ? researchLine : (researchLine ? 'Otro' : '')}
+            onChange={(e) => {
+              const val = e.target.value;
+              if (val !== 'Otro') {
+                setResearchLine(val);
+              } else {
+                setResearchLine('');
+              }
+            }}
+          >
+            <option value="" disabled>-- Seleccione una línea de investigación --</option>
+            {DEFAULT_RESEARCH_LINES.map(line => (
+              <option key={line.id} value={line.name}>{line.name}</option>
+            ))}
+            <option value="Otro">Otro (Especificar)</option>
+          </Select>
+
+          {/* Input para línea de investigación personalizada si no coincide con las predefinidas o es "Otro" */}
+          {(!DEFAULT_RESEARCH_LINES.some(l => l.name === researchLine) || (researchLine && !DEFAULT_RESEARCH_LINES.some(l => l.name === researchLine))) && (
+            <Input
+              id="sub-research-line-custom"
+              type="text"
+              label="Especifique la Línea de Investigación"
+              value={researchLine}
+              onChange={(e) => setResearchLine(e.target.value)}
+              placeholder="Escriba su línea de investigación personalizada..."
+            />
+          )}
         </div>
 
         {/* — Colaboradores / Autores (extraído) — */}
