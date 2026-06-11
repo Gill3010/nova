@@ -11,10 +11,22 @@ import { Badge } from '../../components/common/Badge';
 import { fetchActividades } from '../../services/dbApi';
 import type { Actividad } from '../../types';
 import { Agenda } from '../../components/agenda/PublicAgenda';
+import { useTour } from '../onboarding';
 
 export const AttendeePage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+
+  // ── Product Tour del Asistente ──────────────────────────────────────────────
+  // autoStart: true → se dispara automáticamente si el usuario no ha visto el tour.
+  // El hook filtra automáticamente los pasos cuyos elementos no estén montados en el DOM
+  // (ej: las cards de info/agenda solo aparecen cuando hay un congreso seleccionado).
+  useTour({
+    role: 'attendee',
+    userId: user?.id ?? 0,
+    autoStart: true,
+  });
+
   const {
     internalId,
     name: congressName,
@@ -104,7 +116,8 @@ export const AttendeePage: React.FC = () => {
     <div className="flex flex-col gap-8 w-full animate-fade-in">
       
       {/* SECCIÓN 0: INFORMACIÓN GENERAL DEL CONGRESO (VISTA DE SOLO LECTURA) */}
-      <Card className="flex flex-col gap-6 w-full shadow-sm border-t-4 border-t-indigo-600 dark:border-t-indigo-500">
+      {/* data-tour-id: referenciado en el paso 2 del tour del Asistente */}
+      <Card data-tour-id="attendee-info-card" className="flex flex-col gap-6 w-full shadow-sm border-t-4 border-t-indigo-600 dark:border-t-indigo-500">
         <div className="flex flex-col gap-2">
           <Badge variant="outline" className="w-fit font-bold uppercase tracking-wider text-[10px] border-indigo-200 dark:border-indigo-855 text-indigo-600 dark:text-indigo-400">
             Información del Evento
@@ -191,7 +204,8 @@ export const AttendeePage: React.FC = () => {
       </Card>
 
       {/* SECCIÓN 1: ITINERARIO PÚBLICO (SIEMPRE VISIBLE PARA TODOS) */}
-      <Card className="flex flex-col gap-6 w-full shadow-sm">
+      {/* data-tour-id: referenciado en el paso 3 del tour del Asistente */}
+      <Card data-tour-id="attendee-agenda-card" className="flex flex-col gap-6 w-full shadow-sm">
         <div className="border-b border-zinc-100 dark:border-zinc-800 pb-4">
           <h2 className="text-xl font-bold text-zinc-900 dark:text-white flex items-center gap-2.5">
             <CalendarDays className="h-5 w-5 text-zinc-500" aria-hidden="true" /> Itinerario Dinámico del Congreso
@@ -219,7 +233,8 @@ export const AttendeePage: React.FC = () => {
       </Card>
 
       {/* SECCIÓN 2: TICKET E INSCRIPCIÓN */}
-      <Card className="flex flex-col gap-6 w-full shadow-sm">
+      {/* data-tour-id: referenciado en el paso 4 del tour del Asistente */}
+      <Card data-tour-id="attendee-payment-form" className="flex flex-col gap-6 w-full shadow-sm">
         <div className="border-b border-zinc-100 dark:border-zinc-800 pb-4">
           <h2 className="text-xl font-bold text-zinc-900 dark:text-white flex items-center gap-2.5">
             <Users className="h-5 w-5 text-zinc-500" aria-hidden="true" /> Inscripción y Acceso Oficial

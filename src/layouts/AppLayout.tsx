@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { Header } from '../components/layout/Header';
 import { OjsConfigCard } from '../components/ojs/OjsConfigCard';
 import { ConsoleLogs } from '../components/layout/ConsoleLogs';
+import { TourLauncher } from '../features/onboarding';
 
 export const AppLayout: React.FC = () => {
   const { user, isLoading } = useAuth();
@@ -96,10 +97,10 @@ export const AppLayout: React.FC = () => {
                 role="tab"
                 id="tab-admin"
                 className={({ isActive }) =>
-                  `px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 ${
+                  `px-4 py-2.5 text-sm font-medium border-b-2 transition-all duration-150 whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 rounded-t-sm ${
                     isActive
-                      ? 'border-zinc-900 text-zinc-900 dark:border-zinc-100 dark:text-zinc-100'
-                      : 'border-transparent text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-300'
+                      ? 'border-indigo-600 text-indigo-700 dark:border-indigo-400 dark:text-indigo-400'
+                      : 'border-transparent text-zinc-500 hover:text-indigo-600 hover:bg-indigo-50 dark:text-zinc-400 dark:hover:text-indigo-400 dark:hover:bg-indigo-950/40'
                   }`
                 }
               >
@@ -111,11 +112,12 @@ export const AppLayout: React.FC = () => {
                 to="/espacios"
                 role="tab"
                 id="tab-espacios"
+                data-tour-id="admin-spaces-nav-link"
                 className={({ isActive }) =>
-                  `px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 ${
+                  `px-4 py-2.5 text-sm font-medium border-b-2 transition-all duration-150 whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 rounded-t-sm ${
                     isActive
-                      ? 'border-zinc-900 text-zinc-900 dark:border-zinc-100 dark:text-zinc-100'
-                      : 'border-transparent text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-300'
+                      ? 'border-indigo-600 text-indigo-700 dark:border-indigo-400 dark:text-indigo-400'
+                      : 'border-transparent text-zinc-500 hover:text-indigo-600 hover:bg-indigo-50 dark:text-zinc-400 dark:hover:text-indigo-400 dark:hover:bg-indigo-950/40'
                   }`
                 }
               >
@@ -127,11 +129,12 @@ export const AppLayout: React.FC = () => {
                 to="/agenda"
                 role="tab"
                 id="tab-agenda"
+                data-tour-id="admin-agenda-nav-link"
                 className={({ isActive }) =>
-                  `px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 ${
+                  `px-4 py-2.5 text-sm font-medium border-b-2 transition-all duration-150 whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 rounded-t-sm ${
                     isActive
-                      ? 'border-zinc-900 text-zinc-900 dark:border-zinc-100 dark:text-zinc-100'
-                      : 'border-transparent text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-300'
+                      ? 'border-indigo-600 text-indigo-700 dark:border-indigo-400 dark:text-indigo-400'
+                      : 'border-transparent text-zinc-500 hover:text-indigo-600 hover:bg-indigo-50 dark:text-zinc-400 dark:hover:text-indigo-400 dark:hover:bg-indigo-950/40'
                   }`
                 }
               >
@@ -143,11 +146,12 @@ export const AppLayout: React.FC = () => {
                 to="/users"
                 role="tab"
                 id="tab-users"
+                data-tour-id="admin-users-nav-link"
                 className={({ isActive }) =>
-                  `px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 ${
+                  `px-4 py-2.5 text-sm font-medium border-b-2 transition-all duration-150 whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 rounded-t-sm ${
                     isActive
-                      ? 'border-zinc-900 text-zinc-900 dark:border-zinc-100 dark:text-zinc-100'
-                      : 'border-transparent text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-300'
+                      ? 'border-indigo-600 text-indigo-700 dark:border-indigo-400 dark:text-indigo-400'
+                      : 'border-transparent text-zinc-500 hover:text-indigo-600 hover:bg-indigo-50 dark:text-zinc-400 dark:hover:text-indigo-400 dark:hover:bg-indigo-950/40'
                   }`
                 }
               >
@@ -160,10 +164,10 @@ export const AppLayout: React.FC = () => {
                 role="tab"
                 id="tab-speaker-new"
                 className={({ isActive }) =>
-                  `px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 ${
+                  `px-4 py-2.5 text-sm font-medium border-b-2 transition-all duration-150 whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 rounded-t-sm ${
                     isActive
-                      ? 'border-zinc-900 text-zinc-900 dark:border-zinc-100 dark:text-zinc-100'
-                      : 'border-transparent text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-300'
+                      ? 'border-indigo-600 text-indigo-700 dark:border-indigo-400 dark:text-indigo-400'
+                      : 'border-transparent text-zinc-500 hover:text-indigo-600 hover:bg-indigo-50 dark:text-zinc-400 dark:hover:text-indigo-400 dark:hover:bg-indigo-950/40'
                   }`
                 }
               >
@@ -176,10 +180,10 @@ export const AppLayout: React.FC = () => {
                 role="tab"
                 id="tab-speaker-history"
                 className={({ isActive }) =>
-                  `px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 ${
+                  `px-4 py-2.5 text-sm font-medium border-b-2 transition-all duration-150 whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 rounded-t-sm ${
                     isActive
-                      ? 'border-zinc-900 text-zinc-900 dark:border-zinc-100 dark:text-zinc-100'
-                      : 'border-transparent text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-300'
+                      ? 'border-indigo-600 text-indigo-700 dark:border-indigo-400 dark:text-indigo-400'
+                      : 'border-transparent text-zinc-500 hover:text-indigo-600 hover:bg-indigo-50 dark:text-zinc-400 dark:hover:text-indigo-400 dark:hover:bg-indigo-950/40'
                   }`
                 }
               >
@@ -190,11 +194,12 @@ export const AppLayout: React.FC = () => {
               to="/attendee"
               role="tab"
               id="tab-attendee"
+              data-tour-id="attendee-program-tab"
               className={({ isActive }) =>
-                `px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 ${
+                `px-4 py-2.5 text-sm font-medium border-b-2 transition-all duration-150 whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 rounded-t-sm ${
                   isActive
-                    ? 'border-indigo-600 text-indigo-700 dark:border-indigo-400 dark:text-indigo-400 font-bold'
-                    : 'border-transparent text-indigo-500 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300'
+                    ? 'border-indigo-600 text-indigo-700 dark:border-indigo-400 dark:text-indigo-400'
+                    : 'border-transparent text-zinc-500 hover:text-indigo-600 hover:bg-indigo-50 dark:text-zinc-400 dark:hover:text-indigo-400 dark:hover:bg-indigo-950/40'
                 }`
               }
             >
@@ -226,12 +231,19 @@ export const AppLayout: React.FC = () => {
               className="lg:col-span-5 w-full flex flex-col gap-5"
               aria-label="Integración con OJS y consola"
             >
-              <OjsConfigCard />
+              {/* data-tour-id: referenciado en el paso 2 del tour Admin/Organizador */}
+              <div data-tour-id="admin-portal-ojs-section">
+                <OjsConfigCard />
+              </div>
               <ConsoleLogs />
             </aside>
           )}
         </main>
       </div>
+
+
+      {/* Botón flotante "Ver tutorial de nuevo" — visible en toda la app */}
+      <TourLauncher variant="fab" />
     </>
   );
 };

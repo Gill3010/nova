@@ -1,7 +1,7 @@
 import React from 'react';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
+  variant?: 'primary' | 'secondary' | 'danger' | 'ghost' | 'nav' | 'nav-danger';
   size?: 'sm' | 'default' | 'lg';
   isLoading?: boolean;
 }
@@ -27,6 +27,12 @@ export const Button: React.FC<ButtonProps> = ({
       'bg-red-600 hover:bg-red-700 text-white',
     ghost:
       'bg-transparent hover:bg-zinc-100 text-zinc-600 dark:hover:bg-zinc-800 dark:text-zinc-400',
+    // Nav: borde índigo tenue, texto índigo — ideal para botones del header
+    nav:
+      'bg-transparent border border-indigo-200 text-indigo-600 hover:bg-indigo-50 hover:border-indigo-400 hover:text-indigo-700 dark:border-indigo-800 dark:text-indigo-400 dark:hover:bg-indigo-950 dark:hover:border-indigo-600 dark:hover:text-indigo-300',
+    // Nav-danger: para acciones de salida/cierre de sesión en el header
+    'nav-danger':
+      'bg-transparent border border-zinc-200 text-zinc-500 hover:bg-red-50 hover:border-red-300 hover:text-red-600 dark:border-zinc-700 dark:text-zinc-500 dark:hover:bg-red-950 dark:hover:border-red-800 dark:hover:text-red-400',
   };
 
   const sizes: Record<string, string> = {

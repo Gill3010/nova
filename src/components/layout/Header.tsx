@@ -32,7 +32,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenDashboard, onOpenDirectori
 
             {onOpenDashboard && (user.rol === 'admin' || user.rol === 'organizer') && (
               <Button
-                variant="ghost"
+                variant="nav"
                 size="sm"
                 onClick={onOpenDashboard}
                 aria-label="Volver a Mis Congresos"
@@ -44,7 +44,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenDashboard, onOpenDirectori
 
             {onOpenDirectorio && (
               <Button
-                variant="ghost"
+                variant="nav"
                 size="sm"
                 onClick={onOpenDirectorio}
                 aria-label="Ir al Directorio"
@@ -55,7 +55,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenDashboard, onOpenDirectori
             )}
 
             <Button
-              variant="ghost"
+              variant="nav-danger"
               size="sm"
               onClick={logout}
               aria-label="Cerrar sesión"

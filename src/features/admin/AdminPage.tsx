@@ -1,16 +1,28 @@
-import React from 'react';
-import { Building2 } from 'lucide-react';
+import React, { useCallback } from 'react';
+import { Building2, FilePlus2 } from 'lucide-react';
 import { useCongress } from '../../context/CongressContext';
+import { useOjs } from '../../context/OjsContext';
 import { Card } from '../../components/common/Card';
+import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 import { Select } from '../../components/common/Select';
 import { Textarea } from '../../components/common/Textarea';
 import { Badge } from '../../components/common/Badge';
 import { DEFAULT_ROLES } from '../../constants/data';
 import { useAuth } from '../../context/AuthContext';
+import { useTour } from '../onboarding';
 
 export const AdminPage: React.FC = () => {
   const { user } = useAuth();
+
+  // ── Product Tour del Administrador ───────────────────────────────────
+  // autoStart: true → se dispara automáticamente si el usuario no lo ha visto.
+  useTour({
+    role: user?.rol === 'organizer' ? 'organizer' : 'admin',
+    userId: user?.id ?? 0,
+    autoStart: true,
+  });
+
   const {
     internalId,
     creadorId,
@@ -41,8 +53,22 @@ export const AdminPage: React.FC = () => {
     handleVenueFocus,
     handleVenueKeyDown,
     handleSuggestionClick,
-    toggleRol
+    toggleRol,
+    resetCongressForm,
   } = useCongress();
+
+  const { setOjsUrl, setOjsApiKey, setSelectedJournal } = useOjs();
+
+  /**
+   * Resetea el formulario del congreso Y limpia las credenciales OJS
+   * para que no queden datos del congreso anterior cargados en el sidebar.
+   */
+  const handleNewCongress = useCallback(() => {
+    resetCongressForm();
+    if (setOjsUrl) setOjsUrl('');
+    if (setOjsApiKey) setOjsApiKey('');
+    if (setSelectedJournal) setSelectedJournal(null);
+  }, [resetCongressForm, setOjsUrl, setOjsApiKey, setSelectedJournal]);
 
   const canEdit = !internalId || user?.rol === 'admin' || (user?.rol === 'organizer' && creadorId === user?.id);
 
@@ -56,10 +82,30 @@ export const AdminPage: React.FC = () => {
 
   return (
     <Card className="flex flex-col gap-6 w-full animate-fade-in">
-      <div className="border-b border-slate-100 dark:border-slate-800 pb-4">
+      {/* data-tour-id: referenciado en el paso 1 del tour Admin/Organizador */}
+      <div
+        className="border-b border-slate-100 dark:border-slate-800 pb-4 flex items-center justify-between gap-4"
+        data-tour-id="admin-congress-create-btn"
+      >
         <h2 className="text-xl font-bold text-zinc-900 dark:text-white flex items-center gap-2.5">
-          <Building2 className="h-5 w-5 text-zinc-500" aria-hidden="true" /> Datos del Congreso Académico
+          <Building2 className="h-5 w-5 text-zinc-500" aria-hidden="true" />
+          {internalId ? 'Editar Congreso' : 'Datos del Congreso Académico'}
         </h2>
+
+        {/* Botón visible solo cuando hay un congreso cargado (modo edición) */}
+        {internalId && (
+          <Button
+            id="btn-nuevo-congreso"
+            data-tour-id="btn-nuevo-congreso"
+            variant="secondary"
+            size="sm"
+            onClick={handleNewCongress}
+            aria-label="Limpiar formulario para crear un nuevo congreso"
+          >
+            <FilePlus2 className="h-3.5 w-3.5" aria-hidden="true" />
+            Nuevo Congreso
+          </Button>
+        )}
       </div>
 
       <div className="flex flex-col gap-5">
@@ -140,18 +186,17 @@ export const AdminPage: React.FC = () => {
                     filteredSuggestions.map((suggestion, index) => (
                       <li
                         key={suggestion}
-                        className={`px-3.5 py-2 text-sm text-slate-900 dark:text-slate-200 rounded-md cursor-pointer transition-colors ${
-                          index === activeSuggestion
+                        className={`px-3.5 py-2 text-sm text-slate-900 dark:text-slate-200 rounded-md cursor-pointer transition-colors ${index === activeSuggestion
                             ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 font-medium'
                             : 'hover:bg-slate-50 dark:hover:bg-slate-800/60'
-                        }`}
+                          }`}
                         onClick={() => handleSuggestionClick(suggestion)}
                       >
                         {suggestion}
                       </li>
                     ))
                   ) : !isLoadingSuggestions ? (
-                    <li 
+                    <li
                       className="px-3.5 py-2 text-sm text-slate-500 dark:text-slate-400 italic cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors rounded-md"
                       onClick={() => handleSuggestionClick(venue)}
                     >
@@ -196,11 +241,10 @@ export const AdminPage: React.FC = () => {
                         setEspaciosIds([...espaciosIds, room.id]);
                       }
                     }}
-                    className={`px-3 py-1.5 rounded-full text-sm border transition-colors flex items-center gap-1 ${
-                      isSelected 
-                        ? 'bg-indigo-100 border-indigo-300 text-indigo-800 dark:bg-indigo-900/50 dark:border-indigo-700 dark:text-indigo-200' 
+                    className={`px-3 py-1.5 rounded-full text-sm border transition-colors flex items-center gap-1 ${isSelected
+                        ? 'bg-indigo-100 border-indigo-300 text-indigo-800 dark:bg-indigo-900/50 dark:border-indigo-700 dark:text-indigo-200'
                         : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800/80'
-                    }`}
+                      }`}
                   >
                     <span className="truncate max-w-[200px]" title={room.tipo === 'virtual' ? room.enlace_virtual : room.ubicacion}>
                       {room.tipo === 'virtual' ? (room.enlace_virtual || room.nombre) : (room.ubicacion || room.nombre)}
@@ -272,11 +316,10 @@ export const AdminPage: React.FC = () => {
               return (
                 <div
                   key={role.id}
-                  className={`relative p-4 rounded-xl border cursor-pointer select-none transition-all flex flex-col gap-1.5 ${
-                    isSelected
+                  className={`relative p-4 rounded-xl border cursor-pointer select-none transition-all flex flex-col gap-1.5 ${isSelected
                       ? 'bg-blue-50/50 dark:bg-blue-950/20 border-blue-500 shadow-sm'
                       : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/40'
-                  }`}
+                    }`}
                   onClick={() => toggleRol(role.id)}
                 >
                   <div className="flex justify-between items-center">

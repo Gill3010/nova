@@ -4,11 +4,13 @@ import { fetchDashboardData, fetchRevistasForCongress } from '../../services/dbA
 import type { PostgresCongress } from '../../services/dbApi';
 import { useSpeaker } from '../../context/SpeakerContext';
 import { useOjs } from '../../context/OjsContext';
+import { useAuth } from '../../context/AuthContext';
 import { Card } from '../../components/common/Card';
 import { Input } from '../../components/common/Input';
 import { Select } from '../../components/common/Select';
 import type { Contributor, FileInfo } from '../../types';
 import { DEFAULT_RESEARCH_LINES } from '../../constants/data';
+import { useTour } from '../onboarding';
 
 // Subcomponents
 import { FileUploadCard } from './components/FileUploadCard';
@@ -16,6 +18,17 @@ import { ContributorsSection } from './components/ContributorsSection';
 import { SubmissionStatusBar } from './components/SubmissionStatusBar';
 
 export const SpeakerPage: React.FC = () => {
+  const { user } = useAuth();
+
+  // ── Product Tour del Ponente ──────────────────────────────────────────────
+  // autoStart: true → se dispara automáticamente si el usuario no lo ha visto.
+  // El hook comprueba localStorage; si ya fue completado, no hace nada.
+  useTour({
+    role: 'speaker',
+    userId: user?.id ?? 0,
+    autoStart: true,
+  });
+
   const {
     submissionTitle,
     setSubmissionTitle,
@@ -360,6 +373,8 @@ export const SpeakerPage: React.FC = () => {
       <div className="flex flex-col gap-5">
 
         {/* — Selector de Congreso de Destino — */}
+        {/* data-tour-id: referenciado en el paso 1 del tour del Ponente */}
+        <div data-tour-id="speaker-congress-selector">
         <Select
           id="target-congress"
           label="Seleccione el Congreso de Destino"
@@ -379,6 +394,7 @@ export const SpeakerPage: React.FC = () => {
             </option>
           ))}
         </Select>
+        </div>
 
         {/* — Selector de Revista de Destino (nuevo) — */}
         {selectedCongressId && (
@@ -407,6 +423,8 @@ export const SpeakerPage: React.FC = () => {
         )}
 
         {/* — Metadatos principales — */}
+        {/* data-tour-id: referenciado en el paso 2 del tour del Ponente */}
+        <div data-tour-id="speaker-submission-title">
         <Input
           id="sub-title"
           label="Título del Trabajo Académico"
@@ -415,6 +433,7 @@ export const SpeakerPage: React.FC = () => {
           onChange={(e) => setSubmissionTitle(e.target.value)}
           placeholder="Ingrese el título de su investigación..."
         />
+        </div>
 
         <Select
           id="sub-category"
@@ -530,6 +549,8 @@ export const SpeakerPage: React.FC = () => {
               onRealFileUpload={handleRealFileUpload}
               onDeleteFile={deleteUploadedFile}
             />
+            {/* data-tour-id: referenciado en el paso 3 del tour del Ponente */}
+            <div data-tour-id="speaker-file-manuscript">
             <FileUploadCard
               fileKey="manuscript"
               label="Manuscrito Completo"
@@ -540,6 +561,7 @@ export const SpeakerPage: React.FC = () => {
               onRealFileUpload={handleRealFileUpload}
               onDeleteFile={deleteUploadedFile}
             />
+            </div>
             <FileUploadCard
               fileKey="audio"
               label="Audio (Resumen / Podcast)"
@@ -550,6 +572,8 @@ export const SpeakerPage: React.FC = () => {
               onRealFileUpload={handleRealFileUpload}
               onDeleteFile={deleteUploadedFile}
             />
+            {/* data-tour-id: referenciado en el paso 4 del tour del Ponente */}
+            <div data-tour-id="speaker-file-poster">
             <FileUploadCard
               fileKey="poster"
               label="Afiche o Póster"
@@ -560,6 +584,7 @@ export const SpeakerPage: React.FC = () => {
               onRealFileUpload={handleRealFileUpload}
               onDeleteFile={deleteUploadedFile}
             />
+            </div>
             <FileUploadCard
               fileKey="video"
               label="Video de Presentación (~5 min)"
@@ -575,12 +600,15 @@ export const SpeakerPage: React.FC = () => {
         </div>
 
         {/* — Panel de estado y envío (extraído) — */}
+        {/* data-tour-id: referenciado en el paso 5 del tour del Ponente */}
+        <div data-tour-id="speaker-submit-btn">
         <SubmissionStatusBar
           submissionStatus={submissionStatus}
           isEditMode={isEditMode}
           isPublishing={isPublishing}
           onPublishClick={handlePublishClick}
         />
+        </div>
       </div>
     </Card>
   );
