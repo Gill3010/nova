@@ -6,7 +6,6 @@ import { useSpeaker } from '../../context/SpeakerContext';
 import { useAuth } from '../../context/AuthContext';
 import { Card } from '../common/Card';
 import { Input } from '../common/Input';
-import { Select } from '../common/Select';
 import { Button } from '../common/Button';
 import { createPortalOjs, syncRevistasPortal, associatePortalToCongress } from '../../services/dbApi';
 
@@ -18,8 +17,6 @@ export const OjsConfigCard: React.FC = () => {
     setOjsApiKey,
     ojsStatus,
     journals,
-    selectedJournal,
-    setSelectedJournal,
     isTestingConnection,
     isPublishing,
     testOjsConnection,
