@@ -44,13 +44,29 @@ router.get('/', verifyToken, (req, res) => {
               'revista_destino', e.revista_destino,
               'categoria', e.categoria,
               'autor_email', e.autor_email,
-              'created_at', e.created_at
+              'created_at', e.created_at,
+              'revista_ojs_id', e.revista_ojs_id
             )
           )
           FROM envios_ojs e WHERE e.congreso_id = c.id
         ),
         '[]'::json
-      ) as envios
+      ) as envios,
+      COALESCE(
+        (
+          SELECT json_agg(
+            json_build_object(
+              'portal_ojs_id', p.id,
+              'ojs_url', p.ojs_url,
+              'portal_nombre', p.nombre
+            )
+          )
+          FROM congreso_portal_ojs cp
+          JOIN portales_ojs p ON p.id = cp.portal_ojs_id
+          WHERE cp.congreso_id = c.id
+        ),
+        '[]'::json
+      ) as portales_ojs
     FROM congresos c
     ${whereClause}
     ORDER BY c.created_at DESC;
@@ -65,6 +81,7 @@ router.get('/', verifyToken, (req, res) => {
     const formattedRows = rows.map(row => {
       let enviosArray = [];
       let sedesArray = [];
+      let portalesOjsArray = [];
       try {
         if (row.envios) {
           if (typeof row.envios === 'string' && row.envios !== '[]') {
@@ -81,10 +98,17 @@ router.get('/', verifyToken, (req, res) => {
             sedesArray = row.sedes.filter(s => s.espacio_id !== null);
           }
         }
+        if (row.portales_ojs) {
+          if (typeof row.portales_ojs === 'string' && row.portales_ojs !== '[]') {
+            portalesOjsArray = JSON.parse(row.portales_ojs).filter(p => p.portal_ojs_id !== null);
+          } else if (Array.isArray(row.portales_ojs)) {
+            portalesOjsArray = row.portales_ojs.filter(p => p.portal_ojs_id !== null);
+          }
+        }
       } catch (e) {
         logger.warn('Error al procesar JSON desde BD', { rowId: row.id, error: e.message });
       }
-      return { ...row, envios: enviosArray, sedes: sedesArray };
+      return { ...row, envios: enviosArray, sedes: sedesArray, portales_ojs: portalesOjsArray };
     });
 
     res.status(200).json({ success: true, data: formattedRows });
@@ -110,7 +134,8 @@ router.post('/', verifyToken, async (req, res) => {
     ojs_submission_id,
     ojs_publication_id,
     espacio_id,
-    espaciosIds // Nuevo: array de IDs
+    espaciosIds, // Nuevo: array de IDs
+    portal_ojs_id // Nuevo: ID del portal OJS a asociar
   } = req.body;
   const creador_id = req.user.id;
   
@@ -191,7 +216,7 @@ router.post('/', verifyToken, async (req, res) => {
   db.run(query, values, async function(err) {
     if (err) {
       logger.error('Error insertando congreso en BD', { error: err.message, creador_id });
-      return res.status(500).json({ success: false, error: 'Error interno del servidor al guardar el congreso' });
+      return res.status(500).json({ success: false, error: 'Error interno del servidor al guardar el congreso', details: err.message });
     }
     
     const insertedId = this.lastID;
@@ -207,6 +232,18 @@ router.post('/', verifyToken, async (req, res) => {
         }
       } catch (e) {
         logger.error('Error guardando sedes del congreso', { error: e.message });
+      }
+    }
+    
+    // Asociar portal OJS si se proporcionó
+    if (portal_ojs_id) {
+      try {
+        await db.query(
+          `INSERT INTO congreso_portal_ojs (congreso_id, portal_ojs_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+          [insertedId, portal_ojs_id]
+        );
+      } catch (e) {
+        logger.error('Error asociando portal OJS al congreso', { error: e.message });
       }
     }
     

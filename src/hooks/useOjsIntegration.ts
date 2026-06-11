@@ -49,6 +49,8 @@ export function useOjsIntegration() {
     contributors,
     submissionCategory,
     files,
+    revistaOjsId,
+    revistaOjsData,
     onSuccessSpeaker,
     onSuccessAdmin,
   }: {
@@ -60,6 +62,8 @@ export function useOjsIntegration() {
     contributors?: import('../types').Contributor[];
     submissionCategory: 'poster' | 'libro' | 'articulo';
     files: { key: string; file: FileInfo | null; label: string }[];
+    revistaOjsId?: number;
+    revistaOjsData?: { portal_url: string; portal_api_key: string; ojs_journal_path: string; nombre: string };
     onSuccessSpeaker?: () => void;
     onSuccessAdmin?: (internalId: number) => void;
   }) => {
@@ -70,10 +74,18 @@ export function useOjsIntegration() {
     let targetOjsApiKey = ojsApiKey;
     let targetJournalPath = selectedJournal?.urlPath;
 
-    if (activeRole === 'ponente' && congressJson) {
-      targetOjsUrl = (congressJson as any).ojs_url || '';
-      targetOjsApiKey = (congressJson as any).ojs_api_key || '';
-      targetJournalPath = (congressJson as any).ojs_journal_path;
+    if (activeRole === 'ponente') {
+      // Preferir credenciales de la revista seleccionada (nuevo flujo)
+      if (revistaOjsData) {
+        targetOjsUrl = revistaOjsData.portal_url || '';
+        targetOjsApiKey = revistaOjsData.portal_api_key || '';
+        targetJournalPath = revistaOjsData.ojs_journal_path;
+      } else if (congressJson) {
+        // Fallback: heredar del congreso (retrocompatibilidad)
+        targetOjsUrl = (congressJson as any).ojs_url || '';
+        targetOjsApiKey = (congressJson as any).ojs_api_key || '';
+        targetJournalPath = (congressJson as any).ojs_journal_path;
+      }
     }
 
     if (!targetOjsUrl.trim() || !targetOjsApiKey.trim()) {
@@ -124,7 +136,7 @@ export function useOjsIntegration() {
           sectionId,
           publication: {
             title: { [locale]: submissionTitle },
-            abstract: { [locale]: `Línea: ${congressJson.researchLine}. Categoría: ${submissionCategory}` },
+            abstract: { [locale]: submissionAbstract || `Línea: ${(congressJson as any).researchLine}. Categoría: ${submissionCategory}` },
           },
         };
         addLog('request', `POST /api/v1/submissions`, submissionPayload);
@@ -219,9 +231,11 @@ export function useOjsIntegration() {
                 categoria: submissionCategory,
                 autor_email: validContributors[0]?.email ?? 'N/A',
                 titulo_articulo: submissionTitle,
+                resumen: submissionAbstract,
                 palabras_claves: submissionKeywords ?? '',
                 colaboradores: JSON.stringify(validContributors),
-                revista_destino: currentJournal.name,
+                revista_destino: revistaOjsData?.nombre || currentJournal.name,
+                revista_ojs_id: revistaOjsId || null,
               }),
             });
             const pgData = await pgRes.json();
@@ -312,6 +326,9 @@ export function useOjsIntegration() {
     oldCongressJson,
     isMovingCongress,
     files,
+    revistaOjsId,
+    revistaOjsData,
+    oldRevistaOjsData,
     onSuccessSpeaker,
     onSuccessAdmin,
   }: {
@@ -329,6 +346,9 @@ export function useOjsIntegration() {
     oldCongressJson?: Congress;
     isMovingCongress?: boolean;
     files?: { key: string; file: FileInfo | null; label: string }[];
+    revistaOjsId?: number;
+    revistaOjsData?: { portal_url: string; portal_api_key: string; ojs_journal_path: string; nombre: string };
+    oldRevistaOjsData?: { url: string; key: string; path: string };
     onSuccessSpeaker?: () => void;
     onSuccessAdmin?: () => void;
   }) => {
@@ -344,7 +364,13 @@ export function useOjsIntegration() {
         let targetOjsApiKey = ojsApiKey;
         let targetJournalPath = selectedJournal?.urlPath;
 
-        if (congressJson) {
+        // Preferir credenciales de la revista seleccionada (nuevo flujo)
+        if (revistaOjsData) {
+          targetOjsUrl = revistaOjsData.portal_url || '';
+          targetOjsApiKey = revistaOjsData.portal_api_key || '';
+          targetJournalPath = revistaOjsData.ojs_journal_path;
+        } else if (congressJson) {
+          // Fallback: heredar del congreso (retrocompatibilidad)
           targetOjsUrl = (congressJson as any).ojs_url || '';
           targetOjsApiKey = (congressJson as any).ojs_api_key || '';
           targetJournalPath = (congressJson as any).ojs_journal_path;
@@ -356,9 +382,14 @@ export function useOjsIntegration() {
         if (isMovingCongress && oldCongressJson && ojsSubmissionId) {
           addLog('info', `Mudanza de Congreso detectada. Intentando eliminar envío ID ${ojsSubmissionId} del OJS anterior...`);
           try {
-            const oldUrl = (oldCongressJson as any).ojs_url;
-            const oldKey = (oldCongressJson as any).ojs_api_key;
-            const oldPath = (oldCongressJson as any).ojs_journal_path;
+            const oldUrl = oldRevistaOjsData?.url || (oldCongressJson as any)?.ojs_url;
+            const oldKey = oldRevistaOjsData?.key || (oldCongressJson as any)?.ojs_api_key;
+            const oldPath = oldRevistaOjsData?.path || (oldCongressJson as any)?.ojs_journal_path;
+            
+            if (!oldUrl || !oldKey || !oldPath) {
+              throw new Error("No se encontraron credenciales válidas para el congreso/revista anterior. No se puede eliminar de OJS automáticamente.");
+            }
+            
             await ojsApi.deleteSubmission(oldUrl, oldKey, oldPath, ojsSubmissionId);
             addLog('success', 'Envío eliminado correctamente del OJS anterior.');
           } catch (delErr: any) {
@@ -381,7 +412,7 @@ export function useOjsIntegration() {
           try { sectionId = await ojsApi.fetchSectionId(targetOjsUrl, targetOjsApiKey, currentJournal.urlPath); } catch {}
           
           const submissionPayload = {
-            locale, sectionId, publication: { title: { [locale]: submissionTitle }, abstract: { [locale]: `Línea: ${(congressJson as any).researchLine}. Categoría: ${submissionCategory}` } }
+            locale, sectionId, publication: { title: { [locale]: submissionTitle }, abstract: { [locale]: submissionAbstract || `Línea: ${(congressJson as any).researchLine}. Categoría: ${submissionCategory}` } }
           };
           const subData = await ojsApi.createSubmission(targetOjsUrl, targetOjsApiKey, currentJournal.urlPath, submissionPayload);
           const newSubmissionId: number = subData.id ?? 412;
@@ -498,12 +529,14 @@ export function useOjsIntegration() {
         // --- 2. Save changes to Nova database ---
         const payload: any = {
           titulo_articulo: submissionTitle,
+          resumen: submissionAbstract,
           palabras_claves: submissionKeywords ?? '',
           colaboradores: JSON.stringify(contributors ?? []),
           categoria: submissionCategory ?? 'articulo',
           ...(selectedCongressId && { congreso_id: parseInt(selectedCongressId, 10) }),
           ...(currentSubId && { ojs_submission_id: currentSubId }),
           ...(currentPubId && { ojs_publication_id: currentPubId }),
+          ...(revistaOjsId && { revista_ojs_id: revistaOjsId }),
         };
 
         const res = await fetch(import.meta.env.PROD ? `/api/envios/${internalId}` : `http://localhost:3001/api/envios/${internalId}`, {

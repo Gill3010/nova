@@ -131,3 +131,26 @@ export interface ClassroomInfo {
   type: 'fisica' | 'virtual';
 }
 
+export interface PortalOjs {
+  id: number;
+  ojs_url: string;
+  ojs_api_key: string;
+  nombre: string;
+  habilitado: boolean;
+  revistas: RevistaOjs[];
+}
+
+export interface RevistaOjs {
+  id: number;
+  portal_ojs_id: number;
+  ojs_journal_path: string;
+  ojs_journal_id?: number;
+  nombre: string;
+  url?: string;
+  habilitada: boolean;
+  // Campos denormalizados (disponibles en endpoint congreso/:id/revistas)
+  portal_url?: string;
+  portal_api_key?: string;
+  portal_nombre?: string;
+}
+

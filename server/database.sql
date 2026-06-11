@@ -64,6 +64,7 @@ CREATE TABLE IF NOT EXISTS envios_ojs (
     ojs_submission_id INTEGER NOT NULL,
     ojs_publication_id INTEGER,
     titulo_articulo TEXT,
+    resumen TEXT,
     palabras_claves TEXT,
     colaboradores TEXT, -- Almacena JSON string o texto según sea enviado por el frontend
     revista_destino VARCHAR(255),
@@ -94,3 +95,37 @@ CREATE TABLE IF NOT EXISTS actividades (
     estado VARCHAR(50) DEFAULT 'Programada',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+-- 8. Portales OJS (credenciales del portal)
+CREATE TABLE IF NOT EXISTS portales_ojs (
+    id SERIAL PRIMARY KEY,
+    ojs_url TEXT NOT NULL,
+    ojs_api_key TEXT NOT NULL,
+    nombre VARCHAR(255),
+    habilitado BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(ojs_url)
+);
+
+-- 9. Revistas OJS (revistas dentro de un portal)
+CREATE TABLE IF NOT EXISTS revistas_ojs (
+    id SERIAL PRIMARY KEY,
+    portal_ojs_id INTEGER NOT NULL REFERENCES portales_ojs(id) ON DELETE CASCADE,
+    ojs_journal_path VARCHAR(255) NOT NULL,
+    ojs_journal_id INTEGER,
+    nombre VARCHAR(255),
+    url TEXT,
+    habilitada BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(portal_ojs_id, ojs_journal_path)
+);
+
+-- 10. Relación N:M Congreso ↔ Portal OJS
+CREATE TABLE IF NOT EXISTS congreso_portal_ojs (
+    congreso_id INTEGER NOT NULL REFERENCES congresos(id) ON DELETE CASCADE,
+    portal_ojs_id INTEGER NOT NULL REFERENCES portales_ojs(id) ON DELETE CASCADE,
+    PRIMARY KEY (congreso_id, portal_ojs_id)
+);
+
+-- 11. FK de envios_ojs a revistas_ojs (nullable para retrocompatibilidad)
+ALTER TABLE envios_ojs ADD COLUMN IF NOT EXISTS revista_ojs_id INTEGER REFERENCES revistas_ojs(id) ON DELETE SET NULL;

@@ -78,7 +78,13 @@ const RouterDashboardWrapper = () => {
       return;
     }
 
-    if (setOjsUrl) setOjsUrl(congress.ojs_url || '');
+    // Cargar credenciales OJS: preferir portales_ojs, fallback a campos legacy del congreso
+    const portalData = congress.portales_ojs?.[0];
+    if (portalData) {
+      if (setOjsUrl) setOjsUrl(portalData.ojs_url || '');
+    } else if (setOjsUrl) {
+      setOjsUrl(congress.ojs_url || '');
+    }
     if (setOjsApiKey) setOjsApiKey(congress.ojs_api_key || '');
     if (setSelectedJournal && congress.ojs_journal_path) {
       setSelectedJournal({
@@ -132,7 +138,13 @@ const RouterDirectorioWrapper = () => {
       return;
     }
 
-    if (setOjsUrl) setOjsUrl(congress.ojs_url || '');
+    // Cargar credenciales OJS: preferir portales_ojs, fallback a campos legacy del congreso
+    const portalData = congress.portales_ojs?.[0];
+    if (portalData) {
+      if (setOjsUrl) setOjsUrl(portalData.ojs_url || '');
+    } else if (setOjsUrl) {
+      setOjsUrl(congress.ojs_url || '');
+    }
     if (setOjsApiKey) setOjsApiKey(congress.ojs_api_key || '');
     if (setSelectedJournal && congress.ojs_journal_path) {
       setSelectedJournal({

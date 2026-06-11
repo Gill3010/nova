@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { GraduationCap, FileText, BookOpen, Mic, Image, Video } from 'lucide-react';
-import { fetchDashboardData } from '../../services/dbApi';
+import { fetchDashboardData, fetchRevistasForCongress } from '../../services/dbApi';
 import type { PostgresCongress } from '../../services/dbApi';
 import { useSpeaker } from '../../context/SpeakerContext';
 import { useOjs } from '../../context/OjsContext';
@@ -44,7 +44,10 @@ export const SpeakerPage: React.FC = () => {
     ojsPublicationId,
     selectedCongressId,
     originalCongressId,
-    setSelectedCongressId
+    setSelectedCongressId,
+    originalRevistaOjsData,
+    selectedRevistaOjsId,
+    setSelectedRevistaOjsId
   } = useSpeaker();
 
   const { isPublishing, publishAndSyncOjs, updateAndSyncOjs, addLog } = useOjs();
@@ -55,6 +58,8 @@ export const SpeakerPage: React.FC = () => {
   // --- Selector de Congreso ---
   const [availableCongresses, setAvailableCongresses] = useState<PostgresCongress[]>([]);
   const [isLoadingCongresses, setIsLoadingCongresses] = useState(true);
+  const [availableRevistas, setAvailableRevistas] = useState<any[]>([]);
+  const [isLoadingRevistas, setIsLoadingRevistas] = useState(false);
 
   useEffect(() => {
     const loadCongresses = async () => {
@@ -69,6 +74,34 @@ export const SpeakerPage: React.FC = () => {
     };
     loadCongresses();
   }, []);
+
+  // Cargar revistas disponibles cuando se selecciona un congreso
+  useEffect(() => {
+    if (!selectedCongressId) {
+      setAvailableRevistas([]);
+      return;
+    }
+    const loadRevistas = async () => {
+      setIsLoadingRevistas(true);
+      try {
+        const data = await fetchRevistasForCongress(parseInt(selectedCongressId, 10));
+        setAvailableRevistas(data);
+        // Auto-seleccionar si solo hay una revista o si ya hay una seleccionada
+        if (data.length === 1 && !selectedRevistaOjsId) {
+          setSelectedRevistaOjsId(data[0].id);
+        } else if (selectedRevistaOjsId && !data.find((r: any) => r.id === selectedRevistaOjsId)) {
+          // Si la revista seleccionada no está en la lista, limpiar
+          setSelectedRevistaOjsId(undefined);
+        }
+      } catch (err) {
+        console.error('Error cargando revistas:', err);
+        setAvailableRevistas([]);
+      } finally {
+        setIsLoadingRevistas(false);
+      }
+    };
+    loadRevistas();
+  }, [selectedCongressId]);
 
   // --- Colaboradores (memoizados) ---
   const updateContributor = useCallback((index: number, field: keyof Contributor, value: string) => {
@@ -149,6 +182,26 @@ export const SpeakerPage: React.FC = () => {
       return;
     }
 
+    // Resolver datos de la revista seleccionada
+    let revistaOjsData: { portal_url: string; portal_api_key: string; ojs_journal_path: string; nombre: string } | undefined;
+    if (selectedRevistaOjsId) {
+      const revista = availableRevistas.find((r: any) => r.id === selectedRevistaOjsId);
+      if (revista) {
+        revistaOjsData = {
+          portal_url: revista.portal_url,
+          portal_api_key: revista.portal_api_key,
+          ojs_journal_path: revista.ojs_journal_path,
+          nombre: revista.nombre || revista.ojs_journal_path
+        };
+      }
+    }
+
+    // Validar: si hay revistas disponibles, el ponente debe seleccionar una
+    if (availableRevistas.length > 0 && !selectedRevistaOjsId) {
+      alert('Error: Debe seleccionar una Revista de destino para su trabajo.');
+      return;
+    }
+
     const selectedDbCongress = availableCongresses.find(c => c.id.toString() === selectedCongressId);
     if (!selectedDbCongress) return;
 
@@ -224,10 +277,14 @@ export const SpeakerPage: React.FC = () => {
           oldCongressJson: oldCongressJsonToSync,
           isMovingCongress,
           files: filesList,
+          revistaOjsId: selectedRevistaOjsId,
+          revistaOjsData,
+          oldRevistaOjsData: originalRevistaOjsData,
           onSuccessSpeaker: () => {
             alert('¡Los cambios de su ponencia han sido guardados con éxito!');
             resetSpeakerForm();
             setSelectedCongressId('');
+            setSelectedRevistaOjsId(undefined);
           }
         });
       }
@@ -241,18 +298,23 @@ export const SpeakerPage: React.FC = () => {
         contributors,
         submissionCategory,
         files: filesList,
+        revistaOjsId: selectedRevistaOjsId,
+        revistaOjsData,
         onSuccessSpeaker: () => {
           setSubmissionStatus('submitted');
           alert('¡Su ponencia ha sido enviada con éxito y sincronizada con OJS!');
           resetSpeakerForm();
           setSelectedCongressId('');
+          setSelectedRevistaOjsId(undefined);
         }
       });
     }
   }, [
     selectedCongressId,
     originalCongressId,
+    selectedRevistaOjsId,
     availableCongresses,
+    availableRevistas,
     isEditMode,
     isMovingCongress,
     internalSubmissionId,
@@ -272,6 +334,7 @@ export const SpeakerPage: React.FC = () => {
     publishAndSyncOjs,
     resetSpeakerForm,
     setSelectedCongressId,
+    setSelectedRevistaOjsId,
     setSubmissionStatus
   ]);
 
@@ -290,7 +353,10 @@ export const SpeakerPage: React.FC = () => {
           id="target-congress"
           label="Seleccione el Congreso de Destino"
           value={selectedCongressId}
-          onChange={(e) => setSelectedCongressId(e.target.value)}
+          onChange={(e) => {
+            setSelectedCongressId(e.target.value);
+            setSelectedRevistaOjsId(undefined); // Limpiar revista al cambiar congreso
+          }}
         >
           <option value="" disabled>
             {isLoadingCongresses ? 'Cargando congresos disponibles...' : '-- Seleccione un congreso --'}
@@ -302,6 +368,32 @@ export const SpeakerPage: React.FC = () => {
             </option>
           ))}
         </Select>
+
+        {/* — Selector de Revista de Destino (nuevo) — */}
+        {selectedCongressId && (
+          <Select
+            id="target-revista"
+            label="Seleccione la Revista de Destino"
+            value={selectedRevistaOjsId ?? ''}
+            onChange={(e) => {
+              const val = e.target.value;
+              setSelectedRevistaOjsId(val ? parseInt(val, 10) : undefined);
+            }}
+          >
+            <option value="" disabled>
+              {isLoadingRevistas
+                ? 'Cargando revistas disponibles...'
+                : availableRevistas.length === 0
+                  ? 'No hay revistas configuradas para este congreso'
+                  : '-- Seleccione una revista --'}
+            </option>
+            {availableRevistas.map((r: any) => (
+              <option key={r.id} value={r.id}>
+                {r.nombre || r.ojs_journal_path}
+              </option>
+            ))}
+          </Select>
+        )}
 
         {/* — Metadatos principales — */}
         <Input

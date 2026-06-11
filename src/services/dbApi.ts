@@ -5,9 +5,16 @@ export interface PostgresEnvio {
   palabras_claves?: string;
   colaboradores?: string;
   revista_destino?: string;
+  revista_ojs_id?: number;
   categoria: string;
   autor_email: string;
   created_at: string;
+}
+
+export interface PostgresPortalOjs {
+  portal_ojs_id: number;
+  ojs_url: string;
+  portal_nombre: string;
 }
 
 export interface PostgresCongress {
@@ -30,6 +37,7 @@ export interface PostgresCongress {
   ojs_publication_id?: number;
   created_at: string;
   envios: PostgresEnvio[];
+  portales_ojs: PostgresPortalOjs[];
 }
 
 const API_BASE_URL = import.meta.env.PROD ? '/api' : 'http://localhost:3001/api';
@@ -67,12 +75,19 @@ export interface PostgresMySubmission {
   ojs_submission_id: number;
   ojs_publication_id?: number;
   titulo_articulo: string;
+  resumen?: string;
   palabras_claves?: string;
   colaboradores?: string;
   categoria: string;
   created_at: string;
   congreso_id: number;
   congreso_nombre: string;
+  revista_ojs_id?: number;
+  revista_nombre?: string;
+  revista_path?: string;
+  revista_destino?: string;
+  portal_url?: string;
+  portal_api_key?: string;
 }
 
 export const saveCongress = async (congressData: any, token: string) => {
@@ -302,5 +317,79 @@ export const deleteActividad = async (id: number) => {
     throw new Error(err.error || 'Error al eliminar actividad');
   }
   return response.json();
+};
+
+// --- Módulo de Portales OJS ---
+
+export interface PortalOjsData {
+  id: number;
+  ojs_url: string;
+  ojs_api_key: string;
+  nombre: string;
+  habilitado: boolean;
+  revistas: {
+    id: number;
+    ojs_journal_path: string;
+    ojs_journal_id?: number;
+    nombre: string;
+    url?: string;
+    habilitada: boolean;
+  }[];
+}
+
+export const fetchPortalesOjs = async (): Promise<PortalOjsData[]> => {
+  const response = await fetch(`${API_BASE_URL}/portales-ojs`, {
+    headers: getHeaders()
+  });
+  if (!response.ok) throw new Error('Error al obtener portales OJS');
+  const data = await response.json();
+  return data.success ? data.data : [];
+};
+
+export const createPortalOjs = async (portalData: { ojs_url: string; ojs_api_key: string; nombre?: string }): Promise<any> => {
+  const response = await fetch(`${API_BASE_URL}/portales-ojs`, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify(portalData)
+  });
+  if (!response.ok) {
+    const err = await response.json();
+    throw new Error(err.error || 'Error al crear portal OJS');
+  }
+  return response.json();
+};
+
+export const syncRevistasPortal = async (portalId: number, revistas: any[]): Promise<any> => {
+  const response = await fetch(`${API_BASE_URL}/portales-ojs/${portalId}/revistas`, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify({ revistas })
+  });
+  if (!response.ok) {
+    const err = await response.json();
+    throw new Error(err.error || 'Error al sincronizar revistas');
+  }
+  return response.json();
+};
+
+export const associatePortalToCongress = async (portalId: number, congresoId: number): Promise<any> => {
+  const response = await fetch(`${API_BASE_URL}/portales-ojs/${portalId}/congresos/${congresoId}`, {
+    method: 'POST',
+    headers: getHeaders()
+  });
+  if (!response.ok) {
+    const err = await response.json();
+    throw new Error(err.error || 'Error al asociar portal al congreso');
+  }
+  return response.json();
+};
+
+export const fetchRevistasForCongress = async (congresoId: number): Promise<any[]> => {
+  const response = await fetch(`${API_BASE_URL}/portales-ojs/congreso/${congresoId}/revistas`, {
+    headers: getHeaders()
+  });
+  if (!response.ok) throw new Error('Error al obtener revistas del congreso');
+  const data = await response.json();
+  return data.success ? data.data : [];
 };
 

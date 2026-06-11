@@ -8,6 +8,7 @@ import { Card } from '../common/Card';
 import { Input } from '../common/Input';
 import { Select } from '../common/Select';
 import { Button } from '../common/Button';
+import { createPortalOjs, syncRevistasPortal, associatePortalToCongress } from '../../services/dbApi';
 
 export const OjsConfigCard: React.FC = () => {
   const {
@@ -42,7 +43,7 @@ export const OjsConfigCard: React.FC = () => {
 
   const isEditMode = !!internalId;
 
-  const handlePublishClick = () => {
+  const handlePublishClick = async () => {
     const filesList = [
       { key: 'audio', file: audioFile, label: 'Audio de Resumen' },
       { key: 'poster', file: posterFile, label: 'Póster Científico' },
@@ -50,6 +51,45 @@ export const OjsConfigCard: React.FC = () => {
       { key: 'manuscript', file: manuscriptFile, label: 'Manuscrito Completo' },
       { key: 'video', file: videoFile, label: 'Video de Presentación' }
     ];
+
+    // Persistir portal OJS y sincronizar revistas si estamos conectados
+    let portalOjsId: number | undefined;
+    if (ojsUrl.trim() && ojsApiKey.trim() && ojsStatus === 'connected') {
+      try {
+        // 1. Crear/actualizar portal
+        const portalRes = await createPortalOjs({
+          ojs_url: ojsUrl.trim(),
+          ojs_api_key: ojsApiKey.trim(),
+          nombre: ojsUrl.trim()
+        });
+        if (portalRes.success && portalRes.portal) {
+          const currentPortalId = portalRes.portal.id;
+          portalOjsId = currentPortalId;
+          addLog('success', `Portal OJS registrado (ID: ${currentPortalId})`);
+
+          // 2. Sincronizar revistas detectadas
+          if (journals.length > 0) {
+            const revistasToSync = journals.map(j => ({
+              ojs_journal_path: j.urlPath,
+              ojs_journal_id: j.id,
+              nombre: j.name,
+              url: j.url,
+              habilitada: j.enabled
+            }));
+            await syncRevistasPortal(currentPortalId, revistasToSync);
+            addLog('success', `${journals.length} revista(s) sincronizada(s) en el portal`);
+          }
+
+          // 3. Asociar al congreso actual si estamos editando
+          if (internalId) {
+            await associatePortalToCongress(currentPortalId, internalId);
+            addLog('success', `Portal OJS asociado al congreso (ID: ${internalId})`);
+          }
+        }
+      } catch (err: any) {
+        addLog('error', `Error al persistir portal OJS: ${err.message}`);
+      }
+    }
 
     if (isEditMode) {
       if (updateAndSyncOjs) {
@@ -69,9 +109,20 @@ export const OjsConfigCard: React.FC = () => {
         submissionTitle,
         submissionCategory,
         files: filesList,
-        onSuccessAdmin: (newInternalId) => {
+        onSuccessAdmin: async (newInternalId) => {
           if (setInternalId) setInternalId(newInternalId);
           if (setCreadorId && user?.id) setCreadorId(user.id);
+
+          // Asociar portal al congreso recién creado
+          if (portalOjsId && newInternalId) {
+            try {
+              await associatePortalToCongress(portalOjsId, newInternalId);
+              addLog('success', `Portal OJS asociado al nuevo congreso (ID: ${newInternalId})`);
+            } catch (err: any) {
+              addLog('error', `Error al asociar portal al congreso: ${err.message}`);
+            }
+          }
+
           alert('¡El Congreso ha sido creado con éxito y sincronizado con OJS!');
         }
       });
@@ -128,41 +179,15 @@ export const OjsConfigCard: React.FC = () => {
           )}
         </div>
 
-        {/* Selector de Revista Destino */}
+        {/* Revistas Detectadas */}
         {ojsStatus === 'connected' && journals.length > 0 && (
-          <div className="flex flex-col gap-1.5">
-            <Select
-              id="ojs-journal-select"
-              label="Revista de Destino"
-              value={selectedJournal?.id || ''}
-              onChange={(e) => {
-                const journalId = parseInt(e.target.value);
-                const found = journals.find((j) => j.id === journalId);
-                if (found) {
-                  setSelectedJournal(found);
-                  addLog('info', `Revista seleccionada: "${found.name}" (ID: ${found.id}, Path: ${found.urlPath})`);
-                }
-              }}
-            >
-              {journals.map((j) => (
-                <option key={j.id} value={j.id} disabled={!j.enabled}>
-                  {j.name} {!j.enabled ? '(Deshabilitada en OJS)' : ''}
-                </option>
-              ))}
-            </Select>
-            {selectedJournal && (
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-normal mt-0.5">
-                Las ponencias y congresos se registrarán en:{' '}
-                <a
-                  href={selectedJournal.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-blue-600 hover:text-blue-700 dark:text-blue-400 hover:underline font-semibold break-all"
-                >
-                  {selectedJournal.url}
-                </a>
-              </p>
-            )}
+          <div className="flex flex-col gap-1.5 mt-2 bg-slate-50 dark:bg-slate-900/30 p-3 rounded-lg border border-slate-200 dark:border-slate-800">
+            <h4 className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+              Revistas Sincronizadas ({journals.length})
+            </h4>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-normal">
+              Se han detectado {journals.length} revistas en este portal. Las credenciales de este portal se asociarán al congreso y los ponentes podrán seleccionar la revista a la cual desean enviar su trabajo al momento de enviar su ponencia.
+            </p>
           </div>
         )}
 
@@ -183,7 +208,7 @@ export const OjsConfigCard: React.FC = () => {
             variant="primary"
             size="sm"
             onClick={handlePublishClick}
-            disabled={isPublishing || isTestingConnection || (!selectedJournal && !isEditMode)}
+            disabled={isPublishing || isTestingConnection || (ojsStatus !== 'connected' && !isEditMode)}
           >
             {isPublishing ? 'Procesando...' : isEditMode ? 'Guardar Cambios' : 'Publicar en OJS'}
           </Button>

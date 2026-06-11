@@ -20,6 +20,9 @@ async function resetDB() {
     // Eliminar todas las tablas
     console.log('Eliminando tablas existentes (CASCADE)...');
     await pool.query(`
+      DROP TABLE IF EXISTS congreso_portal_ojs CASCADE;
+      DROP TABLE IF EXISTS revistas_ojs CASCADE;
+      DROP TABLE IF EXISTS portales_ojs CASCADE;
       DROP TABLE IF EXISTS actividades CASCADE;
       DROP TABLE IF EXISTS congreso_sedes CASCADE;
       DROP TABLE IF EXISTS envios_ojs CASCADE;
