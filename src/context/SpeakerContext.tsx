@@ -21,6 +21,7 @@ interface SpeakerState {
   selectedCongressId: string;
   originalCongressId: string;
   selectedRevistaOjsId: number | undefined;
+  originalRevistaOjsId?: number;
   originalRevistaOjsData?: { url: string; key: string; path: string };
   academicLevel: 'maestria' | 'doctorado' | 'otros';
   researchLine: string;
@@ -73,6 +74,7 @@ const INITIAL_STATE: SpeakerState = {
   selectedCongressId: '',
   originalCongressId: '',
   selectedRevistaOjsId: undefined,
+  originalRevistaOjsId: undefined,
   originalRevistaOjsData: undefined,
   academicLevel: 'maestria',
   researchLine: DEFAULT_RESEARCH_LINES[0]?.name || '',
@@ -168,6 +170,7 @@ interface SpeakerContextType {
   setSelectedCongressId: React.Dispatch<React.SetStateAction<string>>;
   selectedRevistaOjsId: number | undefined;
   setSelectedRevistaOjsId: (val: number | undefined) => void;
+  originalRevistaOjsId?: number;
   originalRevistaOjsData?: { url: string; key: string; path: string };
   academicLevel: 'maestria' | 'doctorado' | 'otros';
   setAcademicLevel: (val: 'maestria' | 'doctorado' | 'otros') => void;
@@ -236,6 +239,7 @@ export const SpeakerProvider: React.FC<{ children: React.ReactNode }> = ({ child
         selectedCongressId: data.congreso_id ? String(data.congreso_id) : '',
         originalCongressId: data.congreso_id ? String(data.congreso_id) : '',
         selectedRevistaOjsId: data.revista_ojs_id || undefined,
+        originalRevistaOjsId: data.revista_ojs_id || undefined,
         originalRevistaOjsData: data.portal_url && data.portal_api_key && data.revista_path ? {
           url: data.portal_url,
           key: data.portal_api_key,
@@ -284,6 +288,7 @@ export const SpeakerProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setSelectedCongressId: setSelectedCongressId as React.Dispatch<React.SetStateAction<string>>,
     selectedRevistaOjsId: state.selectedRevistaOjsId,
     setSelectedRevistaOjsId,
+    originalRevistaOjsId: state.originalRevistaOjsId,
     originalRevistaOjsData: state.originalRevistaOjsData,
     academicLevel: state.academicLevel,
     setAcademicLevel,

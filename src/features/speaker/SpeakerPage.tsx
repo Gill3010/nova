@@ -60,6 +60,7 @@ export const SpeakerPage: React.FC = () => {
     originalCongressId,
     setSelectedCongressId,
     originalRevistaOjsData,
+    originalRevistaOjsId,
     selectedRevistaOjsId,
     setSelectedRevistaOjsId,
     academicLevel,
@@ -72,6 +73,8 @@ export const SpeakerPage: React.FC = () => {
 
   const isEditMode = !!internalSubmissionId;
   const isMovingCongress = isEditMode && !!internalSubmissionId && !!originalCongressId && selectedCongressId !== originalCongressId;
+  // isMovingRevista: el congreso es el mismo pero el usuario seleccionó una revista diferente
+  const isMovingRevista = isEditMode && !!internalSubmissionId && !!originalRevistaOjsId && selectedRevistaOjsId !== originalRevistaOjsId;
 
   // --- Selector de Congreso ---
   const [availableCongresses, setAvailableCongresses] = useState<PostgresCongress[]>([]);
@@ -294,6 +297,7 @@ export const SpeakerPage: React.FC = () => {
           congressJson: congressJsonToSync,
           oldCongressJson: oldCongressJsonToSync,
           isMovingCongress,
+          isMovingRevista,
           files: filesList,
           revistaOjsId: selectedRevistaOjsId,
           revistaOjsData,
@@ -339,6 +343,8 @@ export const SpeakerPage: React.FC = () => {
     availableRevistas,
     isEditMode,
     isMovingCongress,
+    isMovingRevista,
+    originalRevistaOjsId,
     internalSubmissionId,
     ojsSubmissionId,
     ojsPublicationId,

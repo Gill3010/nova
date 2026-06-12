@@ -331,6 +331,7 @@ export function useOjsIntegration() {
     submissionCategory,
     oldCongressJson,
     isMovingCongress,
+    isMovingRevista,
     files,
     revistaOjsId,
     revistaOjsData,
@@ -353,6 +354,7 @@ export function useOjsIntegration() {
     submissionCategory?: 'poster' | 'libro' | 'articulo';
     oldCongressJson?: Congress;
     isMovingCongress?: boolean;
+    isMovingRevista?: boolean;
     files?: { key: string; file: FileInfo | null; label: string }[];
     revistaOjsId?: number;
     revistaOjsData?: { portal_url: string; portal_api_key: string; ojs_journal_path: string; nombre: string };
@@ -389,8 +391,18 @@ export function useOjsIntegration() {
         let currentSubId = ojsSubmissionId;
         let currentPubId = ojsPublicationId;
 
-        if (isMovingCongress && oldCongressJson && ojsSubmissionId) {
-          addLog('info', `Mudanza de Congreso detectada. Intentando eliminar envío ID ${ojsSubmissionId} del OJS anterior...`);
+        // Si el usuario cambió de revista (mismo congreso):
+        //  - Con datos OJS previos (oldRevistaOjsData): eliminar del journal antiguo y crear en el nuevo.
+        //  - Sin datos OJS previos: omitir sincronización OJS y solo actualizar BD local.
+        const shouldDoMoveFlow =
+          (isMovingCongress && !!oldCongressJson && !!ojsSubmissionId) ||
+          (!!isMovingRevista && !!oldRevistaOjsData && !!ojsSubmissionId);
+        const shouldSkipOjsSync = !!isMovingRevista && !oldRevistaOjsData;
+
+        if (shouldDoMoveFlow) {
+          addLog('info', isMovingCongress
+            ? `Mudanza de Congreso detectada. Intentando eliminar envío ID ${ojsSubmissionId} del OJS anterior...`
+            : `Cambio de Revista detectado. Intentando reubicar envío ID ${ojsSubmissionId} en la nueva revista...`);
           try {
             const oldUrl = oldRevistaOjsData?.url || (oldCongressJson as any)?.ojs_url;
             const oldKey = oldRevistaOjsData?.key || (oldCongressJson as any)?.ojs_api_key;
@@ -460,7 +472,7 @@ export function useOjsIntegration() {
 
           currentSubId = newSubmissionId;
           currentPubId = newPublicationId;
-        } else if (currentSubId && targetOjsUrl.trim() && targetOjsApiKey.trim() && targetJournalPath) {
+        } else if (!shouldSkipOjsSync && currentSubId && targetOjsUrl.trim() && targetOjsApiKey.trim() && targetJournalPath) {
           const subId = currentSubId;
           addLog('info', `Iniciando sincronización de cambios con OJS para Envío ID ${subId}...`);
           const currentJournal = await resolveJournal(targetOjsUrl, targetOjsApiKey, targetJournalPath);
@@ -534,6 +546,10 @@ export function useOjsIntegration() {
               addLog('error', `Error al sincronizar colaboradores con OJS: ${contribErr.message}`);
             }
           }
+        }
+
+        if (shouldSkipOjsSync) {
+          addLog('info', 'Cambio de revista sin datos OJS previos: se actualizará solo la referencia local (el envío permanece en OJS original).');
         }
 
         // --- 2. Save changes to Nova database ---
