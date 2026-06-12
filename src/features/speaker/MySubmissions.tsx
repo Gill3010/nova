@@ -78,7 +78,7 @@ export const MySubmissions: React.FC<MySubmissionsProps> = ({ onEditSubmission }
           {submissions.length} {submissions.length === 1 ? 'Envío' : 'Envíos'}
         </Badge>
       </div>
-      
+
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
@@ -131,8 +131,8 @@ export const MySubmissions: React.FC<MySubmissionsProps> = ({ onEditSubmission }
                   </div>
                 </td>
                 <td className="py-4 px-6 text-right text-slate-500 whitespace-nowrap">
-                  {new Date(envio.created_at).toLocaleDateString('es-ES', { 
-                    year: 'numeric', month: 'short', day: 'numeric' 
+                  {new Date(envio.created_at).toLocaleDateString('es-ES', {
+                    year: 'numeric', month: 'short', day: 'numeric'
                   })}
                 </td>
                 <td className="py-4 px-6 text-center">

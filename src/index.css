@@ -24,11 +24,16 @@
   text-rendering: optimizeLegibility;
 }
 
+html {
+  overflow-x: hidden;
+}
+
 body {
   margin: 0;
   padding: 0;
   background-color: var(--bg-page);
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 #root {
@@ -131,10 +136,10 @@ button {
   animation: fadeIn var(--duration-slow) var(--ease-out) both;
 }
 
-/* ---- Scrollbar (subtle) ---- */
+/* ---- Scrollbar (subtle, vertical only) ---- */
 ::-webkit-scrollbar {
   width: 6px;
-  height: 6px;
+  height: 0px; /* oculta scrollbar horizontal */
 }
 
 ::-webkit-scrollbar-track {
