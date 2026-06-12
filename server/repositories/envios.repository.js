@@ -68,7 +68,7 @@ class EnviosRepository {
         'titulo_articulo', 'resumen', 'palabras_claves', 
         'colaboradores', 'categoria', 'congreso_id', 
         'ojs_submission_id', 'ojs_publication_id', 'revista_ojs_id',
-        'nivel_academico', 'linea_investigacion'
+        'revista_destino', 'nivel_academico', 'linea_investigacion'
       ];
 
       for (const [key, value] of Object.entries(updates)) {

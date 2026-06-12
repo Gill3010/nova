@@ -565,6 +565,7 @@ export function useOjsIntegration() {
           ...(currentSubId && { ojs_submission_id: currentSubId }),
           ...(currentPubId && { ojs_publication_id: currentPubId }),
           ...(revistaOjsId && { revista_ojs_id: revistaOjsId }),
+          ...(revistaOjsData?.nombre && { revista_destino: revistaOjsData.nombre }),
         };
 
         const res = await fetch(import.meta.env.PROD ? `/api/envios/${internalId}` : `http://localhost:3001/api/envios/${internalId}`, {
