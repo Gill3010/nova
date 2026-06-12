@@ -389,18 +389,8 @@ export function useOjsIntegration() {
         let currentSubId = ojsSubmissionId;
         let currentPubId = ojsPublicationId;
 
-        // Detecta cambio de revista dentro del mismo (o distinto) OJS cuando el congreso no cambia.
-        // En ese caso se debe eliminar el envío de la revista anterior y crear uno nuevo en la nueva,
-        // porque el submission ID de OJS pertenece al path de la revista original.
-        const isMovingRevista = !isMovingCongress &&
-          !!oldRevistaOjsData?.path &&
-          !!ojsSubmissionId &&
-          (oldRevistaOjsData.path !== targetJournalPath || oldRevistaOjsData.url !== targetOjsUrl);
-
-        if ((isMovingCongress && oldCongressJson && ojsSubmissionId) || isMovingRevista) {
-          addLog('info', isMovingCongress
-            ? `Mudanza de Congreso detectada. Intentando eliminar envío ID ${ojsSubmissionId} del OJS anterior...`
-            : `Cambio de Revista detectado. Intentando reubicar envío ID ${ojsSubmissionId} en la nueva revista...`);
+        if (isMovingCongress && oldCongressJson && ojsSubmissionId) {
+          addLog('info', `Mudanza de Congreso detectada. Intentando eliminar envío ID ${ojsSubmissionId} del OJS anterior...`);
           try {
             const oldUrl = oldRevistaOjsData?.url || (oldCongressJson as any)?.ojs_url;
             const oldKey = oldRevistaOjsData?.key || (oldCongressJson as any)?.ojs_api_key;
