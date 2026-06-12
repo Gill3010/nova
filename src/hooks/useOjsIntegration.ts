@@ -2,15 +2,15 @@ import { useState, useCallback } from 'react';
 import type { FileInfo, Congress } from '../types';
 import * as ojsApi from '../services/ojsApi';
 import { getJournalLocale } from '../utils/ojsUtils';
-import { useOjsLogs } from './useOjsLogs';
+import { useOjsLogger } from './useOjsLogger';
 import { useOjsConnection } from './useOjsConnection';
 
 /**
- * Composes useOjsLogs + useOjsConnection and adds publish/update logic.
+ * Composes useOjsLogger + useOjsConnection and adds publish/update logic.
  * This is the main hook consumed by OjsContext — public API unchanged.
  */
 export function useOjsIntegration() {
-  const { logs, addLog, clearConsole } = useOjsLogs();
+  const { logs, addLog, clearConsole, copyPayload } = useOjsLogger();
   const {
     ojsUrl, setOjsUrl,
     ojsApiKey, setOjsApiKey,
@@ -32,12 +32,6 @@ export function useOjsIntegration() {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   });
-
-  // ---- Copy payload -----------------------------------------------------------
-  const copyPayload = useCallback((congressJson: Congress) => {
-    navigator.clipboard.writeText(JSON.stringify(congressJson, null, 2));
-    alert('¡Payload JSON copiado al portapapeles!');
-  }, []);
 
   // ---- Publish and Sync (Speaker + Admin) ------------------------------------
   const publishAndSyncOjs = useCallback(async ({
