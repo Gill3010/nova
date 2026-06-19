@@ -8,7 +8,11 @@ const logger = require('../utils/logger');
  * @returns {Promise<boolean>} Retorna true si el token es válido, false en caso contrario
  */
 async function verifyTurnstileToken(token, ip) {
-  return true;
+  if (process.env.NODE_ENV === 'development' || process.env.SKIP_TURNSTILE === 'true') {
+    logger.info('Desarrollo local: Omitiendo verificación de Turnstile');
+    return true;
+  }
+
   const rawSecretKey = process.env.TURNSTILE_SECRET_KEY;
   const secretKey = rawSecretKey ? rawSecretKey.trim() : null;
 
@@ -43,7 +47,7 @@ async function verifyTurnstileToken(token, ip) {
     }
 
     const data = await response.json();
-    
+
     if (data.success) {
       logger.info('Verificación de Turnstile exitosa');
       return true;
