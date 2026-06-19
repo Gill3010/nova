@@ -1,0 +1,119 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+
+Description: >
+  Nova × OJS × AWS Bedrock — Orquestador de Revisión Preliminar
+  Función Lambda en Python 3.12 que analiza manuscritos académicos
+  usando Claude 3.5 Sonnet y reporta los resultados al servidor Nova.
+
+# ─── Parámetros configurables en el despliegue ─────────────────────────────
+Parameters:
+  OjsBaseUrl:
+    Type: String
+    Description: "URL base del portal OJS (ej: https://relaticpanama.org/_journals)"
+
+  OjsApiKey:
+    Type: String
+    NoEcho: true
+    Description: "API Key de administrador de OJS"
+
+  OjsJournalPath:
+    Type: String
+    Description: "Path del journal en OJS (ej: reic)"
+
+  NovaApiUrl:
+    Type: String
+    Description: "URL del servidor Nova (ej: https://api.tudominio.com)"
+
+  NovaInternalApiKey:
+    Type: String
+    NoEcho: true
+    Description: "API Key interna de Nova (debe coincidir con NOVA_INTERNAL_API_KEY del servidor)"
+
+  BedrockModelId:
+    Type: String
+    Default: "anthropic.claude-3-5-sonnet-20241022-v2:0"
+    Description: "ID del modelo de Amazon Bedrock"
+
+  S3BucketName:
+    Type: String
+    Description: "Nombre del bucket S3 para almacenar reportes"
+
+# ─── Valores globales para todas las funciones ──────────────────────────────
+Globals:
+  Function:
+    Runtime: python3.12
+    Timeout: 600          # 10 minutos máximo por ejecución
+    MemorySize: 1024      # 1 GB RAM (suficiente para pdfplumber)
+    Environment:
+      Variables:
+        OJS_BASE_URL: !Ref OjsBaseUrl
+        OJS_API_KEY: !Ref OjsApiKey
+        OJS_JOURNAL_PATH: !Ref OjsJournalPath
+        NOVA_API_URL: !Ref NovaApiUrl
+        NOVA_INTERNAL_API_KEY: !Ref NovaInternalApiKey
+        BEDROCK_MODEL_ID: !Ref BedrockModelId
+        S3_BUCKET: !Ref S3BucketName
+        AWS_REGION_NAME: !Ref AWS::Region
+
+# ─── Recursos AWS ────────────────────────────────────────────────────────────
+Resources:
+
+  # Bucket S3 para almacenar reportes generados
+  ReportsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref S3BucketName
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  # Función Lambda principal
+  ReviewOrchestrator:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: nova-review-orchestrator
+      Description: "Orquestador de revisión preliminar — Nova × OJS × Bedrock"
+      CodeUri: ./
+      Handler: handler.lambda_handler
+      Policies:
+        # Acceso a Amazon Bedrock
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - bedrock:InvokeModel
+              Resource:
+                - !Sub "arn:aws:bedrock:${AWS::Region}::foundation-model/*"
+        # Acceso al bucket S3
+        - S3CrudPolicy:
+            BucketName: !Ref S3BucketName
+      Events:
+        # EventBridge dispara la función cada 15 minutos
+        ScheduledReview:
+          Type: Schedule
+          Properties:
+            Name: nova-review-schedule
+            Description: "Orquestador de revisión cada 15 minutos"
+            Schedule: "rate(15 minutes)"
+            Enabled: true
+
+# ─── Salidas del Stack ───────────────────────────────────────────────────────
+Outputs:
+  LambdaFunctionArn:
+    Description: "ARN de la función Lambda del orquestador"
+    Value: !GetAtt ReviewOrchestrator.Arn
+
+  LambdaFunctionName:
+    Description: "Nombre de la función Lambda"
+    Value: !Ref ReviewOrchestrator
+
+  S3BucketArn:
+    Description: "ARN del bucket S3 de reportes"
+    Value: !GetAtt ReportsBucket.Arn
