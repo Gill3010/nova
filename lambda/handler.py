@@ -84,21 +84,28 @@ def _find_main_manuscript_file(files: list[dict]) -> dict | None:
         if f.get("genreId") == 1:
             return f
 
-    # 2. Preferir PDF
+    # 2. Preferir PDF por mimetype o nombre
     for f in files:
         name = f.get("name", {})
         filename = name.get("es_ES") or name.get("en_US") or ""
-        if filename.lower().endswith(".pdf"):
+        mimetype = (f.get("mimetype") or "").lower()
+        if filename.lower().endswith(".pdf") or "pdf" in mimetype:
             return f
 
-    # 3. Preferir DOCX
+    # 3. Preferir DOCX por mimetype o nombre
     for f in files:
         name = f.get("name", {})
         filename = name.get("es_ES") or name.get("en_US") or ""
-        if filename.lower().endswith(".docx"):
+        mimetype = (f.get("mimetype") or "").lower()
+        if filename.lower().endswith(".docx") or "word" in mimetype or "officedocument" in mimetype:
             return f
 
-    # 4. Primer archivo disponible
+    # 4. Primer archivo disponible (ignorar videos/audios)
+    for f in files:
+        mimetype = (f.get("mimetype") or "").lower()
+        if "video" not in mimetype and "audio" not in mimetype:
+            return f
+
     return files[0]
 
 
