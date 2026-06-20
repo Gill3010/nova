@@ -32,7 +32,7 @@ Parameters:
 
   BedrockModelId:
     Type: String
-    Default: "anthropic.claude-3-5-sonnet-20240620-v1:0"
+    Default: "anthropic.claude-sonnet-4-6"
     Description: "ID del modelo de Amazon Bedrock"
 
   S3BucketName:
