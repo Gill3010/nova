@@ -593,3 +593,20 @@ export const fetchEnvioArchivoBlobUrl = async (envioId: number): Promise<string>
   return URL.createObjectURL(blob);
 };
 
+/**
+ * Invoca asíncronamente a la IA (AWS Lambda) para procesar un reporte preliminar de un envío.
+ */
+export const triggerSystemReport = async (envioId: number): Promise<boolean> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/revisiones/trigger/${envioId}`, {
+      method: 'POST',
+      headers: getHeaders()
+    });
+    const data = await response.json();
+    return data.success;
+  } catch (error) {
+    console.error('Error triggering system report:', error);
+    return false;
+  }
+};
+

@@ -1,5 +1,7 @@
 const revisionesRepository = require('../repositories/revisiones.repository');
 const logger = require('../utils/logger');
+const db = require('../db');
+const { LambdaClient, InvokeCommand } = require('@aws-sdk/client-lambda');
 
 class RevisionesService {
   /**
@@ -48,6 +50,64 @@ class RevisionesService {
     } catch (error) {
       logger.error('Error al obtener reporte del sistema', { error: error.message, envioId });
       throw new Error('Error interno al obtener el reporte del sistema');
+    }
+  }
+
+  /**
+   * Dispara asíncronamente el agente IA (Lambda) para procesar un manuscrito en OJS.
+   */
+  async triggerAiReview(envioId) {
+    try {
+      // 1. Obtener la metadata necesaria (URL, path, credentials) desde la BD
+      const query = `
+        SELECT 
+          e.ojs_submission_id,
+          r.ojs_journal_path,
+          p.ojs_url,
+          p.ojs_api_key
+        FROM envios_ojs e
+        JOIN revistas_ojs r ON e.revista_ojs_id = r.id
+        JOIN portales_ojs p ON r.portal_ojs_id = p.id
+        WHERE e.id = $1
+        LIMIT 1;
+      `;
+      const { rows } = await db.query(query, [envioId]);
+
+      if (rows.length === 0) {
+        throw new Error('No se encontró información del envío o del portal OJS asociado.');
+      }
+
+      const { ojs_submission_id, ojs_journal_path, ojs_url, ojs_api_key } = rows[0];
+
+      if (!ojs_submission_id || !ojs_journal_path || !ojs_url || !ojs_api_key) {
+        throw new Error('Información incompleta del portal OJS. Faltan credenciales o paths.');
+      }
+
+      // 2. Preparar el payload para la Lambda
+      const payload = {
+        ojs_submission_id: ojs_submission_id.toString(),
+        ojs_base_url: ojs_url,
+        ojs_api_key: ojs_api_key,
+        ojs_journal_path: ojs_journal_path
+      };
+
+      logger.info('Invocando orquestador de revisión por IA...', { envioId, ojs_submission_id, ojs_journal_path });
+
+      // 3. Invocar Lambda asíncronamente (Event)
+      const lambda = new LambdaClient({ region: process.env.AWS_REGION || 'us-east-1' });
+      const command = new InvokeCommand({
+        FunctionName: 'nova-review-orchestrator',
+        InvocationType: 'Event', // Ejecución asíncrona, no esperamos la respuesta aquí
+        Payload: Buffer.from(JSON.stringify(payload))
+      });
+
+      await lambda.send(command);
+      logger.info('Orden de revisión enviada exitosamente a la IA', { envioId });
+
+      return { success: true, message: 'Orden de revisión enviada a la IA' };
+    } catch (error) {
+      logger.error('Error al disparar revisión de IA', { error: error.message, envioId });
+      throw new Error(`No se pudo invocar a la IA: ${error.message}`);
     }
   }
 }

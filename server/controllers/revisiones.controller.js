@@ -40,6 +40,23 @@ class RevisionesController {
       res.status(error.statusCode || 500).json({ success: false, error: error.message });
     }
   }
+
+  /**
+   * POST /api/revisiones/trigger/:envioId
+   * Invoca asíncronamente a la IA para generar el reporte de un envío.
+   */
+  async triggerAiReview(req, res) {
+    try {
+      const envioId = parseInt(req.params.envioId, 10);
+      if (isNaN(envioId)) {
+        return res.status(400).json({ success: false, error: 'ID de envío inválido' });
+      }
+      const result = await revisionesService.triggerAiReview(envioId);
+      res.status(200).json(result);
+    } catch (error) {
+      res.status(error.statusCode || 500).json({ success: false, error: error.message });
+    }
+  }
 }
 
 module.exports = new RevisionesController();

@@ -16,4 +16,7 @@ router.post('/sistema', apiKeyAuth, revisionesController.saveSystemReport);
 // El revisor consulta el reporte — autenticado con JWT de Nova
 router.get('/sistema/:envioId', verifyToken, revisionesController.getSystemReport);
 
+// Invocar a la IA manualmente por demanda
+router.post('/trigger/:envioId', verifyToken, revisionesController.triggerAiReview);
+
 module.exports = router;

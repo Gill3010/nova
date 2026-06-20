@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useOjs } from '../../../context/OjsContext';
-import { fetchRevisorEnvios, submitEvaluation, fetchEvaluation, fetchSystemReport, fetchEnvioArchivoBlobUrl } from '../../../services/dbApi';
+import { fetchRevisorEnvios, submitEvaluation, fetchEvaluation, fetchSystemReport, fetchEnvioArchivoBlobUrl, triggerSystemReport } from '../../../services/dbApi';
 import { fetchSubmissionFiles, downloadFileAsBlobUrl } from '../../../services/ojsApi';
 import type { PostgresEnvio, SystemReport } from '../../../services/dbApi';
 
@@ -145,6 +145,11 @@ export const ReviewerProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         const report = await fetchSystemReport(selectedSubmission.id);
         if (!active) return;
         setSystemReport(report);
+
+        // Si no hay reporte preliminar aún, disparamos a la IA en segundo plano
+        if (!report) {
+          await triggerSystemReport(selectedSubmission.id);
+        }
       } finally {
         if (active) setLoadingSystemReport(false);
       }

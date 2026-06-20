@@ -94,15 +94,16 @@ Resources:
         # Acceso al bucket S3
         - S3CrudPolicy:
             BucketName: !Ref S3BucketName
+      # El temporizador de 15 minutos ha sido deshabilitado.
+      # La función ahora es invocada por demanda vía AWS SDK desde Node.js
       Events:
-        # EventBridge dispara la función cada 15 minutos
         ScheduledReview:
           Type: Schedule
           Properties:
             Name: nova-review-schedule
-            Description: "Orquestador de revisión cada 15 minutos"
+            Description: "Orquestador de revisión cada 15 minutos (Desactivado)"
             Schedule: "rate(15 minutes)"
-            Enabled: true
+            Enabled: false
 
 # ─── Salidas del Stack ───────────────────────────────────────────────────────
 Outputs:
