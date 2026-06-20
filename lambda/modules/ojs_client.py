@@ -92,50 +92,42 @@ class OJSClient:
 
     def download_file(self, submission_id: int, file_id: int, download_url: str = None, file_name: str = None) -> tuple[bytes, str]:
         """
-        Descarga el binario de un archivo del envío.
-        Retorna (contenido_bytes, nombre_archivo).
+        Descarga el binario de un archivo del envío a través del Proxy de Nova.
+        Esto soluciona el bug de OJS que devuelve 403 en su API REST nativa.
         """
         try:
             resolved_name = file_name or f"archivo_{file_id}"
-            file_resp = None
-
-            # 1. Intentar primero con el endpoint de la API REST oficial (acepta Bearer Token nativo)
-            api_download_url = self._api_url(f"/submissions/{submission_id}/files/{file_id}/download")
-            logger.info(f"OJS: Intentando descargar desde API REST: {api_download_url}")
-            try:
-                resp = self.session.get(api_download_url, timeout=60)
-                # Verificar que el status sea 200 y que no sea una página HTML (error)
-                content_type = resp.headers.get("Content-Type", "").lower()
-                if resp.status_code == 200 and "text/html" not in content_type:
-                    file_resp = resp
-                    logger.info("OJS: Archivo descargado exitosamente vía API REST.")
-                else:
-                    logger.warning(f"OJS: Endpoint API REST devolvió status {resp.status_code} o HTML ({content_type}).")
-            except requests.RequestException as e:
-                logger.warning(f"OJS: Error al intentar descargar vía API REST: {e}")
-
-            # 2. Fallback: Si el anterior falló o devolvió HTML, usar la URL directa con apiToken param
-            if not file_resp and download_url:
-                logger.info(f"OJS: Iniciando fallback con URL directa: {download_url}")
-                sep = "&" if "?" in download_url else "?"
-                meta_url_auth = f"{download_url}{sep}apiToken={self.api_key}"
-                try:
-                    resp = self.session.get(meta_url_auth, timeout=60)
-                    content_type = resp.headers.get("Content-Type", "").lower()
-                    if resp.status_code == 200 and "text/html" not in content_type:
-                        file_resp = resp
-                        logger.info("OJS: Archivo descargado exitosamente vía URL directa.")
-                    else:
-                        logger.error(f"OJS: Fallback de URL directa devolvió status {resp.status_code} o HTML ({content_type}).")
-                except requests.RequestException as e:
-                    logger.error(f"OJS: Error en fallback de URL directa: {e}")
-
-            if not file_resp:
-                raise ValueError("No se pudo descargar un archivo binario válido (PDF/Word) de ninguna de las rutas de OJS.")
-
-            file_resp.raise_for_status()
-            logger.info(f"OJS: Archivo '{resolved_name}' descargado ({len(file_resp.content)} bytes).")
-            return file_resp.content, resolved_name
+            
+            # Construir URL proxy apuntando al backend de Nova
+            nova_api_url = os.environ.get("NOVA_API_URL", "https://eventonexus.com").rstrip("/")
+            proxy_url = f"{nova_api_url}/api/ojs-proxy"
+            
+            # Construir URL Legacy de OJS (la misma que usa el visor web)
+            base = self.base_url
+            if "index.php" not in base:
+                journal_base = f"{base}/index.php/{self.journal_path}"
+            else:
+                journal_base = f"{base}/{self.journal_path}"
+                
+            legacy_target_url = f"{journal_base}/$$$call$$$/api/file/file-api/download-file?submissionFileId={file_id}&submissionId={submission_id}&stageId=1"
+            
+            logger.info(f"OJS: Descargando archivo vía Nova Proxy: {legacy_target_url}")
+            
+            headers = {
+                "x-ojs-target-url": legacy_target_url,
+                "Accept": "*/*"
+            }
+            
+            resp = self.session.get(proxy_url, headers=headers, timeout=60)
+            
+            content_type = resp.headers.get("Content-Type", "").lower()
+            if resp.status_code == 200 and "text/html" not in content_type:
+                logger.info(f"OJS: Archivo '{resolved_name}' descargado exitosamente vía Proxy ({len(resp.content)} bytes).")
+                return resp.content, resolved_name
+            else:
+                logger.error(f"OJS: Fallo al descargar vía Proxy. Status: {resp.status_code}, Content-Type: {content_type}")
+                raise ValueError(f"El proxy devolvió status {resp.status_code} o HTML en lugar del binario.")
+                
         except requests.RequestException as e:
             logger.error(f"Error al descargar archivo #{file_id} del envío #{submission_id}: {e}")
             raise
