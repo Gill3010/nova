@@ -1,8 +1,18 @@
 import React from 'react';
-import { Info, FileText, Video, Volume2, Image as ImageIcon, RefreshCw, Bot } from 'lucide-react';
+import { Info, FileText, Video, Volume2, Image as ImageIcon, RefreshCw, Bot, AlertTriangle } from 'lucide-react';
 import { useReviewer, DEMO_FILES } from '../context/ReviewerContext';
 import { Badge } from '../../../components/common/Badge';
 import { ReviewerSystemReport } from './ReviewerSystemReport';
+
+/** Placeholder que se muestra cuando no hay fuente de archivo disponible */
+const NoFileAvailable: React.FC<{ label: string }> = ({ label }) => (
+  <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-slate-400 dark:text-slate-500 py-12">
+    <AlertTriangle className="h-8 w-8 text-slate-300 dark:text-slate-600" />
+    <span className="text-xs font-medium text-center max-w-xs">
+      {label} no disponible. Revise el error de OJS arriba para más detalles.
+    </span>
+  </div>
+);
 
 export const ReviewerFilePreviewer: React.FC = () => {
   const {
@@ -10,6 +20,7 @@ export const ReviewerFilePreviewer: React.FC = () => {
     activeTab,
     setActiveTab,
     fileErrorMsg,
+    useDemoFiles,
     loadingFiles,
     ojsFiles,
     fileUrls,
@@ -79,12 +90,29 @@ export const ReviewerFilePreviewer: React.FC = () => {
       {/* Contenedor del visor en tiempo real */}
       <div className="border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-955/20 rounded-2xl p-4 min-h-[380px] flex flex-col justify-between">
         
+        {/* Banner de error real de OJS — muestra el mensaje/código exacto */}
         {fileErrorMsg && (
-          <div className="mb-4 p-3 rounded-lg bg-amber-55/70 border border-amber-200 dark:bg-amber-950/30 dark:border-amber-900/50 text-amber-800 dark:text-amber-300 text-xs flex gap-2 animate-fade-in">
-            <Info className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+          <div className="mb-4 p-3 rounded-lg bg-red-50/80 border border-red-200 dark:bg-red-950/30 dark:border-red-900/50 text-red-800 dark:text-red-300 text-xs flex gap-2 animate-fade-in">
+            <AlertTriangle className="h-4 w-4 shrink-0 text-red-500 dark:text-red-400 mt-0.5" />
             <div>
-              <span className="font-semibold block mb-0.5">Nota de Integración OJS: {fileErrorMsg}</span>
-              <span>Se muestran archivos de demostración interactivos (PDF, Video, Audio) para permitir la simulación completa de la evaluación.</span>
+              <span className="font-semibold block mb-0.5">Error de OJS al cargar archivos:</span>
+              <code className="block bg-red-100/60 dark:bg-red-900/30 p-1.5 rounded text-[11px] font-mono break-all mt-1">
+                {fileErrorMsg}
+              </code>
+              <span className="block mt-1.5 text-red-600/80 dark:text-red-400/70">
+                Los archivos reales de OJS no pudieron cargarse. Verifique los permisos del API Key, el rol del usuario en OJS, y que la submission exista.
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Banner informativo de modo demo (solo cuando no hay credenciales OJS configuradas) */}
+        {useDemoFiles && !fileErrorMsg && (
+          <div className="mb-4 p-3 rounded-lg bg-blue-50/70 border border-blue-200 dark:bg-blue-950/30 dark:border-blue-900/50 text-blue-800 dark:text-blue-300 text-xs flex gap-2 animate-fade-in">
+            <Info className="h-4 w-4 shrink-0 text-blue-500 dark:text-blue-400" />
+            <div>
+              <span className="font-semibold block mb-0.5">Modo demostración</span>
+              <span>No hay credenciales OJS configuradas para este envío. Se muestran archivos de demostración.</span>
             </div>
           </div>
         )}
@@ -117,7 +145,7 @@ export const ReviewerFilePreviewer: React.FC = () => {
               {loadingFiles ? (
                 <span className="flex items-center gap-1.5"><RefreshCw className="h-3 w-3 animate-spin" /> Cargando archivos...</span>
               ) : ojsFiles.length === 0 ? (
-                <span>Sin archivos cargados en OJS (Visualizando demos).</span>
+                <span>{useDemoFiles ? 'Sin credenciales OJS — visualizando demos.' : 'Sin archivos encontrados en OJS.'}</span>
               ) : (
                 <ul className="list-disc pl-4 flex flex-col gap-0.5">
                   {ojsFiles.map((file: any) => (
@@ -134,12 +162,16 @@ export const ReviewerFilePreviewer: React.FC = () => {
         {activeTab === 'manuscript' && (
           <div className="w-full h-[400px] flex flex-col gap-2 animate-fade-in">
             <span className="text-[10px] font-semibold text-slate-455 uppercase tracking-wider">Visor de PDF</span>
-            <iframe
-              src={`${getFilePreviewSource('pdf')}#toolbar=0`}
-              title="Visor PDF Manuscrito"
-              className="w-full h-full rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm"
-              loading="lazy"
-            />
+            {getFilePreviewSource('pdf') ? (
+              <iframe
+                src={`${getFilePreviewSource('pdf')}#toolbar=0`}
+                title="Visor PDF Manuscrito"
+                className="w-full h-full rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm"
+                loading="lazy"
+              />
+            ) : (
+              <NoFileAvailable label="Manuscrito PDF" />
+            )}
           </div>
         )}
 
@@ -147,12 +179,16 @@ export const ReviewerFilePreviewer: React.FC = () => {
           <div className="w-full h-[400px] flex flex-col justify-center gap-2 animate-fade-in">
             <span className="text-[10px] font-semibold text-slate-455 uppercase tracking-wider">Video de Presentación</span>
             <div className="w-full h-full bg-black rounded-xl overflow-hidden shadow-sm flex items-center justify-center">
-              <video
-                src={getFilePreviewSource('video')}
-                controls
-                className="w-full h-full max-h-[350px] object-contain"
-                poster={DEMO_FILES.poster}
-              />
+              {getFilePreviewSource('video') ? (
+                <video
+                  src={getFilePreviewSource('video')}
+                  controls
+                  className="w-full h-full max-h-[350px] object-contain"
+                  poster={useDemoFiles ? DEMO_FILES.poster : undefined}
+                />
+              ) : (
+                <NoFileAvailable label="Video de presentación" />
+              )}
             </div>
           </div>
         )}
@@ -163,11 +199,15 @@ export const ReviewerFilePreviewer: React.FC = () => {
               <span className="text-[10px] font-semibold text-slate-455 uppercase tracking-wider flex items-center gap-1">
                 <Volume2 className="h-3.5 w-3.5" /> Grabación de Audio (Resumen/Podcast)
               </span>
-              <audio
-                src={getFilePreviewSource('audio')}
-                controls
-                className="w-full mt-1.5 focus:outline-none"
-              />
+              {getFilePreviewSource('audio') ? (
+                <audio
+                  src={getFilePreviewSource('audio')}
+                  controls
+                  className="w-full mt-1.5 focus:outline-none"
+                />
+              ) : (
+                <NoFileAvailable label="Grabación de audio" />
+              )}
             </div>
             
             <div className="flex flex-col gap-2">
@@ -175,12 +215,16 @@ export const ReviewerFilePreviewer: React.FC = () => {
                 <ImageIcon className="h-3.5 w-3.5" /> Afiche o Póster Asociado
               </span>
               <div className="w-full h-48 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden bg-white dark:bg-slate-900 shadow-sm flex items-center justify-center">
-                <img
-                  src={getFilePreviewSource('poster')}
-                  alt="Póster del artículo"
-                  className="h-full w-full object-cover hover:scale-105 transition-transform duration-250 cursor-zoom-in"
-                  onClick={() => window.open(getFilePreviewSource('poster'), '_blank')}
-                />
+                {getFilePreviewSource('poster') ? (
+                  <img
+                    src={getFilePreviewSource('poster')}
+                    alt="Póster del artículo"
+                    className="h-full w-full object-cover hover:scale-105 transition-transform duration-250 cursor-zoom-in"
+                    onClick={() => window.open(getFilePreviewSource('poster'), '_blank')}
+                  />
+                ) : (
+                  <NoFileAvailable label="Póster" />
+                )}
               </div>
             </div>
           </div>

@@ -15,6 +15,10 @@ export const OjsConfigCard: React.FC = () => {
     setOjsUrl,
     ojsApiKey,
     setOjsApiKey,
+    ojsServiceUser,
+    setOjsServiceUser,
+    ojsServicePassword,
+    setOjsServicePassword,
     ojsStatus,
     journals,
     isTestingConnection,
@@ -57,7 +61,9 @@ export const OjsConfigCard: React.FC = () => {
         const portalRes = await createPortalOjs({
           ojs_url: ojsUrl.trim(),
           ojs_api_key: ojsApiKey.trim(),
-          nombre: ojsUrl.trim()
+          nombre: ojsUrl.trim(),
+          ojs_service_user: ojsServiceUser.trim(),
+          ojs_service_password: ojsServicePassword.trim()
         });
         if (portalRes.success && portalRes.portal) {
           const currentPortalId = portalRes.portal.id;
@@ -153,6 +159,24 @@ export const OjsConfigCard: React.FC = () => {
             value={ojsApiKey}
             onChange={(e) => setOjsApiKey(e.target.value)}
             placeholder="Token de acceso REST API"
+          />
+
+          <Input
+            id="ojs-service-user"
+            label="Usuario OJS (para visor de descargas)"
+            type="text"
+            value={ojsServiceUser}
+            onChange={(e) => setOjsServiceUser(e.target.value)}
+            placeholder="Ej: administrador"
+          />
+
+          <Input
+            id="ojs-service-password"
+            label="Contraseña de Usuario OJS"
+            type="password"
+            value={ojsServicePassword}
+            onChange={(e) => setOjsServicePassword(e.target.value)}
+            placeholder="Contraseña del usuario en OJS"
           />
         </div>
 

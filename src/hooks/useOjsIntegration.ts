@@ -38,6 +38,8 @@ export function useOjsIntegration() {
   const {
     ojsUrl, setOjsUrl,
     ojsApiKey, setOjsApiKey,
+    ojsServiceUser, setOjsServiceUser,
+    ojsServicePassword, setOjsServicePassword,
     ojsStatus,
     journals,
     selectedJournal, setSelectedJournal,
@@ -679,6 +681,8 @@ export function useOjsIntegration() {
     // Connection
     ojsUrl, setOjsUrl,
     ojsApiKey, setOjsApiKey,
+    ojsServiceUser, setOjsServiceUser,
+    ojsServicePassword, setOjsServicePassword,
     ojsStatus,
     journals,
     selectedJournal, setSelectedJournal,

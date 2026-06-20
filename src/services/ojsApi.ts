@@ -395,6 +395,36 @@ export const deleteSubmission = async (
   }
 };
 
+/**
+ * Extrae un mensaje de error legible de una respuesta JSON de OJS.
+ * OJS puede usar distintos campos: error, errorMessage, content.
+ */
+const extractOjsErrorMessage = (json: any, httpStatus?: number): string => {
+  const parts: string[] = [];
+
+  if (httpStatus) {
+    parts.push(`HTTP ${httpStatus}`);
+  }
+
+  // OJS 3.x usa "error" (string o clave i18n como "api.submissions.403.unauthorized")
+  if (json.error) {
+    parts.push(`error="${json.error}"`);
+  }
+  // Algunos endpoints usan "errorMessage" con texto descriptivo
+  if (json.errorMessage) {
+    parts.push(`errorMessage="${json.errorMessage}"`);
+  }
+  // El proxy a veces reenvía el cuerpo en "content"
+  if (json.content && json.content !== json.error) {
+    parts.push(`content="${json.content}"`);
+  }
+
+  if (parts.length === 0) {
+    return `Respuesta inesperada de OJS: ${JSON.stringify(json).substring(0, 300)}`;
+  }
+  return parts.join(' — ');
+};
+
 export const fetchSubmissionFiles = async (
   ojsUrl: string,
   apiKey: string,
@@ -405,16 +435,52 @@ export const fetchSubmissionFiles = async (
   const targetOjsUrl = `${portalUrl}/index.php/${journalPath}/api/v1/submissions/${submissionId}/files`;
   const headers = getHeaders(apiKey, targetOjsUrl);
 
-  const response = await fetch(PROXY_URL, {
+  // 🔍 DIAGNOSTIC LOG — TEMPORARY
+  console.log('[OJS-DIAG] fetchSubmissionFiles REQUEST:', {
+    targetOjsUrl,
+    proxyUrl: PROXY_URL,
+    headers: { ...headers, Authorization: headers.Authorization?.substring(0, 20) + '...' },
+  });
+
+  const response = await fetch(`${PROXY_URL}?_t=${Date.now()}`, {
     method: 'GET',
     headers
   });
 
+  // 🔍 DIAGNOSTIC LOG — TEMPORARY: raw response info
+  const responseHeaders: Record<string, string> = {};
+  response.headers.forEach((val, key) => { responseHeaders[key] = val; });
+  console.log('[OJS-DIAG] fetchSubmissionFiles RESPONSE:', {
+    status: response.status,
+    statusText: response.statusText,
+    headers: responseHeaders,
+  });
+
   if (!response.ok) {
-    throw new Error(`HTTP Error: ${response.status} ${response.statusText}`);
+    const errorBody = await response.text();
+    // 🔍 DIAGNOSTIC LOG — TEMPORARY
+    console.error('[OJS-DIAG] fetchSubmissionFiles ERROR BODY:', errorBody);
+    let errorDetail = '';
+    try {
+      const errorJson = JSON.parse(errorBody);
+      errorDetail = ` — ${extractOjsErrorMessage(errorJson, response.status)}`;
+    } catch {
+      errorDetail = errorBody ? ` — ${errorBody.substring(0, 500)}` : '';
+    }
+    throw new Error(`HTTP Error ${response.status} ${response.statusText}${errorDetail}`);
   }
 
-  return response.json();
+  // Incluso con 200, verificar si OJS devolvió un JSON de error (proxy transparente)
+  const data = await response.json();
+
+  // 🔍 DIAGNOSTIC LOG — TEMPORARY: full parsed response
+  console.log('[OJS-DIAG] fetchSubmissionFiles PARSED DATA:', JSON.stringify(data, null, 2)?.substring(0, 2000));
+
+  if (data && typeof data === 'object' && (data.error || data.errorMessage)) {
+    throw new Error(`OJS respondió con error: ${extractOjsErrorMessage(data, response.status)}`);
+  }
+
+  return data;
 };
 
 export const downloadFileAsBlobUrl = async (
@@ -425,18 +491,55 @@ export const downloadFileAsBlobUrl = async (
     'Authorization': `Bearer ${apiKey}`,
     'x-ojs-target-url': fileUrl
   };
-  const response = await fetch(PROXY_URL, {
+
+  // 🔍 DIAGNOSTIC LOG — TEMPORARY
+  console.log('[OJS-DIAG] downloadFileAsBlobUrl REQUEST:', {
+    fileUrl,
+    proxyUrl: PROXY_URL,
+  });
+
+  const response = await fetch(`${PROXY_URL}?_t=${Date.now()}`, {
     method: 'GET',
     headers
   });
-  if (!response.ok) {
-    throw new Error('No se pudo descargar el archivo de OJS');
-  }
+
+  // 🔍 DIAGNOSTIC LOG — TEMPORARY: raw response info
   const contentType = response.headers.get('content-type');
+  const responseHeaders: Record<string, string> = {};
+  response.headers.forEach((val, key) => { responseHeaders[key] = val; });
+  console.log('[OJS-DIAG] downloadFileAsBlobUrl RESPONSE:', {
+    status: response.status,
+    statusText: response.statusText,
+    contentType,
+    headers: responseHeaders,
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    // 🔍 DIAGNOSTIC LOG — TEMPORARY
+    console.error('[OJS-DIAG] downloadFileAsBlobUrl ERROR BODY:', errorBody?.substring(0, 1000));
+    let errorDetail = '';
+    try {
+      const errorJson = JSON.parse(errorBody);
+      errorDetail = extractOjsErrorMessage(errorJson, response.status);
+    } catch {
+      errorDetail = `HTTP ${response.status} ${response.statusText}`;
+    }
+    throw new Error(`Error al descargar archivo de OJS: ${errorDetail}`);
+  }
+
+  // Si el proxy devolvió 200 pero el body es JSON, OJS envió un error enmascarado
   if (contentType && contentType.includes('application/json')) {
     const errorJson = await response.json();
-    throw new Error(errorJson.content || 'El rol actual no tiene acceso a esta operación en OJS.');
+    // 🔍 DIAGNOSTIC LOG — TEMPORARY
+    console.error('[OJS-DIAG] downloadFileAsBlobUrl JSON-MASKED-ERROR:', JSON.stringify(errorJson, null, 2));
+    const errorMsg = extractOjsErrorMessage(errorJson, response.status);
+    throw new Error(`OJS denegó acceso al archivo: ${errorMsg}`);
   }
+
+  // 🔍 DIAGNOSTIC LOG — TEMPORARY
+  console.log('[OJS-DIAG] downloadFileAsBlobUrl SUCCESS — got blob, contentType:', contentType);
+
   const blob = await response.blob();
   return URL.createObjectURL(blob);
 };

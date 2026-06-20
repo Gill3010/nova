@@ -355,7 +355,7 @@ export const fetchPortalesOjs = async (): Promise<PortalOjsData[]> => {
   return data.success ? data.data : [];
 };
 
-export const createPortalOjs = async (portalData: { ojs_url: string; ojs_api_key: string; nombre?: string }): Promise<any> => {
+export const createPortalOjs = async (portalData: { ojs_url: string; ojs_api_key: string; nombre?: string; ojs_service_user?: string; ojs_service_password?: string }): Promise<any> => {
   const response = await fetch(`${API_BASE_URL}/portales-ojs`, {
     method: 'POST',
     headers: getHeaders(),

@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest",
     "create-admin": "node create-admin.js"
   },
   "keywords": [],
@@ -19,5 +19,8 @@
     "multer": "^2.2.0",
     "pg": "^8.21.0",
     "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "jest": "^30.4.2"
   }
 }

@@ -21,6 +21,8 @@ interface ReviewerContextType {
   loadingFiles: boolean;
   fileUrls: Record<string, string>;
   fileErrorMsg: string | null;
+  /** true solo cuando no hay credenciales OJS configuradas (modo demo explícito) */
+  useDemoFiles: boolean;
   activeTab: 'info' | 'manuscript' | 'video' | 'audio_poster' | 'system_report';
   setActiveTab: (tab: 'info' | 'manuscript' | 'video' | 'audio_poster' | 'system_report') => void;
   scoreScientific: number;
@@ -68,6 +70,7 @@ export const ReviewerProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [loadingFiles, setLoadingFiles] = useState(false);
   const [fileUrls, setFileUrls] = useState<Record<string, string>>({});
   const [fileErrorMsg, setFileErrorMsg] = useState<string | null>(null);
+  const [useDemoFiles, setUseDemoFiles] = useState(false);
 
   // Previewer Tabs (now includes system_report)
   const [activeTab, setActiveTab] = useState<'info' | 'manuscript' | 'video' | 'audio_poster' | 'system_report'>('info');
@@ -170,8 +173,12 @@ export const ReviewerProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setOjsFiles([]);
         setFileUrls({});
         setFileErrorMsg(null);
+        setUseDemoFiles(true); // Modo demo explícito: no hay credenciales OJS
         return;
       }
+
+      // Hay credenciales OJS — modo real, no usar demos como fallback
+      if (active) setUseDemoFiles(false);
 
       setLoadingFiles(true);
       if (active) {
@@ -276,6 +283,8 @@ export const ReviewerProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   /**
    * Determina la fuente de previsualización para un tipo de archivo.
    * Para manuscritos (PDF): prioriza la URL local de Nova antes que OJS Blob URLs.
+   * DEMO_FILES solo se usan en modo demo explícito (sin credenciales OJS),
+   * nunca como fallback silencioso ante errores reales de la API.
    */
   const getFilePreviewSource = (type: 'pdf' | 'video' | 'audio' | 'poster') => {
     if (type === 'pdf') {
@@ -289,36 +298,32 @@ export const ReviewerProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         f.name?.en?.toLowerCase().endsWith('.pdf')
       );
       if (pdfFile && fileUrls[pdfFile.id]) return fileUrls[pdfFile.id];
-      return DEMO_FILES.pdf;
+      // Solo usar demo si estamos en modo demo explícito (sin credenciales OJS)
+      return useDemoFiles ? DEMO_FILES.pdf : '';
     }
     if (type === 'video') {
-      const videoFile = ojsFiles.find(f =>
-        f.originalFilename?.toLowerCase().endsWith('.mp4') ||
-        f.name?.es?.toLowerCase().endsWith('.mp4') ||
-        f.name?.en?.toLowerCase().endsWith('.mp4')
-      );
+      const videoFile = ojsFiles.find(f => {
+        const name = (f.originalFilename || f.name?.es || f.name?.en || '').toLowerCase();
+        return name.endsWith('.mp4') || name.endsWith('.mov') || name.endsWith('.webm') || name.endsWith('.avi');
+      });
       if (videoFile && fileUrls[videoFile.id]) return fileUrls[videoFile.id];
-      return DEMO_FILES.video;
+      return useDemoFiles ? DEMO_FILES.video : '';
     }
     if (type === 'audio') {
-      const audioFile = ojsFiles.find(f =>
-        f.originalFilename?.toLowerCase().endsWith('.mp3') ||
-        f.name?.es?.toLowerCase().endsWith('.mp3') ||
-        f.name?.en?.toLowerCase().endsWith('.mp3')
-      );
+      const audioFile = ojsFiles.find(f => {
+        const name = (f.originalFilename || f.name?.es || f.name?.en || '').toLowerCase();
+        return name.endsWith('.mp3') || name.endsWith('.wav') || name.endsWith('.m4a') || name.endsWith('.ogg');
+      });
       if (audioFile && fileUrls[audioFile.id]) return fileUrls[audioFile.id];
-      return DEMO_FILES.audio;
+      return useDemoFiles ? DEMO_FILES.audio : '';
     }
     if (type === 'poster') {
-      const posterFile = ojsFiles.find(f =>
-        f.genreId === 3 ||
-        f.originalFilename?.toLowerCase().endsWith('.jpg') ||
-        f.originalFilename?.toLowerCase().endsWith('.png') ||
-        f.name?.es?.toLowerCase().endsWith('.jpg') ||
-        f.name?.es?.toLowerCase().endsWith('.png')
-      );
+      const posterFile = ojsFiles.find(f => {
+        const name = (f.originalFilename || f.name?.es || f.name?.en || '').toLowerCase();
+        return f.genreId === 3 || name.endsWith('.jpg') || name.endsWith('.jpeg') || name.endsWith('.png') || name.endsWith('.webp') || name.endsWith('.gif');
+      });
       if (posterFile && fileUrls[posterFile.id]) return fileUrls[posterFile.id];
-      return DEMO_FILES.poster;
+      return useDemoFiles ? DEMO_FILES.poster : '';
     }
     return '';
   };
@@ -334,6 +339,7 @@ export const ReviewerProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       loadingFiles,
       fileUrls,
       fileErrorMsg,
+      useDemoFiles,
       activeTab,
       setActiveTab,
       scoreScientific,

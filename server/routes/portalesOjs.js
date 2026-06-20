@@ -114,7 +114,7 @@ router.post('/', verifyToken, async (req, res) => {
     return res.status(403).json({ success: false, error: 'No autorizado para gestionar portales OJS' });
   }
 
-  const { ojs_url, ojs_api_key, nombre } = req.body;
+  const { ojs_url, ojs_api_key, nombre, ojs_service_user, ojs_service_password } = req.body;
 
   if (!ojs_url || !ojs_url.trim()) {
     return res.status(400).json({ success: false, error: 'La URL del portal OJS es requerida' });
@@ -124,15 +124,23 @@ router.post('/', verifyToken, async (req, res) => {
   }
 
   try {
-    // Upsert: si ya existe un portal con esa URL, actualizar el API key
+    // Upsert: si ya existe un portal con esa URL, actualizar el API key y credenciales de servicio
     const result = await db.query(`
-      INSERT INTO portales_ojs (ojs_url, ojs_api_key, nombre)
-      VALUES ($1, $2, $3)
+      INSERT INTO portales_ojs (ojs_url, ojs_api_key, nombre, ojs_service_user, ojs_service_password)
+      VALUES ($1, $2, $3, $4, $5)
       ON CONFLICT (ojs_url) DO UPDATE SET
         ojs_api_key = EXCLUDED.ojs_api_key,
-        nombre = COALESCE(EXCLUDED.nombre, portales_ojs.nombre)
+        nombre = COALESCE(EXCLUDED.nombre, portales_ojs.nombre),
+        ojs_service_user = COALESCE(EXCLUDED.ojs_service_user, portales_ojs.ojs_service_user),
+        ojs_service_password = COALESCE(EXCLUDED.ojs_service_password, portales_ojs.ojs_service_password)
       RETURNING *;
-    `, [ojs_url.trim(), ojs_api_key.trim(), nombre ? nombre.trim() : ojs_url.trim()]);
+    `, [
+      ojs_url.trim(), 
+      ojs_api_key.trim(), 
+      nombre ? nombre.trim() : ojs_url.trim(),
+      ojs_service_user ? ojs_service_user.trim() : null,
+      ojs_service_password ? ojs_service_password : null
+    ]);
 
     const portal = result.rows[0];
     logger.info('Portal OJS registrado/actualizado', { portalId: portal.id, url: ojs_url });

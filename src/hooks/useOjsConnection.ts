@@ -12,6 +12,8 @@ type LogFn = ReturnType<typeof useOjsLogs>['addLog'];
 export function useOjsConnection(addLog: LogFn) {
   const [ojsUrl, setOjsUrl] = useState('');
   const [ojsApiKey, setOjsApiKey] = useState('');
+  const [ojsServiceUser, setOjsServiceUser] = useState('');
+  const [ojsServicePassword, setOjsServicePassword] = useState('');
   const [ojsStatus, setOjsStatus] = useState<'disconnected' | 'connected'>('disconnected');
   const [journals, setJournals] = useState<OjsJournal[]>([]);
   const [selectedJournal, setSelectedJournal] = useState<OjsJournal | null>(null);
@@ -96,6 +98,8 @@ export function useOjsConnection(addLog: LogFn) {
   return {
     ojsUrl, setOjsUrl,
     ojsApiKey, setOjsApiKey,
+    ojsServiceUser, setOjsServiceUser,
+    ojsServicePassword, setOjsServicePassword,
     ojsStatus,
     journals,
     selectedJournal, setSelectedJournal,
