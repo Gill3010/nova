@@ -230,6 +230,7 @@ export const AuthPage: React.FC = () => {
               <option value="organizer">Organizador (Para gestionar congresos)</option>
               <option value="attendee">Asistente / Público General</option>
               <option value="reviewer">Revisor (Para evaluar envíos)</option>
+              <option value="editor">Editor (Para tomar decisiones finales)</option>
             </Select>
           )}
 

@@ -1,3 +1,5 @@
+import type { EditorialDecision, EditorDashboardEnvio, ReviewerEvaluation } from '../types';
+
 export interface PostgresEnvio {
   id: number;
   ojs_submission_id: number;
@@ -176,7 +178,7 @@ export interface PostgresUser {
   id: number;
   nombre: string;
   email: string;
-  rol: 'admin' | 'organizer' | 'speaker' | 'attendee' | 'reviewer';
+  rol: 'admin' | 'organizer' | 'speaker' | 'attendee' | 'reviewer' | 'editor';
   is_active: boolean;
   created_at: string;
 }
@@ -609,4 +611,147 @@ export const triggerSystemReport = async (envioId: number): Promise<boolean> => 
     return false;
   }
 };
+
+/**
+ * Obtiene la lista de envíos y sus evaluaciones consolidadas para el panel del editor.
+ */
+export const fetchEditorDashboard = async (): Promise<EditorDashboardEnvio[]> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/decisiones-editoriales/dashboard`, {
+      headers: getHeaders()
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    if (data.success) {
+      return data.data;
+    }
+    throw new Error(data.error || 'Error al obtener el panel del editor');
+  } catch (error: any) {
+    console.error('Error fetching editor dashboard:', error);
+    throw error;
+  }
+};
+
+/**
+ * Obtiene los envíos que tienen evaluaciones completadas pero aún no tienen una decisión final.
+ */
+export const fetchPendingDecisions = async (): Promise<EditorDashboardEnvio[]> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/decisiones-editoriales/pendientes`, {
+      headers: getHeaders()
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    if (data.success) {
+      return data.data;
+    }
+    throw new Error(data.error || 'Error al obtener envíos pendientes de decisión');
+  } catch (error: any) {
+    console.error('Error fetching pending decisions:', error);
+    throw error;
+  }
+};
+
+/**
+ * Envía una decisión editorial para un manuscrito.
+ */
+export const submitEditorialDecision = async (
+  envioId: number,
+  decision: 'accepted' | 'rejected' | 'revision_required',
+  justificacion: string
+): Promise<EditorialDecision> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/decisiones-editoriales`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({
+        envio_id: envioId,
+        decision,
+        justificacion
+      })
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    if (data.success) {
+      return data.data;
+    }
+    throw new Error(data.error || 'Error al registrar la decisión editorial');
+  } catch (error: any) {
+    console.error('Error submitting editorial decision:', error);
+    throw error;
+  }
+};
+
+/**
+ * Obtiene el historial de decisiones editoriales para un envío.
+ */
+export const fetchDecisionHistory = async (envioId: number): Promise<EditorialDecision[]> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/decisiones-editoriales/${envioId}/historial`, {
+      headers: getHeaders()
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    if (data.success) {
+      return data.data;
+    }
+    throw new Error(data.error || 'Error al obtener el historial de decisiones');
+  } catch (error: any) {
+    console.error('Error fetching decision history:', error);
+    throw error;
+  }
+};
+
+/**
+ * Obtiene la lista de revisores activos.
+ */
+export const fetchActiveReviewers = async (): Promise<PostgresUser[]> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/usuarios/revisores`, {
+      headers: getHeaders()
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    if (data.success) {
+      return data.data;
+    }
+    throw new Error(data.error || 'Error al obtener revisores');
+  } catch (error: any) {
+    console.error('Error fetching active reviewers:', error);
+    throw error;
+  }
+};
+
+/**
+ * Obtiene las evaluaciones detalladas de los revisores para un envío.
+ */
+export const fetchDetailedEvaluations = async (envioId: number): Promise<ReviewerEvaluation[]> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/decisiones-editoriales/${envioId}/evaluaciones`, {
+      headers: getHeaders()
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    if (data.success) {
+      return data.data;
+    }
+    throw new Error(data.error || 'Error al obtener evaluaciones');
+  } catch (error: any) {
+    console.error('Error fetching detailed evaluations:', error);
+    throw error;
+  }
+};
+
 

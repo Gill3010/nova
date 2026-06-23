@@ -156,3 +156,60 @@ export interface RevistaOjs {
   portal_nombre?: string;
 }
 
+export type EditorialDecisionType = 'accepted' | 'rejected' | 'revision_required';
+export type EditorialStatus = 'pending' | 'accepted' | 'rejected' | 'revision_required';
+
+export interface EditorialDecision {
+  id: number;
+  envio_id: number;
+  editor_id: number;
+  decision: EditorialDecisionType;
+  justificacion: string;
+  created_at: string;
+  editor_nombre?: string;
+  editor_email?: string;
+}
+
+export interface EditorDashboardEnvio {
+  id: number;
+  ojs_submission_id: number;
+  autor_email: string;
+  titulo_articulo: string;
+  resumen?: string;
+  nivel_academico?: string;
+  linea_investigacion?: string;
+  categoria?: string;
+  estado_editorial: EditorialStatus;
+  created_at: string;
+  archivo_key?: string;
+  congreso_nombre: string;
+  total_evaluaciones: number;
+  avg_scientific: number | null;
+  avg_originality: number | null;
+  avg_presentation: number | null;
+  aprobaciones: number;
+  rechazos: number;
+  ia_comments?: string;
+  ia_scientific?: number;
+  ia_originality?: number;
+  ia_presentation?: number;
+  ultima_decision?: EditorialDecisionType;
+  ultima_justificacion?: string;
+  fecha_decision?: string;
+  editor_nombre?: string;
+}
+
+export interface ReviewerEvaluation {
+  id: number;
+  envio_id: number;
+  revisor_id: number;
+  score_scientific: number;
+  score_originality: number;
+  score_presentation: number;
+  comments: string;
+  approved: boolean;
+  created_at: string;
+  revisor_nombre: string;
+  revisor_email: string;
+}
+

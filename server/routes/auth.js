@@ -12,7 +12,7 @@ const publicRegisterSchema = z.object({
   email: z.string().email('El correo electrónico no tiene un formato válido'),
   password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres'),
   // Solo se permiten roles públicos
-  rol: z.enum(['speaker', 'organizer', 'attendee', 'reviewer'], {
+  rol: z.enum(['speaker', 'organizer', 'attendee', 'reviewer', 'editor'], {
     errorMap: () => ({ message: 'El rol especificado no es válido o no está permitido en el registro público' })
   })
 });

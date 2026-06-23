@@ -13,6 +13,15 @@ const checkAdmin = (req, res, next) => {
   next();
 };
 
+// Middleware para verificar que el usuario es admin o editor
+const checkAdminOrEditor = (req, res, next) => {
+  if (req.user.rol !== 'admin' && req.user.rol !== 'editor') {
+    logger.warn('Intento de acceso no autorizado a gestión de revisores', { userId: req.user.id });
+    return res.status(403).json({ error: 'Acceso denegado. Se requiere rol de administrador o editor.' });
+  }
+  next();
+};
+
 // 1. Obtener todos los usuarios
 router.get('/', verifyToken, checkAdmin, async (req, res) => {
   try {
@@ -35,7 +44,7 @@ router.put('/:id/rol', verifyToken, checkAdmin, async (req, res) => {
   try {
     const targetUserId = req.params.id;
     const { rol } = req.body;
-    const rolesPermitidos = ['attendee', 'speaker', 'organizer', 'admin', 'reviewer'];
+    const rolesPermitidos = ['attendee', 'speaker', 'organizer', 'admin', 'reviewer', 'editor'];
 
     if (!rolesPermitidos.includes(rol)) {
       return res.status(400).json({ success: false, error: 'Rol no válido: ' + rol });
@@ -120,7 +129,7 @@ router.get('/revisores/envios', verifyToken, async (req, res) => {
 });
 
 // 5. Asignar un envío a un revisor (Admin)
-router.post('/revisores/asignar', verifyToken, checkAdmin, async (req, res) => {
+router.post('/revisores/asignar', verifyToken, checkAdminOrEditor, async (req, res) => {
   try {
     const { revisorId, envioId } = req.body;
     if (!revisorId || !envioId) {
@@ -148,7 +157,7 @@ router.post('/revisores/asignar', verifyToken, checkAdmin, async (req, res) => {
 });
 
 // 6. Desasignar un envío a un revisor (Admin)
-router.post('/revisores/desasignar', verifyToken, checkAdmin, async (req, res) => {
+router.post('/revisores/desasignar', verifyToken, checkAdminOrEditor, async (req, res) => {
   try {
     const { revisorId, envioId } = req.body;
     if (!revisorId || !envioId) {
@@ -169,7 +178,7 @@ router.post('/revisores/desasignar', verifyToken, checkAdmin, async (req, res) =
 });
 
 // 7. Obtener todas las asignaciones de revisores (Admin)
-router.get('/revisores/asignaciones', verifyToken, checkAdmin, async (req, res) => {
+router.get('/revisores/asignaciones', verifyToken, checkAdminOrEditor, async (req, res) => {
   try {
     const query = `
       SELECT revisor_id, envio_id FROM revisores_envios
@@ -238,6 +247,23 @@ router.get('/revisores/evaluaciones/:envioId', verifyToken, async (req, res) => 
     res.json({ success: true, data: rows[0] || null });
   } catch (err) {
     logger.error('Error al obtener evaluación', { error: err.message });
+    res.status(500).json({ success: false, error: 'Error interno del servidor' });
+  }
+});
+
+// 10. Obtener lista de revisores activos (Admin o Editor)
+router.get('/revisores', verifyToken, checkAdminOrEditor, async (req, res) => {
+  try {
+    const query = `
+      SELECT id, nombre, email, rol, is_active, created_at 
+      FROM usuarios 
+      WHERE rol = 'reviewer' AND is_active = true
+      ORDER BY nombre ASC
+    `;
+    const { rows } = await db.query(query);
+    res.status(200).json({ success: true, data: rows });
+  } catch (err) {
+    logger.error('Error al obtener lista de revisores', { error: err.message });
     res.status(500).json({ success: false, error: 'Error interno del servidor' });
   }
 });

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-export type Role = 'admin' | 'organizer' | 'speaker' | 'attendee' | 'reviewer';
+export type Role = 'admin' | 'organizer' | 'speaker' | 'attendee' | 'reviewer' | 'editor';
 
 interface User {
   id: number;

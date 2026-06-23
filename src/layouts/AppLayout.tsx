@@ -19,6 +19,7 @@ export const AppLayout: React.FC = () => {
   const isAdmin = (user?.rol as string) === 'admin';
   const isSpeakerOrAdminOrOrg = (user?.rol as string) === 'speaker' || (user?.rol as string) === 'admin' || (user?.rol as string) === 'organizer';
   const isRevisorOrAdminOrOrg = (user?.rol as string) === 'reviewer' || (user?.rol as string) === 'admin' || (user?.rol as string) === 'organizer';
+  const isEditorOrAdmin = (user?.rol as string) === 'editor' || (user?.rol as string) === 'admin';
 
   const isAuthorized = useMemo(() => {
     if (!user) return false;
@@ -27,6 +28,11 @@ export const AppLayout: React.FC = () => {
     // A reviewer can ONLY access /reviewer, /attendee or / (which redirects to /reviewer)
     if ((user.rol as string) === 'reviewer') {
       return path.startsWith('/reviewer') || path.startsWith('/attendee') || path === '/';
+    }
+
+    // An editor can access /editor, /attendee or / (which redirects to /editor)
+    if ((user.rol as string) === 'editor') {
+      return path.startsWith('/editor') || path.startsWith('/attendee') || path === '/';
     }
 
     // Protect reviewer features (reviewer, admin or organizer)
@@ -215,6 +221,22 @@ export const AppLayout: React.FC = () => {
                 }
               >
                 Revisión de Envíos
+              </NavLink>
+            )}
+            {isEditorOrAdmin && (
+              <NavLink
+                to="/editor"
+                role="tab"
+                id="tab-editor"
+                className={({ isActive }) =>
+                  `px-4 py-2.5 text-sm font-medium border-b-2 transition-all duration-150 whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 rounded-t-sm ${
+                    isActive
+                      ? 'border-indigo-600 text-indigo-700 dark:border-indigo-400 dark:text-indigo-400'
+                      : 'border-transparent text-zinc-500 hover:text-indigo-600 hover:bg-indigo-50 dark:text-zinc-400 dark:hover:text-indigo-400 dark:hover:bg-indigo-950/40'
+                  }`
+                }
+              >
+                Panel Editorial
               </NavLink>
             )}
             <NavLink

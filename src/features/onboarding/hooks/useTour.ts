@@ -43,6 +43,7 @@ const TOUR_STEPS_BY_ROLE: Record<Role, DriveStep[]> = {
   speaker: speakerTourSteps,
   attendee: attendeeTourSteps,
   reviewer: [],
+  editor: [],
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

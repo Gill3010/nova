@@ -45,7 +45,21 @@ const initDbSchema = async () => {
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
     `);
-    logger.info('Esquemas de revisores y evaluaciones verificados/creados en la base de datos.');
+    // Tabla de decisiones editoriales (rol editor)
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS decisiones_editoriales (
+        id SERIAL PRIMARY KEY,
+        envio_id INTEGER REFERENCES envios_ojs(id) ON DELETE CASCADE,
+        editor_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
+        decision VARCHAR(30) NOT NULL CHECK (decision IN ('accepted', 'rejected', 'revision_required')),
+        justificacion TEXT NOT NULL,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    await db.query(`CREATE INDEX IF NOT EXISTS idx_decisiones_envio ON decisiones_editoriales(envio_id);`);
+    // Columna de estado editorial en envios_ojs
+    await db.query(`ALTER TABLE envios_ojs ADD COLUMN IF NOT EXISTS estado_editorial VARCHAR(30) DEFAULT 'pending';`);
+    logger.info('Esquemas de revisores, evaluaciones y decisiones editoriales verificados/creados en la base de datos.');
   } catch (err) {
     logger.error('Error al inicializar esquemas en base de datos:', { error: err.message });
   }
@@ -103,6 +117,7 @@ const espaciosRoutes = require('./routes/espacios');
 const actividadesRoutes = require('./routes/actividades');
 const portalesOjsRoutes = require('./routes/portalesOjs');
 const revisionesRoutes = require('./routes/revisiones');
+const decisionesRoutes = require('./routes/decisiones');
 
 // Registrar rutas
 app.use('/api/auth', authRoutes);
@@ -113,6 +128,7 @@ app.use('/api/espacios', espaciosRoutes);
 app.use('/api/actividades', actividadesRoutes);
 app.use('/api/portales-ojs', portalesOjsRoutes);
 app.use('/api/revisiones', revisionesRoutes);
+app.use('/api/decisiones-editoriales', decisionesRoutes);
 
 // Endpoint de salud
 app.get('/api/ping', (req, res) => {

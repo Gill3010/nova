@@ -34,6 +34,9 @@ const AttendeePage = lazy(() =>
 const ReviewerPage = lazy(() =>
   import('../features/reviewer/ReviewerPage').then((m) => ({ default: m.ReviewerPage }))
 );
+const EditorPage = lazy(() =>
+  import('../features/editor/EditorPage').then((m) => ({ default: m.EditorPage }))
+);
 
 // Fallback skeleton loader
 const RouteSkeleton = () => (
@@ -68,8 +71,8 @@ const RouterDashboardWrapper = () => {
   const handleEditCongress = (congress: any, action?: 'view' | 'edit') => {
     loadCongress(congress);
     
-    if (action === 'view' || user?.rol === 'attendee' || user?.rol === 'reviewer') {
-      navigate('/attendee');
+    if (action === 'view' || user?.rol === 'attendee' || user?.rol === 'reviewer' || user?.rol === 'editor') {
+      navigate(user?.rol === 'editor' ? '/editor' : '/attendee');
       return;
     }
     
@@ -128,8 +131,8 @@ const RouterDirectorioWrapper = () => {
   const handleEditCongress = (congress: any, action?: 'view' | 'edit') => {
     loadCongress(congress);
     
-    if (action === 'view' || user?.rol === 'attendee' || user?.rol === 'reviewer') {
-      navigate('/attendee');
+    if (action === 'view' || user?.rol === 'attendee' || user?.rol === 'reviewer' || user?.rol === 'editor') {
+      navigate(user?.rol === 'editor' ? '/editor' : '/attendee');
       return;
     }
     
@@ -190,6 +193,9 @@ const RootIndexRedirect = () => {
   }
   if (user.rol === 'reviewer') {
     return <Navigate to="/reviewer" replace />;
+  }
+  if (user.rol === 'editor') {
+    return <Navigate to="/editor" replace />;
   }
   return <Navigate to={isAdminOrOrg ? '/admin' : '/speaker/new'} replace />;
 };
@@ -297,6 +303,14 @@ export const router = createBrowserRouter([
         element: (
           <Suspense fallback={<RouteSkeleton />}>
             <ReviewerPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'editor',
+        element: (
+          <Suspense fallback={<RouteSkeleton />}>
+            <EditorPage />
           </Suspense>
         ),
       },
