@@ -110,7 +110,15 @@ export const EditorPage: React.FC = () => {
           
           if (active) setPdfError('PDF no encontrado localmente ni en OJS.');
         } catch (err: any) {
-          if (active) setPdfError(err.message || 'Error cargando el PDF.');
+          if (active) {
+            if (err.message?.includes('404')) {
+              setPdfError('El manuscrito o sus archivos no fueron encontrados en la plataforma OJS.');
+            } else if (err.message?.includes('403')) {
+              setPdfError('No hay permisos suficientes para acceder a los archivos de este manuscrito en OJS.');
+            } else {
+              setPdfError(err.message || 'Error cargando el PDF.');
+            }
+          }
         } finally {
           if (active) setLoadingPdf(false);
         }
