@@ -500,7 +500,7 @@ export const EditorPage: React.FC = () => {
                   const labels = {
                     detalles: 'Ficha',
                     evaluaciones: `Reviews (${selectedSub.total_evaluaciones})`,
-                    ia_report: 'Reporte IA',
+                    ia_report: 'Preliminar',
                     asignar: 'Asignar',
                     pdf: 'PDF'
                   };
@@ -656,61 +656,67 @@ export const EditorPage: React.FC = () => {
                       </div>
                     )}
 
-                    {/* 3. REPORT IA PANEL */}
+                    {/* 3. PRELIMINAR PANEL */}
                     {activeTab === 'ia_report' && (
                       <div className="flex flex-col gap-4">
                         <div className="flex justify-between items-center pb-2 border-b border-zinc-100 dark:border-zinc-850">
-                          <h4 className="text-xs font-bold text-zinc-800 dark:text-zinc-200 uppercase tracking-wide flex items-center gap-1.5">
-                            <Bot className="h-4 w-4 text-violet-500" /> Reporte de Revisión Preliminar (IA Nova)
-                          </h4>
+                          <div className="flex items-center gap-1.5 font-bold text-slate-800 dark:text-slate-200">
+                            <Bot className="h-4 w-4 text-violet-500" /> Revisión preliminar del sistema
+                          </div>
                           {selectedSub.ia_comments && (
                             <Badge variant="success">Generado</Badge>
                           )}
                         </div>
 
                         {!selectedSub.ia_comments ? (
-                          <div className="text-center py-10 text-zinc-500 bg-white dark:bg-zinc-900/40 border border-dashed border-zinc-200 dark:border-zinc-800 rounded-lg">
-                            <Bot className="h-10 w-10 mx-auto text-zinc-300 dark:text-zinc-700 mb-2" />
-                            <p className="text-xs font-semibold">Reporte preliminar de IA no disponible</p>
-                            <p className="text-[10px] text-zinc-450 dark:text-zinc-500 mt-0.5">El reporte de IA se genera automáticamente cuando se adjunta un archivo al manuscrito.</p>
+                          <div className="w-full flex flex-col items-center justify-center gap-3 py-16 bg-slate-50 dark:bg-slate-900/40 rounded-lg border border-slate-200 dark:border-slate-800/60">
+                            <Bot className="h-8 w-8 text-slate-300 dark:text-slate-700" />
+                            <div className="text-center">
+                              <p className="text-xs font-semibold">Revisión preliminar del sistema no disponible</p>
+                              <p className="text-[10px] text-zinc-450 dark:text-zinc-500 mt-0.5">La revisión preliminar se genera automáticamente cuando se adjunta un archivo al manuscrito.</p>
+                            </div>
                           </div>
                         ) : (
                           <div className="flex flex-col gap-4">
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-zinc-50 dark:bg-zinc-950/50 p-3 rounded-lg border border-zinc-100 dark:border-zinc-850">
                               <div>
-                                <div className="flex justify-between text-[9px] font-semibold text-zinc-400 mb-0.5">
-                                  <span>Calidad Científica (IA)</span>
+                                <div className="flex justify-between items-center text-[10px] mb-1 font-semibold text-slate-700 dark:text-slate-300">
+                                  <span>Calidad Científica</span>
                                   <span>{selectedSub.ia_scientific}/10</span>
                                 </div>
-                                <div className="h-1 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                                <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
                                   <div className="h-full bg-violet-500" style={{ width: `${(selectedSub.ia_scientific || 0) * 10}%` }} />
                                 </div>
                               </div>
                               
                               <div>
-                                <div className="flex justify-between text-[9px] font-semibold text-zinc-400 mb-0.5">
-                                  <span>Originalidad (IA)</span>
+                                <div className="flex justify-between items-center text-[10px] mb-1 font-semibold text-slate-700 dark:text-slate-300">
+                                  <span>Originalidad</span>
                                   <span>{selectedSub.ia_originality}/10</span>
                                 </div>
-                                <div className="h-1 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                                <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
                                   <div className="h-full bg-violet-500" style={{ width: `${(selectedSub.ia_originality || 0) * 10}%` }} />
                                 </div>
                               </div>
 
                               <div>
-                                <div className="flex justify-between text-[9px] font-semibold text-zinc-400 mb-0.5">
-                                  <span>Presentación (IA)</span>
+                                <div className="flex justify-between items-center text-[10px] mb-1 font-semibold text-slate-700 dark:text-slate-300">
+                                  <span>Presentación</span>
                                   <span>{selectedSub.ia_presentation}/10</span>
                                 </div>
-                                <div className="h-1 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                                <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
                                   <div className="h-full bg-violet-500" style={{ width: `${(selectedSub.ia_presentation || 0) * 10}%` }} />
                                 </div>
                               </div>
                             </div>
 
-                            <div className="text-xs text-zinc-700 dark:text-zinc-350 leading-relaxed bg-violet-50/20 dark:bg-violet-950/10 border border-violet-100 dark:border-violet-900/40 p-4 rounded-xl">
-                              <span className="text-[10px] font-bold text-violet-500 dark:text-violet-400 block uppercase mb-1">Comentarios del Modelo de IA</span>
-                              <div className="whitespace-pre-wrap leading-relaxed">{selectedSub.ia_comments}</div>
+                            <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800">
+                              <span className="text-[10px] uppercase font-bold text-violet-500 block mb-2">
+                                Observaciones del Sistema
+                              </span>
+                              <p className="text-xs text-slate-600 dark:text-slate-400 whitespace-pre-wrap italic">
+                                {selectedSub.ia_comments}
+                              </p>
                             </div>
                           </div>
                         )}
