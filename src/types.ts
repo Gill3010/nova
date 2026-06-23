@@ -183,6 +183,9 @@ export interface EditorDashboardEnvio {
   created_at: string;
   archivo_key?: string;
   congreso_nombre: string;
+  portal_url?: string;
+  portal_api_key?: string;
+  revista_path?: string;
   total_evaluaciones: number;
   avg_scientific: number | null;
   avg_originality: number | null;

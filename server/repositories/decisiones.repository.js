@@ -88,6 +88,9 @@ class DecisionesRepository {
         e.nivel_academico, e.linea_investigacion, e.categoria,
         e.estado_editorial, e.created_at, e.archivo_key, e.autor_email,
         c.nombre AS congreso_nombre,
+        c.ojs_url AS portal_url,
+        c.ojs_api_key AS portal_api_key,
+        c.ojs_journal_path AS revista_path,
         COUNT(DISTINCT ev.id) AS total_evaluaciones,
         ROUND(AVG(ev.score_scientific)::numeric, 1) AS avg_scientific,
         ROUND(AVG(ev.score_originality)::numeric, 1) AS avg_originality,
@@ -105,7 +108,7 @@ class DecisionesRepository {
       FROM envios_ojs e
       JOIN congresos c ON e.congreso_id = c.id
       LEFT JOIN evaluaciones ev ON ev.envio_id = e.id
-      GROUP BY e.id, c.nombre, e.autor_email
+      GROUP BY e.id, c.nombre, c.ojs_url, c.ojs_api_key, c.ojs_journal_path, e.autor_email
       ORDER BY 
         CASE e.estado_editorial
           WHEN 'pending' THEN 1

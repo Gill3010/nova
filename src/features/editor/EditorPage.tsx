@@ -25,8 +25,10 @@ import {
   unassignRevisorEnvio, 
   fetchRevisorAssignments,
   fetchDetailedEvaluations,
-  getEnvioArchivoUrl
+  getEnvioArchivoUrl,
+  fetchEnvioArchivoBlobUrl
 } from '../../services/dbApi';
+import { fetchSubmissionFiles, downloadFileAsBlobUrl } from '../../services/ojsApi';
 import type { PostgresUser } from '../../services/dbApi';
 import type { 
   EditorDashboardEnvio, 
@@ -63,6 +65,66 @@ export const EditorPage: React.FC = () => {
   const [justificacion, setJustificacion] = useState('');
   const [formSuccess, setFormSuccess] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+
+  // PDF Viewer state
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [loadingPdf, setLoadingPdf] = useState(false);
+  const [pdfError, setPdfError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    if (activeTab === 'pdf' && selectedSub) {
+      setLoadingPdf(true);
+      setPdfError(null);
+      setPdfUrl(null);
+      
+      const loadPdf = async () => {
+        try {
+          if (selectedSub.archivo_key) {
+             const blobUrl = await fetchEnvioArchivoBlobUrl(selectedSub.id);
+             if (active) setPdfUrl(blobUrl);
+             return;
+          }
+          
+          if (selectedSub.portal_url && selectedSub.portal_api_key && selectedSub.revista_path) {
+             const res = await fetchSubmissionFiles(
+               selectedSub.portal_url,
+               selectedSub.portal_api_key,
+               selectedSub.revista_path,
+               selectedSub.ojs_submission_id
+             );
+             const files = res.items || res || [];
+             const pdfFile = files.find((f: any) =>
+               f.genreId === 1 ||
+               f.originalFilename?.toLowerCase().endsWith('.pdf') ||
+               f.name?.es?.toLowerCase().endsWith('.pdf') ||
+               f.name?.en?.toLowerCase().endsWith('.pdf')
+             );
+             
+             if (pdfFile && pdfFile.url) {
+               const blobUrl = await downloadFileAsBlobUrl(selectedSub.portal_api_key, pdfFile.url);
+               if (active) setPdfUrl(blobUrl);
+               return;
+             }
+          }
+          
+          if (active) setPdfError('PDF no encontrado localmente ni en OJS.');
+        } catch (err: any) {
+          if (active) setPdfError(err.message || 'Error cargando el PDF.');
+        } finally {
+          if (active) setLoadingPdf(false);
+        }
+      };
+      
+      loadPdf();
+    }
+    
+    return () => {
+      active = false;
+      // Note: we don't revoke here instantly because the iframe might still be rendering it, 
+      // but in a real app we'd revoke the old URL when selectedSub changes.
+    };
+  }, [activeTab, selectedSub]);
 
   // Load submissions & active reviewers
   const loadDashboardData = useCallback(async () => {
@@ -716,9 +778,9 @@ export const EditorPage: React.FC = () => {
                       <div className="w-full h-[500px] flex flex-col gap-2">
                         <div className="flex justify-between items-center text-xs text-zinc-450">
                           <span>Visor de Manuscrito PDF</span>
-                          {selectedSub.archivo_key && (
+                          {pdfUrl && (
                             <a 
-                              href={getEnvioArchivoUrl(selectedSub.id)} 
+                              href={pdfUrl} 
                               target="_blank" 
                               rel="noreferrer"
                               className="text-indigo-650 hover:text-indigo-700 dark:text-indigo-400 flex items-center gap-1"
@@ -727,18 +789,25 @@ export const EditorPage: React.FC = () => {
                             </a>
                           )}
                         </div>
-                        {selectedSub.archivo_key ? (
+                        
+                        {loadingPdf ? (
+                          <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-zinc-400 py-12 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg">
+                            <RefreshCw className="h-8 w-8 text-indigo-500 animate-spin" />
+                            <span className="text-xs font-semibold">Cargando PDF seguro...</span>
+                          </div>
+                        ) : pdfError ? (
+                          <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-red-500 py-12 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/50 rounded-lg p-6 text-center">
+                            <AlertTriangle className="h-8 w-8 text-red-500 mb-2" />
+                            <span className="text-xs font-bold">PDF no disponible</span>
+                            <span className="text-[10px] text-red-400">{pdfError}</span>
+                          </div>
+                        ) : pdfUrl ? (
                           <iframe
-                            src={`${getEnvioArchivoUrl(selectedSub.id)}#toolbar=0`}
+                            src={`${pdfUrl}#toolbar=0`}
                             title="Visor PDF Editor"
                             className="w-full h-full rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white"
                           />
-                        ) : (
-                          <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-zinc-400 py-12 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg">
-                            <AlertTriangle className="h-8 w-8 text-zinc-300 dark:text-zinc-700" />
-                            <span className="text-xs font-semibold">PDF no disponible para este manuscrito.</span>
-                          </div>
-                        )}
+                        ) : null}
                       </div>
                     )}
                   </>
