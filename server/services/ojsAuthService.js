@@ -8,22 +8,96 @@ require('dotenv').config();
 const sessionCache = {};
 
 /**
- * Realiza una petición HTTPS/HTTP envuelta en una Promesa
+ * Fusiona cabeceras de cookies existentes con nuevas cookies devueltas en set-cookie
  */
-const makeRequest = (url, options, postData = null) => {
+const mergeCookies = (oldCookieHeader, newSetCookies) => {
+  const cookieMap = {};
+  if (oldCookieHeader) {
+    oldCookieHeader.split(';').forEach(c => {
+      const parts = c.split('=');
+      if (parts.length >= 2) {
+        cookieMap[parts[0].trim()] = parts.slice(1).join('=').trim();
+      }
+    });
+  }
+  if (newSetCookies) {
+    newSetCookies.forEach(c => {
+      const firstPart = c.split(';')[0];
+      const parts = firstPart.split('=');
+      if (parts.length >= 2) {
+        cookieMap[parts[0].trim()] = parts.slice(1).join('=').trim();
+      }
+    });
+  }
+  return Object.entries(cookieMap).map(([k, v]) => `${k}=${v}`).join('; ');
+};
+
+/**
+ * Realiza una petición HTTPS/HTTP envuelta en una Promesa, con soporte opcional para seguir redirecciones
+ */
+const makeRequest = (url, options, postData = null, redirectCount = 0) => {
   return new Promise((resolve, reject) => {
+    if (redirectCount > 5) {
+      return reject(new Error('Demasiados redireccionamientos (max 5)'));
+    }
+
     const isHttps = url.startsWith('https:');
     const requestModule = isHttps ? https : http;
 
     const req = requestModule.request(url, options, (res) => {
+      // Manejar redirecciones si followRedirects está habilitado en las opciones
+      if (options.followRedirects && [301, 302, 303, 307, 308].includes(res.statusCode) && res.headers.location) {
+        let redirectUrl = res.headers.location;
+        if (!redirectUrl.startsWith('http:') && !redirectUrl.startsWith('https:')) {
+          const parsedUrl = new URL(url);
+          redirectUrl = parsedUrl.origin + redirectUrl;
+        }
+
+        // Acumular cookies obtenidas durante la redirección
+        const newCookies = res.headers['set-cookie'];
+        const mergedCookie = mergeCookies(options.headers?.['Cookie'], newCookies);
+
+        const newOptions = {
+          ...options,
+          method: 'GET', // Cambiar método a GET tras redirect
+          headers: {
+            ...options.headers,
+            'Cookie': mergedCookie
+          }
+        };
+        // Eliminar headers de cuerpo para el redirect
+        delete newOptions.headers['Content-Type'];
+        delete newOptions.headers['Content-Length'];
+
+        res.on('data', () => {});
+        res.on('end', () => {
+          makeRequest(redirectUrl, newOptions, null, redirectCount + 1)
+            .then(resolve)
+            .catch(reject);
+        });
+        return;
+      }
+
       let data = '';
       res.on('data', chunk => data += chunk);
-      res.on('end', () => resolve({ status: res.statusCode, headers: res.headers, data }));
+      res.on('end', () => {
+        const accumulatedCookie = options.headers?.['Cookie'] || '';
+        const finalCookie = mergeCookies(accumulatedCookie, res.headers['set-cookie']);
+        resolve({
+          status: res.statusCode,
+          headers: {
+            ...res.headers,
+            'x-accumulated-cookie': finalCookie,
+            'x-final-url': url
+          },
+          data
+        });
+      });
     });
 
     req.on('error', reject);
     
-    if (postData) {
+    if (postData && options.method !== 'GET') {
       req.write(postData);
     }
     req.end();
@@ -126,17 +200,16 @@ const getOjsSessionCookie = async (journalBaseUrl) => {
 
   let sessionCookie = '';
   let csrfToken = '';
+  let finalLoginUrl = '';
 
   // PASO 1: Petición GET a la página de login para obtener CSRF y cookie inicial
   try {
     const loginUrl = `${journalBaseUrl}/login`;
-    const loginRes = await makeRequest(loginUrl, { method: 'GET' });
+    const loginRes = await makeRequest(loginUrl, { method: 'GET', followRedirects: true });
 
-    // Extraer cookie inicial
-    const setCookie = loginRes.headers['set-cookie'];
-    if (setCookie) {
-      sessionCookie = setCookie.map(c => c.split(';')[0]).join('; ');
-    }
+    // Extraer cookies acumuladas (incluye las de redirecciones y la respuesta final)
+    sessionCookie = loginRes.headers['x-accumulated-cookie'] || '';
+    finalLoginUrl = loginRes.headers['x-final-url'] || loginUrl;
 
     // Usar la función modularizada para extraer el token CSRF
     csrfToken = extractCsrfToken(loginRes.data);
@@ -147,7 +220,13 @@ const getOjsSessionCookie = async (journalBaseUrl) => {
 
   // PASO 2: POST a /login/signIn para autenticar
   try {
-    const signInUrl = `${journalBaseUrl}/login/signIn`;
+    let signInUrl;
+    const lastLoginIndex = finalLoginUrl.lastIndexOf('/login');
+    if (lastLoginIndex !== -1) {
+      signInUrl = finalLoginUrl.substring(0, lastLoginIndex) + '/login/signIn' + finalLoginUrl.substring(lastLoginIndex + 6);
+    } else {
+      signInUrl = `${journalBaseUrl}/login/signIn`;
+    }
     const postData = new URLSearchParams({
       csrfToken: csrfToken,
       source: '',
@@ -167,9 +246,14 @@ const getOjsSessionCookie = async (journalBaseUrl) => {
     const signInRes = await makeRequest(signInUrl, signInOptions, postData);
 
     // Actualizar cookie si fue rotada durante el login (muy común en OJS)
-    const newCookies = signInRes.headers['set-cookie'];
+    const newCookies = signInRes.headers['x-accumulated-cookie'];
     if (newCookies) {
-      sessionCookie = newCookies.map(c => c.split(';')[0]).join('; ');
+      sessionCookie = newCookies;
+    } else {
+      const setCookie = signInRes.headers['set-cookie'];
+      if (setCookie) {
+        sessionCookie = setCookie.map(c => c.split(';')[0]).join('; ');
+      }
     }
 
     // Validación real de que el login funcionó y no estamos en una sesión invitada

@@ -90,7 +90,8 @@ Resources:
               Action:
                 - bedrock:InvokeModel
               Resource:
-                - !Sub "arn:aws:bedrock:${AWS::Region}::foundation-model/*"
+                - "arn:aws:bedrock:*::foundation-model/*"
+                - !Sub "arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:inference-profile/*"
         # Acceso al bucket S3
         - S3CrudPolicy:
             BucketName: !Ref S3BucketName

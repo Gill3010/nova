@@ -24,9 +24,23 @@ class RevisionesService {
       }
     }
 
+    // Resolver el ID local en la base de datos a partir del ojs_submission_id
+    let actualEnvioId = envioId;
+    try {
+      const { rows } = await db.query(
+        'SELECT id FROM envios_ojs WHERE ojs_submission_id = $1 OR id = $1 LIMIT 1',
+        [envioId]
+      );
+      if (rows.length > 0) {
+        actualEnvioId = rows[0].id;
+      }
+    } catch (dbErr) {
+      logger.error('Error al resolver ojs_submission_id en saveSystemReport', { error: dbErr.message, envioId });
+    }
+
     try {
       const report = await revisionesRepository.upsertSystemReport({
-        envioId,
+        envioId: actualEnvioId,
         scoreScientific: scoreScientific ?? null,
         scoreOriginality: scoreOriginality ?? null,
         scorePresentation: scorePresentation ?? null,

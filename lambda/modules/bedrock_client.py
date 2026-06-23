@@ -134,8 +134,16 @@ class BedrockClient:
             response_body = json.loads(response["body"].read())
             raw_text = response_body["content"][0]["text"].strip()
 
+            # Quitar bloques de formato markdown si la IA los incluyó
+            cleaned_text = raw_text
+            if cleaned_text.startswith("```"):
+                first_brace = cleaned_text.find("{")
+                last_brace = cleaned_text.rfind("}")
+                if first_brace != -1 and last_brace != -1:
+                    cleaned_text = cleaned_text[first_brace:last_brace + 1]
+
             # Parsear el JSON de la respuesta
-            evaluation = json.loads(raw_text)
+            evaluation = json.loads(cleaned_text)
 
             # Validar y sanitizar puntuaciones (deben ser 0-10)
             for field in ("score_scientific", "score_originality", "score_presentation"):

@@ -1,5 +1,5 @@
-import React from 'react';
-import { Info, FileText, Video, Volume2, Image as ImageIcon, RefreshCw, Bot, AlertTriangle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Info, FileText, Video, Volume2, Image as ImageIcon, RefreshCw, Bot, AlertTriangle, X } from 'lucide-react';
 import { useReviewer, DEMO_FILES } from '../context/ReviewerContext';
 import { Badge } from '../../../components/common/Badge';
 import { ReviewerSystemReport } from './ReviewerSystemReport';
@@ -28,6 +28,20 @@ export const ReviewerFilePreviewer: React.FC = () => {
     systemReport,
     loadingSystemReport,
   } = useReviewer();
+
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsLightboxOpen(false);
+      }
+    };
+    if (isLightboxOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isLightboxOpen]);
 
   if (!selectedSubmission) return null;
 
@@ -214,13 +228,14 @@ export const ReviewerFilePreviewer: React.FC = () => {
               <span className="text-[10px] font-semibold text-slate-455 uppercase tracking-wider flex items-center gap-1">
                 <ImageIcon className="h-3.5 w-3.5" /> Afiche o Póster Asociado
               </span>
-              <div className="w-full h-48 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden bg-white dark:bg-slate-900 shadow-sm flex items-center justify-center">
+              <div className="w-full h-72 sm:h-80 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden bg-white dark:bg-slate-900 shadow-sm flex items-center justify-center">
                 {getFilePreviewSource('poster') ? (
                   <img
                     src={getFilePreviewSource('poster')}
                     alt="Póster del artículo"
-                    className="h-full w-full object-cover hover:scale-105 transition-transform duration-250 cursor-zoom-in"
-                    onClick={() => window.open(getFilePreviewSource('poster'), '_blank')}
+                    className="cursor-zoom-in"
+                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                    onClick={() => setIsLightboxOpen(true)}
                   />
                 ) : (
                   <NoFileAvailable label="Póster" />
@@ -236,6 +251,45 @@ export const ReviewerFilePreviewer: React.FC = () => {
         )}
 
       </div>
+
+      {/* Lightbox para visualización en pantalla completa */}
+      {isLightboxOpen && getFilePreviewSource('poster') && (
+        <div 
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/90 backdrop-blur-xs p-4 animate-fade-in"
+          onClick={() => setIsLightboxOpen(false)}
+        >
+          {/* Botón de cerrar */}
+          <button 
+            className="absolute top-4 right-4 text-white/80 hover:text-white bg-slate-900/60 hover:bg-slate-800/80 p-2.5 rounded-full transition-colors cursor-pointer z-55"
+            onClick={() => setIsLightboxOpen(false)}
+            aria-label="Cerrar vista completa"
+          >
+            <X className="h-6 w-6" />
+          </button>
+          
+          {/* Contenedor del póster */}
+          <div className="relative max-w-5xl max-h-[90vh] flex flex-col items-center justify-center" onClick={(e) => e.stopPropagation()}>
+            <img
+              src={getFilePreviewSource('poster')}
+              alt="Póster en tamaño completo"
+              className="max-w-full max-h-[80vh] rounded-lg shadow-2xl object-contain"
+            />
+            {/* Pie de foto / Indicaciones */}
+            <div className="mt-4 text-white/70 text-xs flex gap-3 items-center">
+              <span>Presiona 'ESC' o haz clic fuera para cerrar</span>
+              <span className="text-white/30">•</span>
+              <a 
+                href={getFilePreviewSource('poster')} 
+                target="_blank" 
+                rel="noreferrer" 
+                className="underline hover:text-white transition-colors"
+              >
+                Abrir en pestaña nueva
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
