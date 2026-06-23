@@ -71,8 +71,23 @@ const RouterDashboardWrapper = () => {
   const handleEditCongress = (congress: any, action?: 'view' | 'edit') => {
     loadCongress(congress);
     
-    if (action === 'view' || user?.rol === 'attendee' || user?.rol === 'reviewer' || user?.rol === 'editor') {
-      navigate(user?.rol === 'editor' ? '/editor' : '/attendee');
+    if (action === 'view') {
+      navigate('/attendee');
+      return;
+    }
+    
+    if (user?.rol === 'attendee') {
+      navigate('/attendee');
+      return;
+    }
+    
+    if (user?.rol === 'reviewer') {
+      navigate('/reviewer');
+      return;
+    }
+    
+    if (user?.rol === 'editor') {
+      navigate('/editor');
       return;
     }
     
@@ -131,8 +146,23 @@ const RouterDirectorioWrapper = () => {
   const handleEditCongress = (congress: any, action?: 'view' | 'edit') => {
     loadCongress(congress);
     
-    if (action === 'view' || user?.rol === 'attendee' || user?.rol === 'reviewer' || user?.rol === 'editor') {
-      navigate(user?.rol === 'editor' ? '/editor' : '/attendee');
+    if (action === 'view') {
+      navigate('/attendee');
+      return;
+    }
+    
+    if (user?.rol === 'attendee') {
+      navigate('/attendee');
+      return;
+    }
+    
+    if (user?.rol === 'reviewer') {
+      navigate('/reviewer');
+      return;
+    }
+    
+    if (user?.rol === 'editor') {
+      navigate('/editor');
       return;
     }
     
