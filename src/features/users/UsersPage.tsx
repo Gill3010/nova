@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Users, Shield, ShieldAlert, CheckCircle2, XCircle, UserX, UserCheck, RefreshCw, ClipboardCheck, X, MoreVertical } from 'lucide-react';
+import { Users, Shield, ShieldAlert, CheckCircle2, XCircle, UserX, UserCheck, RefreshCw, ClipboardCheck, X, MoreVertical, Mic } from 'lucide-react';
 import { fetchUsers, updateUserRole, toggleUserStatus, fetchDashboardData, assignRevisorEnvio, unassignRevisorEnvio, fetchRevisorAssignments } from '../../services/dbApi';
 import type { PostgresUser, PostgresCongress } from '../../services/dbApi';
 import { Card } from '../../components/common/Card';
-import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
 import { useAuth } from '../../context/AuthContext';
 
@@ -106,18 +105,42 @@ export const UsersPage: React.FC = () => {
   const getRoleBadge = (role: string) => {
     switch (role) {
       case 'admin':
-        return <Badge variant="destructive" className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border-red-200"><ShieldAlert className="w-3 h-3 mr-1" /> Admin</Badge>;
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-xs font-semibold" style={{ backgroundColor: '#fee2e2', color: '#991b1b', border: '1px solid #fecaca' }}>
+            <ShieldAlert className="w-3 h-3" /> Admin
+          </span>
+        );
       case 'organizer':
-        return <Badge variant="outline" className="bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400 border-orange-200"><Shield className="w-3 h-3 mr-1" /> Organizer</Badge>;
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-xs font-semibold" style={{ backgroundColor: '#ffedd5', color: '#9a3412', border: '1px solid #fed7aa' }}>
+            <Shield className="w-3 h-3" /> Organizador
+          </span>
+        );
       case 'attendee':
-        return <Badge variant="success" className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-200"><Users className="w-3 h-3 mr-1" /> Asistente</Badge>;
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-xs font-semibold" style={{ backgroundColor: '#d1fae5', color: '#065f46', border: '1px solid #a7f3d0' }}>
+            <Users className="w-3 h-3" /> Asistente
+          </span>
+        );
       case 'reviewer':
-        return <Badge variant="default" className="bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400 border-purple-200"><ClipboardCheck className="w-3 h-3 mr-1" /> Revisor</Badge>;
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-xs font-semibold" style={{ backgroundColor: '#ede9fe', color: '#5b21b6', border: '1px solid #ddd6fe' }}>
+            <ClipboardCheck className="w-3 h-3" /> Revisor
+          </span>
+        );
       case 'editor':
-        return <Badge variant="default" className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 border-amber-200"><Shield className="w-3 h-3 mr-1" /> Editor</Badge>;
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-xs font-semibold" style={{ backgroundColor: '#fef3c7', color: '#92400e', border: '1px solid #fde68a' }}>
+            <Shield className="w-3 h-3" /> Editor
+          </span>
+        );
       case 'speaker':
       default:
-        return <Badge variant="default" className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200">Speaker</Badge>;
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-xs font-semibold" style={{ backgroundColor: '#dbeafe', color: '#1e40af', border: '1px solid #bfdbfe' }}>
+            <Mic className="w-3 h-3" /> Speaker
+          </span>
+        );
     }
   };
 
