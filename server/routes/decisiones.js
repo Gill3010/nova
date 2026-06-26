@@ -13,7 +13,7 @@ const { verifyToken, authorize } = require('../middleware/auth');
 const decisionesController = require('../controllers/decisiones.controller');
 
 // Todas las rutas requieren autenticación + rol de editor o admin
-router.use(verifyToken, authorize('editor', 'admin'));
+router.use(verifyToken, authorize('editor', 'admin', 'organizer'));
 
 // Dashboard del editor
 router.get('/dashboard', decisionesController.getDashboard);

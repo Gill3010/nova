@@ -75,8 +75,8 @@ class EnviosController {
         return res.status(404).json({ success: false, error: 'No hay archivo disponible para este envío' });
       }
 
-      // Verificar autorización: admin o revisor asignado
-      if (rol !== 'admin') {
+      // Verificar autorización: admin, editor, organizador o revisor asignado
+      if (rol !== 'admin' && rol !== 'editor' && rol !== 'organizer') {
         const { rows: assignRows } = await db.query(
           'SELECT 1 FROM revisores_envios WHERE revisor_id = $1 AND envio_id = $2',
           [userId, envioId]

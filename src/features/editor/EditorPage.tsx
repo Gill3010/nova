@@ -154,7 +154,7 @@ export const EditorPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (currentUser?.rol === 'editor' || currentUser?.rol === 'admin') {
+    if (currentUser?.rol === 'editor' || currentUser?.rol === 'admin' || currentUser?.rol === 'organizer') {
       loadDashboardData();
     }
   }, [currentUser, loadDashboardData]);
@@ -279,7 +279,7 @@ export const EditorPage: React.FC = () => {
   });
 
   // Access check
-  if (currentUser?.rol !== 'editor' && currentUser?.rol !== 'admin') {
+  if (currentUser?.rol !== 'editor' && currentUser?.rol !== 'admin' && currentUser?.rol !== 'organizer') {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center animate-fade-in">
         <ShieldAlert className="h-16 w-16 text-red-500 mb-4" />

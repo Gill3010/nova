@@ -15,9 +15,9 @@ const checkAdmin = (req, res, next) => {
 
 // Middleware para verificar que el usuario es admin o editor
 const checkAdminOrEditor = (req, res, next) => {
-  if (req.user.rol !== 'admin' && req.user.rol !== 'editor') {
+  if (req.user.rol !== 'admin' && req.user.rol !== 'editor' && req.user.rol !== 'organizer') {
     logger.warn('Intento de acceso no autorizado a gestión de revisores', { userId: req.user.id });
-    return res.status(403).json({ error: 'Acceso denegado. Se requiere rol de administrador o editor.' });
+    return res.status(403).json({ error: 'Acceso denegado. Se requiere rol de administrador, editor u organizador.' });
   }
   next();
 };

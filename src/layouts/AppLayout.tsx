@@ -19,7 +19,7 @@ export const AppLayout: React.FC = () => {
   const isAdmin = (user?.rol as string) === 'admin';
   const isSpeakerOrAdminOrOrg = (user?.rol as string) === 'speaker' || (user?.rol as string) === 'admin' || (user?.rol as string) === 'organizer';
   const isRevisorOrAdminOrOrg = (user?.rol as string) === 'reviewer' || (user?.rol as string) === 'admin' || (user?.rol as string) === 'organizer';
-  const isEditorOrAdmin = (user?.rol as string) === 'editor' || (user?.rol as string) === 'admin';
+  const isEditorOrAdmin = (user?.rol as string) === 'editor' || (user?.rol as string) === 'admin' || (user?.rol as string) === 'organizer';
 
   const isAuthorized = useMemo(() => {
     if (!user) return false;
