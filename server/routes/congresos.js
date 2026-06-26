@@ -13,7 +13,7 @@ router.get('/', verifyToken, async (req, res) => {
     let whereClause = '';
     let queryParams = [];
 
-    if (rol !== 'admin' && (scope === 'mine' || (rol === 'organizer' && scope !== 'all'))) {
+    if (scope === 'mine' || (rol !== 'admin' && scope !== 'all')) {
       whereClause = 'WHERE c.creador_id = $1';
       queryParams.push(id);
     }
