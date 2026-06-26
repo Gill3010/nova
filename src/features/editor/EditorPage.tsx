@@ -210,23 +210,6 @@ export const EditorPage: React.FC = () => {
       // Refresh evaluations in case assignment changed
       const evals = await fetchDetailedEvaluations(envioId);
       setEvaluations(evals);
-      
-      // Update local submissions list counter
-      setSubmissions(prev => 
-        prev.map(s => {
-          if (s.id === envioId) {
-            const diff = isCurrentlyAssigned ? -1 : 1;
-            return { ...s, total_evaluaciones: Math.max(0, s.total_evaluaciones + diff) };
-          }
-          return s;
-        })
-      );
-      if (selectedSub && selectedSub.id === envioId) {
-        setSelectedSub(prev => prev ? { 
-          ...prev, 
-          total_evaluaciones: Math.max(0, prev.total_evaluaciones + (isCurrentlyAssigned ? -1 : 1)) 
-        } : null);
-      }
     } catch (err: any) {
       alert(err.message || 'Error al modificar la asignación del revisor.');
     }
