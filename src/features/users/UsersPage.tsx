@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Users, Shield, ShieldAlert, CheckCircle2, XCircle, UserX, UserCheck, RefreshCw, ClipboardCheck, X, MoreVertical, Mic } from 'lucide-react';
+import { Users, Shield, ShieldAlert, CheckCircle2, XCircle, UserX, UserCheck, RefreshCw, ClipboardCheck, X, MoreVertical, Mic, PenLine } from 'lucide-react';
 import { fetchUsers, updateUserRole, toggleUserStatus, fetchDashboardData, assignRevisorEnvio, unassignRevisorEnvio, fetchRevisorAssignments } from '../../services/dbApi';
 import type { PostgresUser, PostgresCongress } from '../../services/dbApi';
 import { Card } from '../../components/common/Card';
@@ -131,7 +131,7 @@ export const UsersPage: React.FC = () => {
       case 'editor':
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-xs font-semibold" style={{ backgroundColor: '#fef3c7', color: '#92400e', border: '1px solid #fde68a' }}>
-            <Shield className="w-3 h-3" /> Editor
+            <PenLine className="w-3 h-3" /> Editor
           </span>
         );
       case 'speaker':
